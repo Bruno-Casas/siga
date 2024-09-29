@@ -470,8 +470,8 @@ public class ExMobilController extends
             }
         }
 
-        List<CpOrgaoUsuario> orgaos = Ex.getInstance().getBL()
-                .removeOrgaosRestritos(this.getOrgaosUsu(), getCadastrante(), getLotaCadastrante());
+        List<CpOrgaoUsuario> orgaos = Cp.getInstance().getBL()
+                .removeOrgaosQueNaoSeraoExibidos(this.getOrgaosUsu(), getCadastrante(), getLotaCadastrante());
 
         DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
 

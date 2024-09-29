@@ -275,12 +275,19 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                         td.setDefinicaoDeResponsavel(dao().consultar(td.getDefinicaoDeResponsavelId(),
                                 WfDefinicaoDeResponsavel.class, false));
 
+                    if (!td.getTipoDeTarefa().isSuportarVariaveis())
+                        td.setDefinicaoDeVariavel(new ArrayList<>());
+
                     if (td.getDefinicaoDeVariavel() != null) {
                         for (WfDefinicaoDeVariavel vd : td.getDefinicaoDeVariavel()) {
                             vd.setDefinicaoDeTarefa(td);
                             setDepois.add(vd);
                         }
                     }
+
+                    if (!td.getTipoDeTarefa().isSuportarDesvios())
+                        td.setDefinicaoDeDesvio(new ArrayList<>());
+
                     if (td.getDefinicaoDeDesvio() != null) {
                         for (WfDefinicaoDeDesvio dd : td.getDefinicaoDeDesvio()) {
                             dd.setDefinicaoDeTarefa(td);

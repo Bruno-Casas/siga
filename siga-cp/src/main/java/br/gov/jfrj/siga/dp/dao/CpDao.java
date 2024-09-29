@@ -982,7 +982,7 @@ public class CpDao extends ModeloDao {
             query.setParameter("matricula", o.getMatricula());
 
             final List<DpPessoa> l = query.getResultList();
-            return l.isEmpty()? null : l.get(0);
+            return l.isEmpty() ? null : l.get(0);
         } catch (final NullPointerException e) {
             return null;
         }

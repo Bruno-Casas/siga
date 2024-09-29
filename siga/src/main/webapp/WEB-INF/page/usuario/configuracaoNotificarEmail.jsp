@@ -16,17 +16,19 @@
 
 <!DOCTYPE html>
 <siga:pagina popup="false" titulo="Receber notificação por email">
+    <script type="text/javascript" src="/siga/javascript/jquery.blockUI.js"></script>
+
     <main class="container-fluid">
         <div class="card bg-light mb-3">
             <div class="card-header">
                 <h5 id="et">Receber notificação por e-mail</h5>
             </div>
 
-            <form class="card-body" name="frm" id="listar" action="listar" method="GET">
+            <form class="card-body p-0" name="frm" id="listar" action="listar" method="GET">
                 <table style="border: none;" class="form-group table table-sm table-striped">
                     <thead class="thead-dark">
                     <tr>
-                        <th style="width: 70%;">Ações</th>
+                        <th class="pl-4" style="width: 70%;">Ações</th>
                         <th class="text-center">Receber</th>
                     </tr>
                     </thead>
@@ -45,23 +47,31 @@
                             </c:url>
 
                             <tr>
-                                <td class="align-middle">${conf.cpServico.dscServico}</td>
+                                <td class="align-middle pl-4">
+                                        ${conf.cpServico.dscServico}
+                                    <a
+                                            class="fas fa-info-circle text-secondary ml-1"
+                                            data-toggle="tooltip" data-trigger="click"
+                                            data-placement="bottom"
+                                            title="${conf.cpServico.labelServico} ">
+                                    </a>
+                                </td>
 
                                 <td class="text-center">
                                     <c:choose>
-                                        <c:when test="${conf.cpSituacaoConfiguracao.id == pode and conf.cpServico.siglaServico != servPai}">
+                                        <c:when test="${conf.cpSituacaoConfiguracao.id == pode}">
                                             <button class="btn btn-primary btnAcao" style="min-width: 100px;"
                                                     type="button"
                                                     onclick="submitPost('${inativar}')">Inativar
                                             </button>
                                         </c:when>
-                                        <c:when test="${conf.cpSituacaoConfiguracao.id == naoPode and conf.cpServico.siglaServico != servPai}">
+                                        <c:when test="${conf.cpSituacaoConfiguracao.id == naoPode}">
                                             <button class="btn btn-danger btnAcao" style="min-width: 100px;"
                                                     type="button"
                                                     onclick="submitPost('${ativar}')">Ativar
                                             </button>
                                         </c:when>
-                                        <c:when test="${conf.cpSituacaoConfiguracao.id == recbObrigatorio and conf.cpServico.siglaServico != servPai}">
+                                        <c:when test="${conf.cpSituacaoConfiguracao.id == recbObrigatorio}">
                                             <p style="font-size: 12px; color: grey;">Recebimento obrigatório</p>
                                         </c:when>
                                     </c:choose>
@@ -78,6 +88,10 @@
                 const btn = document.querySelector(".btnAcao")
                 btn.disabled = true;
                 btn.innerHtml = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Aguarde'
+
+                $(function () {
+                    $('[data-toggle="tooltip"]').tooltip()
+                })
 
                 setTimeout(function () {
                     const frm = document.getElementById('listar');

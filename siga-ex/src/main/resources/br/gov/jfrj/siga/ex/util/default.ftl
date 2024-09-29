@@ -1870,10 +1870,6 @@ Descrição: Esta macro é utilizada pelo Integrador
         }
 
 
-
-
-
-
     </script>
 
     <div id="xstandard_temp" style="display:none">
@@ -2626,6 +2622,28 @@ Pede deferimento.</span><br/><br/><br/>
     [#if !somenteTR]
         </table>
     [/#if]
+[/#macro]
+
+[#macro rodapeEnderecamento]
+    <!-- INICIO ENDERECAMENTO -->
+    <style>
+        .texto-enderecamento {
+            font-family: Verdana;
+            font-size: 13px;
+            text-align: left;
+        }
+    </style>
+    <p class="texto-enderecamento">
+        [#if (Vocativo!"") != ""]<b>${Vocativo!}<b><br/>[/#if]
+                [#if (Orgao!"") != ""]${Orgao!}[/#if]<br/>
+                [#if (CargoDsp!"") != ""]<b>${CargoDsp!}<b><br/>[/#if]
+                        [#if (Orgao!"") != ""]${Orgao!}<br/>[/#if]
+                        [#if (Logradouro!"") != ""]${Logradouro!}[/#if][#if (Numero!"") != ""], ${Numero!}[/#if][#if (Complemento!"") != ""], ${Complemento!}
+                            <br/>[/#if]
+                        [#if (Bairro!"") != ""]${Bairro!}<br/>[/#if]
+                        [#if (CEP!"") != ""]${CEP}[/#if] [#if (Municipio!"") != ""]${Municipio!}[/#if] [#if (Municipio!"") != "" && (UF!"") != ""]- ${UF!}[/#if]
+    </p>
+    <!-- FIM ENDERECAMENTO -->
 [/#macro]
 
 [#macro rodapeNumeracaoADireita texto=""]

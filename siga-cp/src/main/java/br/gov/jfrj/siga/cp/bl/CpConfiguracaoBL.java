@@ -888,4 +888,42 @@ public class CpConfiguracaoBL {
         }
         return (configVigentes);
     }
+
+    public CpSituacaoDeConfiguracaoEnum situacaoPorConfiguracao(CpServico cpServico, DpCargo cargo,
+                                                                CpOrgaoUsuario cpOrgaoUsu, DpFuncaoConfianca dpFuncaoConfianca,
+                                                                DpLotacao dpLotacao, DpPessoa dpPessoa, CpTipoLotacao cpTpLotacao,
+                                                                ITipoDeConfiguracao idTpConf, DpPessoa pessoaObjeto,
+                                                                DpLotacao lotacaoObjeto, CpComplexo complexoObjeto, DpCargo cargoObjeto,
+                                                                DpFuncaoConfianca funcaoConfiancaObjeto, CpOrgaoUsuario orgaoObjeto) {
+
+        CpConfiguracao config = new CpConfiguracao();
+        config.setCargo(cargo);
+        config.setOrgaoUsuario(cpOrgaoUsu);
+        config.setFuncaoConfianca(dpFuncaoConfianca);
+        config.setLotacao(dpLotacao);
+        config.setDpPessoa(dpPessoa);
+        config.setCpTipoConfiguracao(idTpConf);
+        config.setCpTipoLotacao(cpTpLotacao);
+
+        config.setCpServico(cpServico);
+
+        config.setPessoaObjeto(pessoaObjeto);
+        config.setLotacaoObjeto(lotacaoObjeto);
+        config.setComplexoObjeto(complexoObjeto);
+        config.setCargoObjeto(cargoObjeto);
+        config.setFuncaoConfiancaObjeto(funcaoConfiancaObjeto);
+        config.setOrgaoObjeto(orgaoObjeto);
+
+        CpConfiguracaoCache cfg = (CpConfiguracaoCache) buscaConfiguracao(config,
+                new int[]{0}, null);
+
+        CpSituacaoDeConfiguracaoEnum situacao = null;
+        if (cfg != null)
+            situacao = cfg.situacao;
+        else if (config.getCpTipoConfiguracao() != null)
+            situacao = config.getCpTipoConfiguracao().getSituacaoDefault();
+
+        return situacao;
+    }
+
 }

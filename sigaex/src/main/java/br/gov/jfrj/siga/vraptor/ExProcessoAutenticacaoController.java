@@ -16,7 +16,6 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
 import br.gov.jfrj.siga.ex.bl.Ex;
-import br.gov.jfrj.siga.ex.logic.ExPodeVisualizarExternamente;
 import br.gov.jfrj.siga.ex.vo.ExDocumentoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.persistencia.ExMobilDaoFiltro;
@@ -277,16 +276,12 @@ public class ExProcessoAutenticacaoController extends ExController {
         }
 
         final ExDocumentoVO docVO = new ExDocumentoVO(doc, mob, getCadastrante(), p, l, true, true, false, true);
-        final boolean podeVisualizarExternamente = Objects.nonNull(mob) && new ExPodeVisualizarExternamente(mob, p, l).eval();
 
         result.include("movs", lista);
         result.include("sigla", exDocumentoDTO.getDoc().getSigla());
         result.include("msg", exDocumentoDTO.getMsg());
         result.include("docVO", docVO);
-        result.include("podeVisualizarExternamente", podeVisualizarExternamente);
-        result.include("autenticacao", exDocumentoDTO.getDoc().getAssinantesCompleto()
-                + " Documento Nº:  " + exDocumentoDTO.getDoc().getSiglaAssinatura()
-        );
+        result.include("autenticacao", exDocumentoDTO.getDoc().getAssinantesCompleto());
         result.include("protocolo", prot.getCodigo());
         result.include("mob", exDocumentoDTO.getMob());
         result.include("isProtocoloFilho", idMovJuntada != null);
