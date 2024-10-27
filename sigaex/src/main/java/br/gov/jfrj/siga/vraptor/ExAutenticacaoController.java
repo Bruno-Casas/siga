@@ -12,8 +12,12 @@ import br.gov.jfrj.siga.bluc.service.HashRequest;
 import br.gov.jfrj.siga.bluc.service.HashResponse;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.ex.*;
+import br.gov.jfrj.siga.ex.ExArquivo;
+import br.gov.jfrj.siga.ex.ExDocumento;
+import br.gov.jfrj.siga.ex.ExMobil;
+import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.logic.ExPodeVisualizarExternamente;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.vo.ExDocumentoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -33,9 +37,8 @@ import java.util.*;
 @Controller
 public class ExAutenticacaoController extends ExController {
     private static final String URL_EXIBIR = "/public/app/autenticar";
+    private static final String URL_ACOMPANHAMENTO_PROTOCOLO = "/public/app/processoautenticar";
     private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
-    private static final String APPLICATION_PDF = "application/pdf";
-
 
     /**
      * @deprecated CDI eyes only
@@ -94,6 +97,13 @@ public class ExAutenticacaoController extends ExController {
         }
 
         ExArquivo arq = Ex.getInstance().getBL().buscarPorNumeroAssinatura(n);
+        ExDocumento doc = dao().consultar(arq.getIdDoc(), ExDocumento.class, false);
+
+        if (!Ex.getInstance().getComp().pode(ExPodeVisualizarExternamente.class, doc)) {
+            setDefaultResults();
+            result.redirectTo(URL_ACOMPANHAMENTO_PROTOCOLO);
+        }
+
         Set<ExMovimentacao> assinaturas = arq.getAssinaturasDigitais();
         boolean mostrarBotaoAssinarExterno = arq
                 .isCodigoParaAssinaturaExterna(n);
@@ -103,14 +113,14 @@ public class ExAutenticacaoController extends ExController {
             mov = (ExMovimentacao) arq;
         }
 
-        if (ass != null && ass.trim().length() != 0) {
+        if (ass != null && !ass.trim().isEmpty()) {
             byte[] assinatura = Base64.getDecoder().decode(assinaturaB64 == null ? ""
                     : assinaturaB64);
             byte[] certificado = Base64.getDecoder().decode(certificadoB64 == null ? ""
                     : certificadoB64);
             Date dt = mov.getDtMov();
             if (certificado != null && certificado.length != 0)
-                dt = new Date(Long.valueOf(atributoAssinavelDataHora));
+                dt = new Date(Long.parseLong(atributoAssinavelDataHora));
             else
                 certificado = null;
 

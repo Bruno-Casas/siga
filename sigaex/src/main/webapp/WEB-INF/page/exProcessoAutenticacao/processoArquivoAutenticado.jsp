@@ -10,7 +10,6 @@
 <%--@elvariable id="sigla" type="String"--%>
 <%--@elvariable id="protocolo" type="String"--%>
 <%--@elvariable id="autenticacao" type="String"--%>
-<%--@elvariable id="podeVisualizarExternamente" type="Boolean"--%>
 <%--@elvariable id="docVO" type="br.gov.jfrj.siga.ex.vo.ExDocumentoVO"--%>
 <%--@elvariable id="movs" type="java.util.List<br.gov.jfrj.siga.ex.vo.ExMovimentacao>"--%>
 <%--@elvariable id="titular" type="br.gov.jfrj.siga.dp.DpPessoa"--%>
@@ -39,42 +38,37 @@
 <siga:pagina titulo="Movimentação" desabilitarmenu="sim" onLoad=" pageOnLoad()">
     <div class="container-fluid">
         <div class="row">
-            <div class="col ${podeVisualizarExternamente ? 'col-12 col-sm-8' : 'col-auto'}" style="${podeVisualizarExternamente ? 'margin: 0 auto' : ''}">
+            <div class="col col-12 col-lg-9 col-xl-8 mx-auto">
                 <div class="card bg-light mb-3">
                     <h5 class="card-header">
-                        Autenticação de Protocolo${podeVisualizarExternamente ? '' : ' - '.concat(sigla)}
+                        Autenticação de Protocolo
                     </h5>
 
-                    <c:if test="${not empty docVO  && podeVisualizarExternamente}">
-                        <div class="card-body">
+                    <div class="card-body">
+                        <p class="p-0 m-0">
+                            <b>Documento ${docVO.tipoDocumento}:</b> ${sigla}
+                        </p>
+                        <p class="p-0 m-0">
+                            <b>Protocolo:</b> ${protocolo}
+                        </p>
+                        <p class="p-0 m-0">
+                            <b>Classifica&ccedil;&atilde;o:</b> ${docVO.classificacaoDescricaoCompleta}
+                        </p>
+                        <p class="p-0 m-0">
+                            <b>Descri&ccedil;&atilde;o:</b> ${docVO.descrDocumento}
+                        </p>
+                        <c:if test="${not empty docVO.destinatarioString}">
                             <p class="p-0 m-0">
-                                <b>Documento ${docVO.tipoDocumento}:</b> ${sigla}
+                                <b>Para:</b> ${docVO.destinatarioString}
                             </p>
-                            <p class="p-0 m-0">
-                                <b>Protocolo:</b> ${protocolo}
-                            </p>
-                            <p class="p-0 m-0">
-                                <b>Classifica&ccedil;&atilde;o:</b> ${docVO.classificacaoDescricaoCompleta}
-                            </p>
-                            <p class="p-0 m-0">
-                                <b>Descri&ccedil;&atilde;o:</b> ${docVO.descrDocumento}
-                            </p>
-                            <c:if test="${not empty docVO.destinatarioString}">
-                                <p class="p-0 m-0">
-                                    <b>Para:</b> ${docVO.destinatarioString}
-                                </p>
-                            </c:if>
-                            <p class="p-0 m-0">
-                                <b>Cadastrante:</b> ${docVO.cadastranteString} ${docVO.lotaCadastranteString}
-                            </p>
-                            <p class="p-0 m-0">
-                                <b>Espécie:</b> ${docVO.forma}
-                            </p>
-                            <p class="p-0 m-0">
-                                <b>Autentica&ccedil;&atilde;o/Assinatura:</b> ${autenticacao}
-                            </p>
-                        </div>
-                    </c:if>
+                        </c:if>
+                        <p class="p-0 m-0">
+                            <b>Espécie:</b> ${docVO.forma}
+                        </p>
+                        <p class="p-0 m-0">
+                            <b>Autentica&ccedil;&atilde;o/Assinatura:</b> ${autenticacao}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

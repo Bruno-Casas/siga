@@ -24,6 +24,7 @@ import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.cp.AbstractCpAcesso.CpTipoAcessoEnum;
 import br.gov.jfrj.siga.cp.*;
+import br.gov.jfrj.siga.cp.logic.CpExibirEmCampoDePesquisa;
 import br.gov.jfrj.siga.cp.model.enm.*;
 import br.gov.jfrj.siga.cp.util.Excel;
 import br.gov.jfrj.siga.cp.util.MatriculaUtils;
@@ -2547,5 +2548,17 @@ public class CpBL {
 
     }
 
+    //Não persistindo no banco esse método remove da coleção que será iterada e renderizada na view
+    //os órgão que não querem ser exibidos por outros órgãos no sistema.
+    public List<CpOrgaoUsuario> removeOrgaosQueNaoSeraoExibidos(List<CpOrgaoUsuario> orgaos, DpPessoa pessoa, DpLotacao lotacao) {
+        Iterator<CpOrgaoUsuario> i = orgaos.iterator();
+        while (i.hasNext()) {
+            CpOrgaoUsuario org = i.next();
+            if (!new CpExibirEmCampoDePesquisa(pessoa, lotacao, org).eval())
+                i.remove();
+
+        }
+        return orgaos;
+    }
 
 }

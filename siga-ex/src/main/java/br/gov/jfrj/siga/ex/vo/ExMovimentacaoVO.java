@@ -154,7 +154,7 @@ public class ExMovimentacaoVO extends ExVO {
         if (exTipoMovimentacao == ExTipoDeMovimentacao.ANOTACAO) {
             descricao = mov.getObs();
             addAcao(AcaoVO.builder().nome("Excluir").nameSpace("/app/expediente/mov").acao("excluir")
-                    .params("sigla", mov.mob().getCodigoCompacto()).params("id", mov.getIdMov().toString()).exp(new ExPodeExcluirAnotacao(mov.mob(), mov, titular, lotaTitular)).classe("once").build());
+                    .params("sigla", mov.mob().getCodigoCompacto()).params("id", mov.getIdMov().toString()).exp(new ExPodeExcluirAnotacao(mov, titular, lotaTitular)).classe("once").build());
         }
 
         if (exTipoMovimentacao == ExTipoDeMovimentacao.VINCULACAO_PAPEL) {
