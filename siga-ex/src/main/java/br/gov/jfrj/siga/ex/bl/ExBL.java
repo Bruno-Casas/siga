@@ -3272,6 +3272,9 @@ public class ExBL extends CpBL {
         return false;
     }
 
+
+
+
     public static String anotacaoConfidencial(ExMobil mob, DpPessoa titular, DpLotacao lotaTitular) {
         if (mob.isGeral())
             mob = mob.getDoc().getUltimoVolume();
