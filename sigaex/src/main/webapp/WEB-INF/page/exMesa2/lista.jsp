@@ -179,7 +179,7 @@
                     </div>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm mb-1 mr-2" title="Recarregar Mesa"
-                        :class="{disabled: carregando}" @click="recarregarMesa();">
+                        aria-label="Recarregar Mesa" :class="{disabled: carregando}" @click="recarregarMesa();">
                     <i class="fas fa-sync-alt"></i>
                 </button>
                 <small id="ultima-atualizacao" class="my-auto d-none d-md-block fadein text-danger">
