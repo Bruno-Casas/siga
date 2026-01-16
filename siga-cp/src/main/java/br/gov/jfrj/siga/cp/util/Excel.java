@@ -12,7 +12,7 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -791,7 +791,7 @@ public class Excel {
 
                 /* 5 --------  DATA DE NASCIMENTO -----------*/
                 if (retornaConteudo(row.getCell(5, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)) != "") {
-                    if (row.getCell(5).getCellType() == CellType.NUMERIC && HSSFDateUtil.isCellDateFormatted(row.getCell(5, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK))) {
+                    if (row.getCell(5).getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(row.getCell(5, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK))) {
                         date = row.getCell(5).getDateCellValue();
 
                         if (date.compareTo(new Date()) > 0) {
@@ -873,7 +873,7 @@ public class Excel {
 
                 /* 11 --------  RG Data Expedicao -----------*/
                 if (retornaConteudo(row.getCell(11, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)) != "") {
-                    if (row.getCell(11).getCellType() == CellType.NUMERIC && HSSFDateUtil.isCellDateFormatted(row.getCell(11, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK))) {
+                    if (row.getCell(11).getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(row.getCell(11, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK))) {
                         dateExp = row.getCell(11).getDateCellValue();
 
                         if (dateExp.compareTo(new Date()) > 0) {
