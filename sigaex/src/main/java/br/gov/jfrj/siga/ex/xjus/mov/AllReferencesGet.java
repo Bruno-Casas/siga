@@ -23,7 +23,7 @@ public class AllReferencesGet implements IXjusRecordAPI.IAllReferencesGet {
         if (req.lastid == null)
             req.lastid = Utils.formatId(0L);
         try {
-            ExDao dao = ExDao.getInstance();
+            ExDao dao = dao;
             Query q = dao.em().createQuery(HQL);
             q.setParameter("tpmovs", EnumSet.of(
                     ExTipoDeMovimentacao.ANEXACAO,

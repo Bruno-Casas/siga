@@ -4,7 +4,6 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaJuntarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeJuntar;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -25,11 +24,11 @@ public class DocumentosSiglaJuntarPost implements IDocumentosSiglaJuntarPost {
 
         ctx.assertAcesso(mobFilho, titular, lotaTitular);
 
-        Date dt = ExDao.getInstance().consultarDataEHoraDoServidor();
+        Date dt = dao.consultarDataEHoraDoServidor();
 
         Ex.getInstance().getComp().afirmar("Não é possível fazer juntada", ExPodeJuntar.class, cadastrante, lotaTitular, mobFilho);
 
-        Ex.getInstance().getBL().juntarDocumento(cadastrante, titular, lotaTitular, null, mobFilho, mobPai, dt,
+        this.bl.juntarDocumento(cadastrante, titular, lotaTitular, null, mobFilho, mobPai, dt,
                 cadastrante, cadastrante, "1");
 
         resp.status = "OK";

@@ -18,40 +18,28 @@
  ******************************************************************************/
 package br.gov.jfrj.siga.vraptor;
 
-import br.com.caelum.vraptor.*;
+import br.com.caelum.vraptor.Controller;
+import br.com.caelum.vraptor.Get;
+import br.com.caelum.vraptor.Path;
+import br.com.caelum.vraptor.Post;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
+import br.gov.jfrj.siga.cp.CpGrupo;
 import br.gov.jfrj.siga.cp.CpTipoGrupo;
-import br.gov.jfrj.siga.cp.bl.Cp;
-import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.CpGrupoDeEmailSelecao;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.CpGrupoDaoFiltro;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
 
 @Controller
-public class GrupoDeEmailController extends GrupoController {
+public class GrupoDeEmailController extends GrupoController<CpGrupo> {
 
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public GrupoDeEmailController() {
-        super();
-    }
-
-    @Inject
-    public GrupoDeEmailController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-        super(request, result, CpDao.getInstance(), so, em);
-        prepare();
-
+    @PostConstruct
+    private void init() {
         setItemPagina(10);
     }
 
@@ -61,13 +49,11 @@ public class GrupoDeEmailController extends GrupoController {
 
     @Get("app/gi/grupoDeEmail/editar")
     public void edita(Long idCpGrupo) throws Exception {
-        CpConfiguracaoBL conf = Cp.getInstance().getConf();
-
-        if (conf.podeUtilizarServicoPorConfiguracao(
+        if (cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;GDISTR:Gerenciar grupos de distribuição")
-                || conf.podeGerirGrupo(
+                || cpConf.podeGerirGrupo(
                 getTitular(),
                 getLotaTitular(),
                 idCpGrupo,
@@ -115,12 +101,11 @@ public class GrupoDeEmailController extends GrupoController {
                        List<String> conteudoConfiguracaoSelecionada)
             throws Exception {
 
-        CpConfiguracaoBL conf = Cp.getInstance().getConf();
-        if (conf.podeUtilizarServicoPorConfiguracao(
+        if (cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;GDISTR:Gerenciar grupos de distribuição")
-                || conf.podeGerirGrupo(
+                || cpConf.podeGerirGrupo(
                 getTitular(),
                 getLotaTitular(),
                 idCpGrupo,
@@ -144,12 +129,11 @@ public class GrupoDeEmailController extends GrupoController {
 
     @Get("app/gi/grupoDeEmail/listar")
     public void lista() throws Exception {
-        CpConfiguracaoBL conf = Cp.getInstance().getConf();
-        if (conf.podeUtilizarServicoPorConfiguracao(
+        if (cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;GDISTR:Gerenciar grupos de distribuição")
-                || conf.podeGerirAlgumGrupo(
+                || cpConf.podeGerirAlgumGrupo(
                 getTitular(),
                 getLotaTitular(),
                 Long.valueOf(CpTipoGrupo.TIPO_GRUPO_GRUPO_DE_DISTRIBUICAO))) {
@@ -170,12 +154,11 @@ public class GrupoDeEmailController extends GrupoController {
     @Get("app/gi/grupoDeEmail/excluirGestorGrupo")
     public void excluirGestorGrupo(Long idCpGrupo, Long idConfGestor)
             throws Exception {
-        CpConfiguracaoBL conf = Cp.getInstance().getConf();
-        if (conf.podeUtilizarServicoPorConfiguracao(
+        if (cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;GDISTR:Gerenciar grupos de distribuição")
-                || conf.podeGerirAlgumGrupo(
+                || cpConf.podeGerirAlgumGrupo(
                 getTitular(),
                 getLotaTitular(),
                 Long.valueOf(CpTipoGrupo.TIPO_GRUPO_GRUPO_DE_DISTRIBUICAO))) {
@@ -191,12 +174,11 @@ public class GrupoDeEmailController extends GrupoController {
     @Post("app/gi/grupoDeEmail/gravarGestorGrupo")
     public void gravarGestorGrupo(Long idCpGrupo,
                                   DpLotacaoSelecao lotacaoGestoraSel) throws Exception {
-        CpConfiguracaoBL conf = Cp.getInstance().getConf();
-        if (conf.podeUtilizarServicoPorConfiguracao(
+        if (cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;GDISTR:Gerenciar grupos de distribuição")
-                || conf.podeGerirAlgumGrupo(
+                || cpConf.podeGerirAlgumGrupo(
                 getTitular(),
                 getLotaTitular(),
                 Long.valueOf(CpTipoGrupo.TIPO_GRUPO_GRUPO_DE_DISTRIBUICAO))) {

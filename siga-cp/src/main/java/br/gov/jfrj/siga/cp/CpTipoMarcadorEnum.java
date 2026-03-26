@@ -21,7 +21,7 @@ public enum CpTipoMarcadorEnum implements IEnumWithId {
 	private final Integer id;
 	private final String descricao;
 
-	private CpTipoMarcadorEnum(Integer id, String descricao) {
+	CpTipoMarcadorEnum(Integer id, String descricao) {
 		this.id = id;
 		this.descricao = descricao;
 	}

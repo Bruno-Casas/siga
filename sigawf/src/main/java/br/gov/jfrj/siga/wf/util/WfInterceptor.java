@@ -16,7 +16,6 @@ import br.com.caelum.vraptor.jpa.JPATransactionInterceptor;
 import br.com.caelum.vraptor.validator.Validator;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.vraptor.WfAppController;
 
@@ -64,7 +63,7 @@ public class WfInterceptor {
 		// this.response));
 
 		ModeloDao.freeInstance();
-		WfDao.getInstance();
+		dao;
 		try {
 			Wf.getInstance().getConf().limparCacheSeNecessario();
 		} catch (Exception e1) {

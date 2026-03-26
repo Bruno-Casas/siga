@@ -24,7 +24,8 @@ import br.gov.jfrj.siga.ex.ExArquivoNumerado;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExBL;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import br.gov.jfrj.siga.ex.ext.AbstractConversorHTMLFactory;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.util.ProcessadorHtml;
@@ -35,6 +36,7 @@ import com.lowagie.text.pdf.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -55,18 +57,12 @@ import static br.gov.jfrj.siga.ex.util.ProcessadorHtml.novoHtmlPersonalizado;
  */
 public class Documento {
 
-
-    /**
-     *
-     */
-    private static final long serialVersionUID = -6008800739543368811L;
-
     private static final Pattern pattern = Pattern
             .compile("^([0-9A-Z\\-\\/]+(?:\\.[0-9]+)?(?:V[0-9]+)?)(:[0-9]+)?(?:\\.pdf|\\.html|\\.zip|\\.rtf)?$");
 
     private static Log log = LogFactory.getLog(Documento.class);
 
-    public static ExMobil getMobil(String requestURI) throws SecurityException,
+    public static ExMobil getMobil(ExDao dao, String requestURI) throws SecurityException,
             IllegalAccessException, InvocationTargetException,
             NoSuchMethodException, Exception {
         ExMobil mob = null;
@@ -77,13 +73,13 @@ public class Documento {
             sigla = m.group(1);
             final ExMobilDaoFiltro flt = new ExMobilDaoFiltro();
             flt.setSigla(sigla);
-            mob = (ExMobil) ExDao.getInstance().consultarPorSigla(flt);
+            mob = (ExMobil) dao.consultarPorSigla(flt);
         }
         // expDAO.consultarConteudoBlob(docvia.getExDocumento());
         return mob;
     }
 
-    public static ExMovimentacao getMov(ExMobil mob, String requestURI)
+    public static ExMovimentacao getMov(ExDao dao, ExMobil mob, String requestURI)
             throws AplicacaoException, SQLException {
         String sMovId = null;
         ExMovimentacao mov = null;
@@ -101,26 +97,9 @@ public class Documento {
         }
         if (mov == null)
             return null;
-        mov = ExDao.getInstance().consultar(mov.getIdMov(),
+        mov = dao.consultar(mov.getIdMov(),
                 ExMovimentacao.class, false);
         return mov;
-    }
-
-    private String getDocHTML(ExMobil mob, HttpServletRequest request)
-            throws Exception {
-        ExDocumento doc;
-        doc = mob.getExDocumento();
-        String sHtml;
-        if (doc.getExTipoDocumento().getIdTpDoc() == 1) {
-            sHtml = doc.getConteudoBlobHtmlString();
-            sHtml = (new ProcessadorHtml()).canonicalizarHtml(sHtml, true,
-                    false, true, false, true);
-        } else {
-            sHtml = Ex.getInstance().getBL()
-                    .processarModelo(doc, "processar_modelo", null, null);
-        }
-
-        return sHtml;
     }
 
     private byte[] getDocPDF(ExMobil mob, ExMovimentacao mov,
@@ -166,8 +145,9 @@ public class Documento {
                 if (movAssinatura.getExDocumento().isInternoCapturado()
                         && (movAssinatura.getExTipoMovimentacao() == ExTipoDeMovimentacao.ASSINATURA_COM_SENHA
                         || movAssinatura.getExTipoMovimentacao() == ExTipoDeMovimentacao.ASSINATURA_DIGITAL_DOCUMENTO)) {
-                    /* Interno Exibe Personalização se realizada */
-                    s.append(Ex.getInstance().getBL().extraiPersonalizacaoAssinatura(movAssinatura, true));
+
+                    ExBL bl = CDI.current().select(ExBL.class).get();
+                    s.append(bl.extraiPersonalizacaoAssinatura(movAssinatura, true));
                 } else if (movAssinatura.getExDocumento().isExternoCapturado()
                         || movAssinatura.getExDocumento().isInternoCapturado()) {
                     s.append(" - ");
@@ -554,6 +534,8 @@ public class Documento {
     }
 
     private static List<ExArquivoNumerado> getArquivosNumerados(ExMobil mob, ExMovimentacao mov, String uuid, boolean completo, boolean volumes) throws Exception {
+        ExMobilBL mobBl = CDI.current().select(ExMobilBL.class).get();
+
         List<ExArquivoNumerado> ans = null;
         if (volumes && completo && mob.getDoc().isProcesso()) {
             ExDocumento doc = mob.getDoc();
@@ -562,10 +544,10 @@ public class Documento {
             for (ExMobil m : vols) {
                 if (uuid != null)
                     Status.update(uuid, "Obtendo a lista de documentos - Volume " + m.getNumSequencia() + "/" + vols.size(), 0, 100, 0L);
-                ans.addAll(m.filtrarArquivosNumerados(null, completo));
+                ans.addAll(mobBl.filtrarArquivosNumerados(m, null, completo));
             }
         } else
-            ans = mob.filtrarArquivosNumerados(mov, completo);
+            ans = mobBl.filtrarArquivosNumerados(mob, mov, completo);
         return ans;
     }
 

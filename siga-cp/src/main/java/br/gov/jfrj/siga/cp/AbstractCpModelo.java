@@ -33,7 +33,6 @@ import javax.persistence.SequenceGenerator;
 
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 
 @SuppressWarnings("serial")
 @MappedSuperclass
@@ -45,7 +44,6 @@ public abstract class AbstractCpModelo extends HistoricoAuditavelSuporte {
 	@SequenceGenerator(name = "CP_MODELO_SEQ", sequenceName = "CORPORATIVO.CP_MODELO_SEQ")
 	@GeneratedValue(generator = "CP_MODELO_SEQ")
 	@Column(name = "ID_MODELO", unique = true, nullable = false)
-	@Desconsiderar
 	private java.lang.Long idMod;
 
 	/** The value of the simple conteudoBlobMod property. */

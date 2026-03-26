@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaExcluirPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeExcluir;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -18,7 +17,7 @@ public class DocumentosSiglaExcluirPost implements IDocumentosSiglaExcluirPost {
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        Ex.getInstance().getBL().excluirDocumento(mob.doc(), ctx.getCadastrante(), ctx.getLotaCadastrante(), false);
+        this.bl.excluirDocumento(mob.doc(), ctx.getCadastrante(), ctx.getLotaCadastrante(), false);
 
         resp.status = "OK";
     }

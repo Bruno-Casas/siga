@@ -50,18 +50,6 @@ public class ServicoVeiculoController extends TpController {
     @Inject
     private AutorizacaoGI autorizacaoGI;
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ServicoVeiculoController() {
-		super();
-	}
-		
-	@Inject
-    public ServicoVeiculoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @RoleAdmin
     @RoleAdminFrota
     @Path("/incluir")
@@ -123,7 +111,7 @@ public class ServicoVeiculoController extends TpController {
             for (Avaria avaria : avarias) {
                 avaria = Avaria.AR.findById(avaria.getId());
                 avaria.setDataDeSolucao(Calendar.getInstance());
-                avaria.save();
+                dao.gravar(avaria);
                 redirecionarSeErroAoSalvar(servico, template);
             }
         }
@@ -160,7 +148,7 @@ public class ServicoVeiculoController extends TpController {
             gravarAndamentosRequisicao(EstadoRequisicao.AUTORIZADA, dpPessoa, descricaoRequisicao, servico.getRequisicaoTransporte());
         }
 
-        servico.save();
+        dao.gravar(servico);
         result.redirectTo(this).listarFiltrado(servico.getSituacaoServico().toString());
     }
 
@@ -248,7 +236,7 @@ public class ServicoVeiculoController extends TpController {
         andamento.setEstadoRequisicao(estadoRequisicao);
         andamento.setRequisicaoTransporte(requisicaoTransporte);
         andamento.setResponsavel(dpPessoa);
-        andamento.save();
+        dao.gravar(andamento);
 
         requisicaoTransporte.addAndamento(andamento);
     }
@@ -271,7 +259,7 @@ public class ServicoVeiculoController extends TpController {
             requisicaoTransporte.setDataHora(Calendar.getInstance());
         }
 
-        requisicaoTransporte.save();
+        dao.gravar(requisicaoTransporte);
         return requisicaoTransporte;
     }
 
@@ -286,7 +274,7 @@ public class ServicoVeiculoController extends TpController {
         }
 
         if (!servico.getTiposDeServico().getGeraRequisicao()) {
-            servico.delete();
+            dao.excluir(servico);
             result.redirectTo(ServicoVeiculoController.class).listar();
             return;
         }

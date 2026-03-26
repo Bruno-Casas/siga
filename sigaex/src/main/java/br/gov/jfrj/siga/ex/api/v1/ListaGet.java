@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IListaGet;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.ListaItem;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.persistencia.ExMobilDaoFiltro;
 
@@ -52,7 +51,7 @@ public class ListaGet implements IListaGet {
         else
             flt.setUltMovLotaRespSelId(ctx.getLotaTitular().getIdInicial());
 
-        List<Object[]> l = ExDao.getInstance().consultarPorFiltroOtimizado(flt, 0, 1000, ctx.getTitular(),
+        List<Object[]> l = dao.consultarPorFiltroOtimizado(flt, 0, 1000, ctx.getTitular(),
                 ctx.getLotaTitular());
 
         resp.list = new ArrayList<>();
@@ -70,7 +69,7 @@ public class ListaGet implements IListaGet {
             r.documentoLotaSubscritor = doc.getLotaSubscritor() != null ? doc.getLotaSubscritor().getSigla() : null;
             r.documentoEspecie = doc.getExFormaDocumento().getDescricao();
             r.documentoModelo = doc.getExModelo().getNmMod();
-            if (!Ex.getInstance().getBL().mostraDescricaoConfidencial(doc, ctx.getTitular(), ctx.getLotaTitular())) {
+            if (!this.bl.mostraDescricaoConfidencial(doc, ctx.getTitular(), ctx.getLotaTitular())) {
                 r.documentoDescricao = doc.getDescrDocumento();
                 r.mobilUltimaAnotacao = mob.getDnmUltimaAnotacao();
             } else {
@@ -85,9 +84,9 @@ public class ListaGet implements IListaGet {
                 r.marcadorIcone = marca.getCpMarcador().getIdIcone().getCodigoFontAwesome();
             r.marcaData = marca.getDtIniMarca();
             if (marca.getDpPessoaIni() != null)
-                r.marcaResponsavel = marca.getDpPessoaIni().getPessoaAtual().getSigla();
+                r.marcaResponsavel = marca.getDpPessoaIni().getHistoricoAtual().getSigla();
             if (marca.getDpLotacaoIni() != null)
-                r.marcaLotaResponsavel = marca.getDpLotacaoIni().getLotacaoAtual().getSigla();
+                r.marcaLotaResponsavel = marca.getDpLotacaoIni().getHistoricoAtual().getSigla();
 
             resp.list.add(r);
         }

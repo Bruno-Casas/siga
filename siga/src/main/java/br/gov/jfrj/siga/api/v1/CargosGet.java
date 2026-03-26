@@ -9,10 +9,15 @@ import br.gov.jfrj.siga.dp.dao.DpCargoDaoFiltro;
 import com.crivano.swaggerservlet.SwaggerException;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class CargosGet implements ICargosGet {
+
+    @Inject
+    private CpDao dao;
+
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
         if (StringUtils.isEmpty(req.idOrgao))
@@ -29,7 +34,7 @@ public class CargosGet implements ICargosGet {
         if (!(req.nomeCargo == null || req.nomeCargo.isEmpty()))
             flt.setNome(Texto.removeAcentoMaiusculas(req.nomeCargo));
         flt.setIdOrgaoUsu(Long.valueOf(req.idOrgao));
-        List<DpCargo> l = CpDao.getInstance().consultarPorFiltro(flt);
+        List<DpCargo> l = dao.consultarPorFiltro(flt);
         return l.stream().map(this::cargoToResultadoPesquisa).collect(Collectors.toList());
     }
 
@@ -43,7 +48,7 @@ public class CargosGet implements ICargosGet {
 
         crgo.sigla = (cargo.getSigla() != null ? cargo.getSigla() : null);
         crgo.idCargo = cargo.getId().toString();
-        crgo.idCargoIni = cargo.getIdCargoIni().toString();
+        crgo.hisIdIni = cargo.getHisIdIni().toString();
         crgo.idExterna = (cargo.getIdExterna() != null ? cargo.getIdExterna() : null);
         crgo.nome = (cargo.getNomeCargo() != null ? cargo.getNomeCargo() : null);
         return crgo;

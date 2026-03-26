@@ -61,10 +61,10 @@ public class ConfiguracaoGrupoLotacao extends ConfiguracaoGrupo {
 	public void setConteudoConfiguracao(String p_strConteudo) {
 		/*DpLotacao t_dplLotacaoExemplo = new DpLotacao();
 		t_dplLotacaoExemplo.setSiglaLotacao(p_strConteudo.toUpperCase());
-		DpLotacao t_lotLotacao =  CpDao.getInstance().consultarPorSigla(t_dplLotacaoExemplo);
+		DpLotacao t_lotLotacao =  dao.consultarPorSigla(t_dplLotacaoExemplo);
 		setDpLotacao(t_lotLotacao); */
 		Long t_lngId = Long.parseLong(p_strConteudo);
-		DpLotacao t_lotLotacao =  CpDao.getInstance().consultar( t_lngId,(new DpLotacao()).getClass(),false).getLotacaoInicial();
+		DpLotacao t_lotLotacao =  dao.consultar( t_lngId,(new DpLotacao()).getClass(),false).getLotacaoInicial();
 		setDpLotacao(t_lotLotacao);
 		conteudoConfiguracao = p_strConteudo;
 	}

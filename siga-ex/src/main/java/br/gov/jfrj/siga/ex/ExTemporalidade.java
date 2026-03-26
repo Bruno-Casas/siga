@@ -22,7 +22,6 @@
 package br.gov.jfrj.siga.ex;
 
 import br.gov.jfrj.siga.cp.CpUnidadeMedida;
-import br.gov.jfrj.siga.model.Assemelhavel;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -52,10 +51,6 @@ public class ExTemporalidade extends AbstractExTemporalidade implements
 
     public void setId(Long id) {
         setIdTemporalidade(id);
-    }
-
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return false;
     }
 
     public int getValorEmDias() {

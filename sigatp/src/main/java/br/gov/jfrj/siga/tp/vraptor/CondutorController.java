@@ -44,18 +44,6 @@ public class CondutorController extends TpController {
 	
 	private static final String CONDUTOR = "condutor";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public CondutorController() {
-		super();
-	}
-	
-	@Inject	
-	public CondutorController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listar")
 	public void listar() {
 		result.include("condutores", getCondutores());
@@ -120,7 +108,7 @@ public class CondutorController extends TpController {
 		}
 
 		condutor.setCpOrgaoUsuario(getTitular().getOrgaoUsuario());
-		condutor.save();
+		dao.gravar(condutor);
 		result.redirectTo(CondutorController.class).listar();
 	}
 
@@ -137,7 +125,7 @@ public class CondutorController extends TpController {
 			tx.begin();
 
 		try {
-			condutor.delete();
+			dao.excluir(condutor);
 			tx.commit();
 			result.redirectTo(CondutorController.class).listar();
 		} catch (PersistenceException ex) {
@@ -180,7 +168,7 @@ public class CondutorController extends TpController {
 	private DpPessoa recuperaPessoa(DpPessoa dpPessoa) throws Exception {
 		Map<String, Object> parametros = new HashMap<String,Object>();
 		parametros.put("idPessoaIni",dpPessoa.getIdInicial());
-		return 	DpPessoa.AR.find("idPessoaIni = :idPessoaIni and dataFimPessoa = null", 
+		return 	DpPessoa.AR.find("hisIdIni = :idPessoaIni and dataFimPessoa = null",
 				parametros).first();
 	}
 

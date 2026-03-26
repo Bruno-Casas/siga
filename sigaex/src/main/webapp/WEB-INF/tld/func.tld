@@ -256,12 +256,6 @@
         </function-signature>
     </function>
     <function>
-        <name>termoEliminacao</name>
-        <function-class>br.gov.jfrj.siga.ex.util.FuncoesEL</function-class>
-        <function-signature>br.gov.jfrj.siga.ex.ExTermoEliminacao termoEliminacao(br.gov.jfrj.siga.ex.ExDocumento)
-        </function-signature>
-    </function>
-    <function>
         <name>buscaDocumentosAssinadosAgrupadosPorMetadado</name>
         <function-class>br.gov.jfrj.siga.ex.util.FuncoesEL</function-class>
         <function-signature>Map&lt;String,List&lt;ExDocumento&gt;&gt;

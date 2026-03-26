@@ -548,11 +548,11 @@ public class SrRelPrazo extends RelatorioTemplate {
 				&& !(parametros.get("atendente") == null)) {
 			String query = "";
 			if (parametros.get("atendente") != null)
-				query = "select idLotacao from DpLotacao where idLotacaoIni in (select idLotacaoIni "
+				query = "select idLotacao from DpLotacao where hisIdIni in (select hisIdIni "
 						+ "from DpLotacao where idLotacao in ("
 						+ parametros.get("atendente") + "))";
 			else
-				query = "select idLotacao from DpLotacao where idLotacaoIni in (select idLotacaoIni "
+				query = "select idLotacao from DpLotacao where hisIdIni in (select hisIdIni "
 						+ "from DpLotacao where idLotacao in ("
 						+ parametros.get("lotacao") + "))";
 			List lotacoes = ContextoPersistencia.em().createQuery(query).getResultList();
@@ -1107,11 +1107,11 @@ public class SrRelPrazo extends RelatorioTemplate {
 		} else {
 			String query = "";
 			if (parametros.get("atendente") != null)
-				query = "select idLotacao from DpLotacao where idLotacaoIni in (select idLotacaoIni "
+				query = "select idLotacao from DpLotacao where hisIdIni in (select hisIdIni "
 						+ "from DpLotacao where idLotacao in ("
 						+ parametros.get("atendente") + "))";
 			else
-				query = "select idLotacao from DpLotacao where idLotacaoIni in (select idLotacaoIni "
+				query = "select idLotacao from DpLotacao where hisIdIni in (select hisIdIni "
 						+ "from DpLotacao where idLotacao in ("
 						+ parametros.get("lotacao") + "))";
 			List lotacoes = ContextoPersistencia.em().createQuery(query).getResultList();

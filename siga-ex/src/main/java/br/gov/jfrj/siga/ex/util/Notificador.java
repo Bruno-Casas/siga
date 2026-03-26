@@ -21,19 +21,23 @@ package br.gov.jfrj.siga.ex.util;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Correio;
 import br.gov.jfrj.siga.base.Prop;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeMovimentacao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.parser.PessoaLotacaoParser;
 import org.jboss.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.*;
 
+@ApplicationScoped
 public class Notificador {
 
     public static int TIPO_NOTIFICACAO_GRAVACAO = 1;
@@ -42,10 +46,18 @@ public class Notificador {
 
     private static final Logger log = Logger.getLogger(Notificador.class);
 
-    private static ExDao exDao() {
-        return ExDao.getInstance();
-    }
+    @Inject
+    private ExDao exDao;
 
+    @Inject
+    private ExConfiguracaoBL conf;
+
+    public String mensagemDeTeste() {
+        String mensagemTeste = null;
+        if (!"prod".equals(Prop.get("/siga.ambiente")))
+            mensagemTeste = Prop.get("email.mensagem.teste");
+        return mensagemTeste;
+    }
 
     /**
      * Método que notifica pessoas por email.
@@ -55,7 +67,7 @@ public class Notificador {
      * @param html          - HTML do email
      * @param txt           - Texto do email
      */
-    public static void notificar(String destinatarios, String assunto, String html, String txt) throws AplicacaoException {
+    public void notificar(String destinatarios, String assunto, String html, String txt) throws AplicacaoException {
         HashSet<String> emails = new HashSet<>();
         List<Notificacao> notificacoes = new ArrayList<>();
 
@@ -65,17 +77,17 @@ public class Notificador {
         String[] addrs = destinatarios.split(";");
         for (String addr : addrs) {
             addr = addr.trim();
-            DpPessoa p = exDao().getPessoaFromSigla(addr);
+            DpPessoa p = exDao.getPessoaFromSigla(addr);
             if (p != null) {
-                List<ExEmailNotificacao> emns = exDao().consultarEmailNotificacao(p, null);
+                List<ExEmailNotificacao> emns = exDao.consultarEmailNotificacao(p, null);
                 for (ExEmailNotificacao emn : emns) {
                     emails.add(emn.getEmail());
                 }
                 continue;
             }
-            DpLotacao l = exDao().getLotacaoFromSigla(addr);
+            DpLotacao l = exDao.getLotacaoFromSigla(addr);
             if (l != null) {
-                List<ExEmailNotificacao> emns = exDao().consultarEmailNotificacao(null, l);
+                List<ExEmailNotificacao> emns = exDao.consultarEmailNotificacao(null, l);
                 for (ExEmailNotificacao emn : emns) {
                     emails.add(emn.getEmail());
                 }
@@ -95,7 +107,7 @@ public class Notificador {
      *
      * @param tipoNotificacao - Se é uma gravação, cancelamento ou exclusão de movimentação.
      */
-    public static void notificarDestinariosEmail(ExMovimentacao mov,
+    public void notificarDestinariosEmail(ExMovimentacao mov,
                                                  int tipoNotificacao) throws AplicacaoException {
 
         if (mov.getExMobil().isApensadoAVolumeDoMesmoProcesso())
@@ -169,9 +181,9 @@ public class Notificador {
                              * e-mail.
                              */
                             if (mov.getExMovimentacaoRef() != null)
-                                adicionarDestinatariosEmail(mov.getExMovimentacaoRef(), destinatariosEmail, m, m.getSubscritor().getPessoaAtual(), null); /* verificar ExEmailNotificação */
+                                adicionarDestinatariosEmail(mov.getExMovimentacaoRef(), destinatariosEmail, m, m.getSubscritor().getHistoricoAtual(), null); /* verificar ExEmailNotificação */
                             else
-                                adicionarDestinatariosEmail(mov, destinatariosEmail, m, m.getSubscritor().getPessoaAtual(), null); /* verificar ExEmailNotificação também */
+                                adicionarDestinatariosEmail(mov, destinatariosEmail, m, m.getSubscritor().getHistoricoAtual(), null); /* verificar ExEmailNotificação também */
                         }
                     } else {
                         if (m.getLotaSubscritor() != null) {
@@ -181,9 +193,9 @@ public class Notificador {
                              * e-mail.
                              */
                             if (mov.getExMovimentacaoRef() != null)
-                                adicionarDestinatariosEmail(mov.getExMovimentacaoRef(), destinatariosEmail, m, null, m.getLotaSubscritor().getLotacaoAtual()); /* verificar ExEmailNotificação tmb*/
+                                adicionarDestinatariosEmail(mov.getExMovimentacaoRef(), destinatariosEmail, m, null, m.getLotaSubscritor().getHistoricoAtual()); /* verificar ExEmailNotificação tmb*/
                             else
-                                adicionarDestinatariosEmail(mov, destinatariosEmail, m, null, m.getLotaSubscritor().getLotacaoAtual()); /* verificar ExEmailNotificação tmb*/
+                                adicionarDestinatariosEmail(mov, destinatariosEmail, m, null, m.getLotaSubscritor().getHistoricoAtual()); /* verificar ExEmailNotificação tmb*/
                         }
                     }
                 } catch (Exception e) {
@@ -226,7 +238,7 @@ public class Notificador {
      *
      */
 
-    private static void adicionarDestinatariosEmail(ExMovimentacao mov,
+    private void adicionarDestinatariosEmail(ExMovimentacao mov,
                                                     HashSet<Destinatario> destinatariosEmail, ExMovimentacao m, DpPessoa pess, DpLotacao lot)
             throws Exception {
 
@@ -236,7 +248,7 @@ public class Notificador {
         ExPapel papel = null;
         Long idMovPapel = null;
 
-        List<ExEmailNotificacao> listaDeEmails = exDao().consultarEmailNotificacao(pess, lot);
+        List<ExEmailNotificacao> listaDeEmails = exDao.consultarEmailNotificacao(pess, lot);
 
         if (m != null) {
             papel = m.getExPapel();
@@ -258,22 +270,22 @@ public class Notificador {
                             if (m != null) { /* perfil */
                                 if (temPermissao(mov.getExDocumento().getExFormaDocumento().getExTipoFormaDoc(),
                                         papel, emailNot.getDpPessoa(), mov.getExTipoMovimentacao()))
-                                    emailsTemp.add(emailNot.getDpPessoa().getEmailPessoaAtual());
+                                    emailsTemp.add(emailNot.getDpPessoa().getHistoricoAtual().getEmailPessoa());
                             } else {  /* transferência */
                                 if (temPermissao(emailNot.getDpPessoa(), emailNot.getDpPessoa().getLotacao(), mov.getExDocumento().getExModelo(), mov.getExTipoMovimentacao()))
-                                    emailsTemp.add(emailNot.getDpPessoa().getEmailPessoaAtual());
+                                    emailsTemp.add(emailNot.getDpPessoa().getHistoricoAtual().getEmailPessoa());
                             }
                         }
                     } else {
-                        for (DpPessoa pes : emailNot.getDpLotacao().getLotacaoAtual().getDpPessoaLotadosSet()) {
+                        for (DpPessoa pes : emailNot.getDpLotacao().getHistoricoAtual().getDpPessoaLotadosSet()) {
                             if (!pes.isFechada()) {
                                 if (m != null) { /* perfil */
                                     if (temPermissao(mov.getExDocumento().getExFormaDocumento().getExTipoFormaDoc(),
                                             papel, pes, mov.getExTipoMovimentacao()))
-                                        emailsTemp.add(pes.getEmailPessoaAtual());
+                                        emailsTemp.add(pes.getHistoricoAtual().getEmailPessoa());
                                 } else { /* transferência */
                                     if (temPermissao(pes, pes.getLotacao(), mov.getExDocumento().getExModelo(), mov.getExTipoMovimentacao()))
-                                        emailsTemp.add(pes.getEmailPessoaAtual());
+                                        emailsTemp.add(pes.getHistoricoAtual().getEmailPessoa());
                                 }
                             }
                         }
@@ -284,23 +296,23 @@ public class Notificador {
                             if (m != null) {/* perfil */
                                 if (temPermissao(mov.getExDocumento().getExFormaDocumento().getExTipoFormaDoc(),
                                         papel, emailNot.getPessoaEmail(), mov.getExTipoMovimentacao()))
-                                    emailsTemp.add(emailNot.getPessoaEmail().getEmailPessoaAtual());
+                                    emailsTemp.add(emailNot.getPessoaEmail().getHistoricoAtual().getEmailPessoa());
                             } else { /* transferência */
                                 if (temPermissao(emailNot.getPessoaEmail(), emailNot.getPessoaEmail().getLotacao(), mov.getExDocumento().getExModelo(), mov.getExTipoMovimentacao()))
-                                    emailsTemp.add(emailNot.getPessoaEmail().getEmailPessoaAtual());
+                                    emailsTemp.add(emailNot.getPessoaEmail().getHistoricoAtual().getEmailPessoa());
                             }
                         }
                     } else {
                         if (emailNot.getLotacaoEmail() != null) {
-                            for (DpPessoa pes : emailNot.getLotacaoEmail().getLotacaoAtual().getDpPessoaLotadosSet()) {
+                            for (DpPessoa pes : emailNot.getLotacaoEmail().getHistoricoAtual().getDpPessoaLotadosSet()) {
                                 if (!pes.isFechada()) {
                                     if (m != null) {/* perfil */
                                         if (temPermissao(mov.getExDocumento().getExFormaDocumento().getExTipoFormaDoc(),
                                                 papel, pes, mov.getExTipoMovimentacao()))
-                                            emailsTemp.add(pes.getEmailPessoaAtual());
+                                            emailsTemp.add(pes.getHistoricoAtual().getEmailPessoa());
                                     } else /* transferência */
                                         if (temPermissao(pes, pes.getLotacao(), mov.getExDocumento().getExModelo(), mov.getExTipoMovimentacao()))
-                                            emailsTemp.add(pes.getEmailPessoaAtual());
+                                            emailsTemp.add(pes.getHistoricoAtual().getEmailPessoa());
                                 }
                             }
                         } else {
@@ -315,22 +327,22 @@ public class Notificador {
                     if (m != null) { /* perfil */
                         if (temPermissao(mov.getExDocumento().getExFormaDocumento().getExTipoFormaDoc(),
                                 papel, pess, mov.getExTipoMovimentacao()))
-                            emailsTemp.add(pess.getEmailPessoaAtual());
+                            emailsTemp.add(pess.getHistoricoAtual().getEmailPessoa());
                     } else {/* transferência */
                         if (temPermissao(pess, pess.getLotacao(), mov.getExDocumento().getExModelo(), mov.getExTipoMovimentacao()))
-                            emailsTemp.add(pess.getEmailPessoaAtual());
+                            emailsTemp.add(pess.getHistoricoAtual().getEmailPessoa());
                     }
                 }
             } else {
-                for (DpPessoa pes : lot.getLotacaoAtual().getDpPessoaLotadosSet()) {
+                for (DpPessoa pes : lot.getHistoricoAtual().getDpPessoaLotadosSet()) {
                     if (!pes.isFechada()) {
                         if (m != null) { /* perfil */
                             if (temPermissao(mov.getExDocumento().getExFormaDocumento().getExTipoFormaDoc(),
                                     papel, pes, mov.getExTipoMovimentacao()))
-                                emailsTemp.add(pes.getEmailPessoaAtual());
+                                emailsTemp.add(pes.getHistoricoAtual().getEmailPessoa());
                         } else {/* transferência */
                             if (temPermissao(pes, pes.getLotacao(), mov.getExDocumento().getExModelo(), mov.getExTipoMovimentacao()))
-                                emailsTemp.add(pes.getEmailPessoaAtual());
+                                emailsTemp.add(pes.getHistoricoAtual().getEmailPessoa());
                         }
                     }
                 }
@@ -338,9 +350,9 @@ public class Notificador {
         }
 
         if (pess != null)
-            sigla = pess.getPessoaAtual().getNomePessoa() + " (" + pess.getPessoaAtual().getSigla() + ")";
+            sigla = pess.getHistoricoAtual().getNomePessoa() + " (" + pess.getHistoricoAtual().getSigla() + ")";
         else
-            sigla = lot.getLotacaoAtual().getNomeLotacao() + " (" + lot.getLotacaoAtual().getSigla() + ")";
+            sigla = lot.getHistoricoAtual().getNomeLotacao() + " (" + lot.getHistoricoAtual().getSigla() + ")";
 
         if (m != null) /* perfil */ {
             if (!emailsTemp.isEmpty())
@@ -353,12 +365,10 @@ public class Notificador {
         }
     }
 
-    private static boolean temPermissao(ExTipoFormaDoc tipoFormaDoc,
+    private boolean temPermissao(ExTipoFormaDoc tipoFormaDoc,
                                         ExPapel papel, DpPessoa pessoa, ITipoDeMovimentacao tipoMovimentacao) throws Exception {
 
-        return (Ex.getInstance()
-                .getConf()
-                .podePorConfiguracao(
+        return (conf.podePorConfiguracao(
                         tipoFormaDoc,
                         papel,
                         pessoa,
@@ -367,9 +377,9 @@ public class Notificador {
 
     }
 
-    private static boolean temPermissao(DpPessoa pessoa, DpLotacao lotacao, ExModelo modelo, ITipoDeMovimentacao idTpMov) {
+    private boolean temPermissao(DpPessoa pessoa, DpLotacao lotacao, ExModelo modelo, ITipoDeMovimentacao idTpMov) {
 
-        return (Ex.getInstance().getConf().podePorConfiguracao(pessoa,
+        return (conf.podePorConfiguracao(pessoa,
                 lotacao, modelo, idTpMov,
                 ExTipoDeConfiguracao.NOTIFICAR_POR_EMAIL));
 
@@ -385,7 +395,7 @@ public class Notificador {
      * @param destinatariosEmail
      *            - Conjunto de destinatários.
      */
-    private static void notificarPorEmail(List<Notificacao> notificacoes) {
+    private void notificarPorEmail(List<Notificacao> notificacoes) {
         // Se existirem destinatários, envia o e-mail. O e-mail é enviado
         // assincronamente.
         if (notificacoes.size() > 0) {
@@ -400,7 +410,7 @@ public class Notificador {
      *
      * @param tipoNotificacao - Se é uma gravação, cancelamento ou exclusão de movimentação.
      */
-    private static void prepararTexto(Destinatario dest,
+    private void prepararTexto(Destinatario dest,
                                       StringBuilder conteudo, StringBuilder conteudoHTML,
                                       ExMovimentacao mov, int tipoNotificacao) {
 
@@ -538,7 +548,7 @@ public class Notificador {
             }
             conteudoHTML.append("</body></html>");
         } else {
-            String mensagemTeste = Ex.getInstance().getBL().mensagemDeTeste();
+            String mensagemTeste = mensagemDeTeste();
 
             conteudo.append("O documento ")
                     .append(dest.siglaMobil)

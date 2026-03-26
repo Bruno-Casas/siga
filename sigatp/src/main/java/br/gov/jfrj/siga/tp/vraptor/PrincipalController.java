@@ -16,18 +16,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Controller
 public class PrincipalController extends TpController {
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public PrincipalController() {
-		super();
-	}
-	
-	@Inject
-	public PrincipalController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Get("/app/principal")
     public void principal() throws ApplicationControllerException {
         // Principal

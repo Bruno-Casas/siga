@@ -21,22 +21,28 @@ package br.gov.jfrj.siga.cp.util;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@ApplicationScoped
 public class CpProcessadorReferencias {
 
     static String acronimos = null;
     static String siglas = null;
 
-    public static String marcarReferenciasParaDocumentos(String sHtml, Set setIgnorar) {
+    @Inject
+    CpDao dao;
+
+    public String marcarReferenciasParaDocumentos(String sHtml, Set setIgnorar) {
         if (acronimos == null) {
             acronimos = "";
             siglas = "";
-            List<CpOrgaoUsuario> lou = CpDao.getInstance().listarOrgaosUsuarios();
+            List<CpOrgaoUsuario> lou = dao.listarOrgaosUsuarios();
             for (CpOrgaoUsuario ou : lou) {
                 acronimos += (acronimos.length() > 0 ? "|" : "") + ou.getAcronimoOrgaoUsu();
                 siglas += (siglas.length() > 0 ? "|" : "") + ou.getSiglaOrgaoUsu();

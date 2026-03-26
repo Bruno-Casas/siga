@@ -29,18 +29,6 @@ public class FinalidadeController extends TpController {
 	private static final String LABEL_EDITAR = "views.label.editar";
 	private static final String LABEL_INCLUIR = "views.label.incluir";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public FinalidadeController() {
-		super();
-	}
-	
-	@Inject
-	public FinalidadeController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listar")
 	public void listar(String mensagem) {
     	MenuMontador.instance(result).recuperarMenuFinalidades(true);
@@ -113,7 +101,7 @@ public class FinalidadeController extends TpController {
     		validator.onErrorUse(Results.page()).of(FinalidadeController.class).editar(finalidadeBuscada.getId());
 		}
 
-	 	finalidadeBuscada.save();
+	 	dao.gravar(finalidadeBuscada);
 	 	listar();
     }
 
@@ -135,7 +123,7 @@ public class FinalidadeController extends TpController {
 			tx.begin();
 
 		try {
-		    finalidade.delete();    
+		    dao.excluir(finalidade);    
 			tx.commit();
 			
 		} catch(PersistenceException ex) {

@@ -66,9 +66,6 @@ import java.util.Set;
                 + "	       	and v.hisAtivo = 1"),
         @NamedQuery(name = "consultarPorSiglaExClassificacao", query = "select cla from ExClassificacao cla "
                 + " 		where cla.codificacao = :codificacao and cla.hisAtivo = 1"),
-        @NamedQuery(name = "consultarAtualPorId", query = "select cla from ExClassificacao cla "
-                + " 		where  cla.hisIdIni = :hisIdIni"
-                + "    	and cla.hisAtivo = 1"),
         @NamedQuery(name = "consultarDescricaoExClassificacao", query = "select descrClassificacao from ExClassificacao cla"
                 + "		where cla.codificacao in :listaCodificacao"
                 + "		and cla.hisAtivo = 1 order by codificacao"),
@@ -76,7 +73,7 @@ import java.util.Set;
                 + "		where cla.codificacao like :mascara"
                 + "			and (upper(cla.descrClassificacao) like upper('%' || :descrClassificacao || '%'))"
                 + "	    	and cla.hisAtivo = 1 order by codificacao, via.codVia")})
-public abstract class AbstractExClassificacao extends HistoricoAuditavelSuporte
+public abstract class AbstractExClassificacao extends HistoricoAuditavelSuporte<ExClassificacao>
         implements Serializable {
 
     @Id

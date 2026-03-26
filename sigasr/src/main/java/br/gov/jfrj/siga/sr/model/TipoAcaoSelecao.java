@@ -26,7 +26,7 @@ public class TipoAcaoSelecao extends Selecao<SrTipoAcao> {
         if (getId() == null)
             return null;
 
-        final SrTipoAcao o = CpDao.getInstance().consultar(getId(), SrTipoAcao.class, false);
+        final SrTipoAcao o = dao.consultar(getId(), SrTipoAcao.class, false);
 
         return o;
     }
@@ -36,7 +36,7 @@ public class TipoAcaoSelecao extends Selecao<SrTipoAcao> {
         final SrTipoAcao oExemplo = new SrTipoAcao();
         oExemplo.setSigla(getSigla());
 
-        final SrTipoAcao o = CpDao.getInstance().consultarPorSigla(oExemplo);
+        final SrTipoAcao o = dao.consultarPorSigla(oExemplo);
 
         if (o == null) {
             apagar();

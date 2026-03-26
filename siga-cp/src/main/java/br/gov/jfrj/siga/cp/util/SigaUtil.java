@@ -15,6 +15,8 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.JWTVerifyException;
 import com.auth0.jwt.internal.org.apache.commons.lang3.StringUtils;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -26,11 +28,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@ApplicationScoped
 public class SigaUtil {
 
-    public static SigaUtil getInstance() {
-        return new SigaUtil();
-    }
+    @Inject
+    CpDao dao;
 
     /**
      * Consulta a Identidade do usuário
@@ -42,7 +44,6 @@ public class SigaUtil {
     public CpIdentidade autenticar(String matricula, String senha) {
         CpIdentidade cpIdentidade = null;
         try {
-            CpDao dao = CpDao.getInstance();
             DpPessoaDaoFiltro flt = new DpPessoaDaoFiltro();
             flt.setSigla(matricula);
             cpIdentidade = dao.consultaIdentidadeCadastrante(matricula, true);
@@ -73,7 +74,7 @@ public class SigaUtil {
         t_cfgConfigExemplo.setCpTipoConfiguracao(CpTipoDeConfiguracao.UTILIZAR_SERVICO);
 
         try {
-            List<CpConfiguracao> ll = CpDao.getInstance().porLotacaoPessoaServicoTipo(t_cfgConfigExemplo);
+            List<CpConfiguracao> ll = dao.porLotacaoPessoaServicoTipo(t_cfgConfigExemplo);
             for (CpConfiguracao cpConfiguracao : ll) {
                 if (cpConfiguracao.getCpServico().getSiglaServico().equals(CpServico.ACESSO_WEBSERVICE)) {
                     retorno = true;

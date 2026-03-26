@@ -13,8 +13,6 @@ public class MatriculaUtilsTest extends TestCase {
             CpAmbienteEnumBL ambiente = CpAmbienteEnumBL.DESENVOLVIMENTO;
 //			Cp.getInstance().getProp().setPrefixo(ambiente.getSigla());
             // HibernateUtil.configurarHibernate(cfg);
-
-            CpDao.getInstance();
         }
     }
 

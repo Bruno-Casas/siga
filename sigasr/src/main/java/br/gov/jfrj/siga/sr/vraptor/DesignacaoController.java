@@ -4,7 +4,6 @@ import static br.gov.jfrj.siga.sr.util.SrSigaPermissaoPerfil.ADM_ADMINISTRAR;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -15,9 +14,7 @@ import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.cp.CpComplexo;
-import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpGrupo;
-import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.dao.CpDao;
@@ -35,19 +32,6 @@ import br.gov.jfrj.siga.vraptor.Transacional;
 @Controller
 @Path("/app/designacao")
 public class DesignacaoController extends SrController {
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public DesignacaoController() {
-		super();
-	}
-	
-	@Inject
-	public DesignacaoController(HttpServletRequest request, Result result,
-			SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-	}
 
 	@AssertAcesso(ADM_ADMINISTRAR)
 	@SuppressWarnings("unchecked")
@@ -76,7 +60,7 @@ public class DesignacaoController extends SrController {
 	@Path("/desativar")
 	public void desativar(Long id) throws Exception {
 		SrConfiguracao designacao = SrConfiguracao.AR.findById(id);
-		designacao.finalizar();
+		dao.finalizar(designacao);
 
 		result.use(Results.http()).body(designacao.toJson());
 	}
@@ -87,7 +71,7 @@ public class DesignacaoController extends SrController {
 	public void reativar(Long id) throws Exception {
 		SrConfiguracao designacao = SrConfiguracao.AR.em().find(
 				SrConfiguracao.class, id);
-		designacao.salvarComHistorico();
+		dao.salvarComHistorico(designacao);
 
 		result.use(Results.http()).body(designacao.toJson());
 	}
@@ -120,7 +104,7 @@ public class DesignacaoController extends SrController {
 	 * Utilizado para ajustar o objeto recebido devido a mudanca do vraptor 3 para o 4.
 	 */
 	private void setupDesignacao(SrConfiguracao designacao, Long cpGrupoId) {
-		if(designacao.getCargo() != null && designacao.getCargo().getIdCargoIni() == null) designacao.setCargo(null);
+		if(designacao.getCargo() != null && designacao.getCargo().getHisIdIni() == null) designacao.setCargo(null);
 		if(designacao.getFuncaoConfianca() != null && designacao.getFuncaoConfianca().getIdFuncao() == null) designacao.setFuncaoConfianca(null);
 		if(designacao.getComplexo() != null && designacao.getComplexo().getIdComplexo() == null) designacao.setComplexo(null);
 		if(designacao.getDpPessoa() != null && designacao.getDpPessoa().getIdPessoa() == null) designacao.setDpPessoa(null);

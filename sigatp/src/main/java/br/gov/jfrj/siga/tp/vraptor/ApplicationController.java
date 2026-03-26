@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
@@ -98,23 +99,15 @@ public class ApplicationController extends TpController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationController.class);
 
+    @Inject
     private AutorizacaoGI autorizacaoGI;
 	protected int totalDiasARecuperar;
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ApplicationController() {
-		super();
-	}
-	
-	@Inject	
-	public ApplicationController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em, AutorizacaoGI autorizacaoGI) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-        this.autorizacaoGI = autorizacaoGI;
+    @PostConstruct
+    public void init() {
         this.totalDiasARecuperar = retornaDias();
     }
-    
+
     private int retornaDias() {
     	return Integer.parseInt(Parametro.buscarValorEmVigor("total.dias.pesquisa", getTitular(), autorizacaoGI.getComplexoPadrao()));
     }

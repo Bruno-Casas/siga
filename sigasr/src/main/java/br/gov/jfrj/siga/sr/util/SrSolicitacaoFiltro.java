@@ -81,7 +81,7 @@ public class SrSolicitacaoFiltro extends SrSolicitacao {
         incluirJoinsEWheres(query, buscador);
         try {
             return (Long) ContextoPersistencia.em().createQuery(query.toString())
-                    .setParameter("dbDatetime", CpDao.getInstance().consultarDataEHoraDoServidor())
+                    .setParameter("dbDatetime", dao.consultarDataEHoraDoServidor())
                     .getSingleResult();
         } catch (Exception e) {
             // TODO: handle exception
@@ -142,7 +142,7 @@ public class SrSolicitacaoFiltro extends SrSolicitacao {
 
         query.append(sentidoOrdenacao.name());
         Query jq = ContextoPersistencia.em().createQuery(query.toString());
-        jq.setParameter("dbDatetime", CpDao.getInstance().consultarDataEHoraDoServidor());
+        jq.setParameter("dbDatetime", dao.consultarDataEHoraDoServidor());
         jq.setFirstResult(getStart().intValue());
         if (getLength() > 0)
             jq.setMaxResults(getLength().intValue());
@@ -215,16 +215,16 @@ public class SrSolicitacaoFiltro extends SrSolicitacao {
         query.append(" and not exists (from SrMovimentacao mov where solicitacao = sol and idMovimentacao > ultMov.idMovimentacao) ");
 
         if (Filtros.deveAdicionar(getCadastranteBusca()))
-            query.append(" and sol.cadastrante.idPessoaIni = "
+            query.append(" and sol.cadastrante.hisIdIni = "
                     + getCadastranteBusca().getIdInicial());
         if (Filtros.deveAdicionar(getLotaCadastranteBusca()))
-            query.append(" and sol.lotaTitular.idLotacaoIni = "
+            query.append(" and sol.lotaTitular.hisIdIni = "
                     + getLotaCadastranteBusca().getIdInicial());
         if (Filtros.deveAdicionar(getSolicitante()))
-            query.append(" and sol.solicitante.idPessoaIni = "
+            query.append(" and sol.solicitante.hisIdIni = "
                     + getSolicitante().getIdInicial());
         if (Filtros.deveAdicionar(getLotaSolicitante()))
-            query.append(" and sol.lotaSolicitante.idLotacaoIni = "
+            query.append(" and sol.lotaSolicitante.hisIdIni = "
                     + getLotaSolicitante().getIdInicial());
 
         if (Filtros.deveAdicionar(getItemConfiguracao()) && getItemConfiguracao().getItemInicial() != null) {
@@ -305,8 +305,8 @@ public class SrSolicitacaoFiltro extends SrSolicitacao {
         // BJN usuario externo so ve suas solicitacoes ou as que ele pode atender.
         // me parece um where basico
         if (buscador.isUsuarioExterno()) {
-            query.append(" and ( sol.solicitante.idPessoaIni = " + buscador.getIdInicial().toString() + " ");
-            query.append(" or ultMov.atendente.idPessoaIni = " + buscador.getLotacao().getIdInicial().toString() + " ) ");
+            query.append(" and ( sol.solicitante.hisIdIni = " + buscador.getIdInicial().toString() + " ");
+            query.append(" or ultMov.atendente.hisIdIni = " + buscador.getLotacao().getIdInicial().toString() + " ) ");
         }
     }
 

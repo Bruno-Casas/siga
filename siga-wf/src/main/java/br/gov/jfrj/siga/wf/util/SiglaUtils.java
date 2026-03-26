@@ -9,6 +9,8 @@ import java.util.regex.Pattern;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class SiglaUtils {
 
 	public static class SiglaDecodificada {
@@ -24,7 +26,9 @@ public class SiglaUtils {
 		sigla = sigla.trim().toUpperCase();
 
 		Map<String, CpOrgaoUsuario> mapAcronimo = new TreeMap<String, CpOrgaoUsuario>();
-		for (CpOrgaoUsuario ou : CpDao.getInstance().listarOrgaosUsuarios()) {
+
+		CpDao dao = CDI.current().select(CpDao.class).get();
+		for (CpOrgaoUsuario ou : dao.listarOrgaosUsuarios()) {
 			mapAcronimo.put(ou.getAcronimoOrgaoUsu(), ou);
 			mapAcronimo.put(ou.getSiglaOrgaoUsu(), ou);
 		}

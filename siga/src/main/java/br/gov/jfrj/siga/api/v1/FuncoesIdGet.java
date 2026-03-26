@@ -11,7 +11,13 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.IFuncoesIdGet;
 import br.gov.jfrj.siga.dp.DpFuncaoConfianca;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class FuncoesIdGet implements IFuncoesIdGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (StringUtils.isEmpty(req.id))
@@ -21,10 +27,10 @@ public class FuncoesIdGet implements IFuncoesIdGet {
 	}
 
 	private FuncaoConfianca pesquisarPorId(Request req, Response resp) throws SwaggerException {
-		ArrayList<DpFuncaoConfianca> la = (ArrayList<DpFuncaoConfianca>) CpDao.getInstance()
-				.consultarPorIdOuIdInicial(DpFuncaoConfianca.class, "idFuncaoIni", null, Long.valueOf(req.id));
-		ArrayList<DpFuncaoConfianca> l = (ArrayList<DpFuncaoConfianca>) CpDao.getInstance().consultarPorIdOuIdInicial(
-				DpFuncaoConfianca.class, "idFuncaoIni", "dataFimFuncao", Long.valueOf(req.id));
+		ArrayList<DpFuncaoConfianca> la = (ArrayList<DpFuncaoConfianca>) dao
+				.consultarPorIdOuIdInicial(DpFuncaoConfianca.class, "hisIdIni", null, Long.valueOf(req.id));
+		ArrayList<DpFuncaoConfianca> l = (ArrayList<DpFuncaoConfianca>) dao.consultarPorIdOuIdInicial(
+				DpFuncaoConfianca.class, "hisIdIni", "hisDtFim", Long.valueOf(req.id));
 		if (l.size() == 0)
 			throw new SwaggerException("Nenhuma função de confiança foi encontrada para os parâmetros informados.", 404,
 					null, req, resp, null);
@@ -45,7 +51,7 @@ public class FuncoesIdGet implements IFuncoesIdGet {
 
 		func.sigla = funcao.getSigla();
 		func.idFuncaoConfianca = funcao.getId().toString();
-		func.idFuncaoConfiancaIni = funcao.getIdFuncaoIni().toString();
+		func.idFuncaoConfiancaIni = funcao.getHisIdIni().toString();
 		func.idExterna = funcao.getIdExterna().toString();
 		func.nome = funcao.getNomeFuncao();
 		return func;

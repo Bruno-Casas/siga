@@ -37,20 +37,9 @@ public class ControleGabineteController extends TpController {
     private static final String CONTROLE_GABINETE = "controleGabinete";
     private static final String VEICULOS = "veiculos";
     private static final String CONDUTORES = "condutores";
+
     @Inject
     private AutorizacaoGI autorizacaoGI;
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ControleGabineteController() {
-		super();
-	}
-	
-	@Inject
-    public ControleGabineteController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,   EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
 
     @RoleGabinete
     @RoleAdminGabinete
@@ -190,7 +179,7 @@ public class ControleGabineteController extends TpController {
             controleGabinete.setSolicitante(getCadastrante());
             controleGabinete.setTitular(getTitular());
 
-            controleGabinete.save();
+            dao.gravar(controleGabinete);
             result.redirectTo(ControleGabineteController.class).listar();
         }
     }
@@ -203,7 +192,7 @@ public class ControleGabineteController extends TpController {
         try {
             ControleGabinete controleGabinete = ControleGabinete.AR.findById(id);
             verificarAcesso(controleGabinete);
-            controleGabinete.delete();
+            dao.excluir(controleGabinete);
 
             result.redirectTo(ControleGabineteController.class).listar();
         } catch (Exception e) {

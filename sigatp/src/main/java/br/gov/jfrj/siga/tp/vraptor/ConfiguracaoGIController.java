@@ -41,18 +41,6 @@ public class ConfiguracaoGIController extends TpController {
     private static final String CP_ORGAO_USUARIO = "cpOrgaoUsuario";
     private static final String CP_CONFIGURACOES = "cpConfiguracoes";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ConfiguracaoGIController() {
-		super();
-	}
-	
-	@Inject	
-    public ConfiguracaoGIController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/pesquisar")
     public void pesquisar() throws ConfiguracaoGIControllerException {
         try {
@@ -168,7 +156,7 @@ public class ConfiguracaoGIController extends TpController {
     public void excluir(Long id) throws ConfiguracaoGIControllerException {
         try {
             CpConfiguracao cpConfiguracao = CpConfiguracao.AR.findById(id);
-            cpConfiguracao.delete();
+            dao.excluir(cpConfiguracao);
             redirecionaParaListagem(cpConfiguracao);
         } catch (Exception e) {
             throw new ConfiguracaoGIControllerException(e);
@@ -184,11 +172,11 @@ public class ConfiguracaoGIController extends TpController {
             if (cpConfiguracaoAnterior != null) {
                 if (cpConfiguracaoAnterior.getConfiguracaoInicial() == null) {
                     cpConfiguracaoAnterior.setConfiguracaoInicial(cpConfiguracaoAnterior);
-                    cpConfiguracaoAnterior.save();
+                    dao.gravar(cpConfiguracaoAnterior);
                 }
                 cpConfiguracaoAnterior.setHisDtFim(new Date());
                 cpConfiguracaoAnterior.setHisIdcFim(getIdentidadeCadastrante());
-                cpConfiguracaoAnterior.save();
+                dao.gravar(cpConfiguracaoAnterior);
 
                 cpConfiguracaoNova.setConfiguracaoInicial(cpConfiguracaoAnterior.getConfiguracaoInicial());
             }
@@ -206,10 +194,10 @@ public class ConfiguracaoGIController extends TpController {
             cpConfiguracaoNova.setDpPessoa(cpConfiguracao.getDpPessoa());
             cpConfiguracaoNova.setHisDtIni(new Date());
             cpConfiguracaoNova.setHisIdcIni(getIdentidadeCadastrante());
-            cpConfiguracaoNova.save();
+            dao.gravar(cpConfiguracaoNova);
             if (cpConfiguracaoNova.getConfiguracaoInicial() == null) {
                 cpConfiguracaoNova.setConfiguracaoInicial(cpConfiguracaoNova);
-                cpConfiguracaoNova.save();
+                dao.gravar(cpConfiguracaoNova);
             }
             redirecionaParaListagem(cpConfiguracaoNova);
         } catch (Exception e) {

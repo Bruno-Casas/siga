@@ -26,7 +26,6 @@ import br.gov.jfrj.siga.base.SigaCalendar;
 import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.CpPerfil;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.CpMarcador;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
@@ -49,20 +48,19 @@ import org.hibernate.annotations.SortNatural;
 		@NamedQuery(name = "buscarConhecimentoAlgumIgualNenhumDiferente", query = "select i.id, i.arq.titulo, (select j.arq.conteudo from GcInformacao j where j = i), count(*), (select count(*) from GcMarca m where m.inf=i and m.cpMarcador.idMarcador = 28 and (m.dpLotacaoIni.idLotacao = :lotacaoIni or m.dpPessoaIni.idPessoa = :pessoaIni) and m.dtFimMarca is null) as interessado, (select count(*) from GcMarca m where m.inf=i and m.cpMarcador.idMarcador = 70 and (m.dpLotacaoIni.idLotacao = :lotacaoIni or m.dpPessoaIni.idPessoa = :pessoaIni) and m.dtFimMarca is null) as executor from GcInformacao i inner join i.tags t where t in (:tags) and i not in (select i2 from GcInformacao i2 inner join i2.tags t2 where t2 not in (:tags) and t2.tipo in (select tipo from GcTag where id in (:tags))) and i.hisDtFim is null group by i.id, i.arq.titulo, i.hisDtIni order by interessado desc, executor desc, count(*) desc, i.hisDtIni desc"),
 		@NamedQuery(name = "buscarConhecimentoExatoOuNada", query = "select i.id, i.arq.titulo, (select j.arq.conteudo from GcInformacao j where j = i), count(*) from GcInformacao i inner join i.tags t where t in (:tags) and i.hisDtFim is null group by i.id, i.arq.titulo, i.hisDtIni having count(*) = :numeroDeTags order by count(*) desc, i.hisDtIni desc"),
 		@NamedQuery(name = "maisRecentes", query = "from GcInformacao i where i.hisDtFim is null and i.elaboracaoFim is not null order by i.hisDtIni desc"),
-		@NamedQuery(name = "maisRecentesLotacao", query = "from GcInformacao i where i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.idLotacaoIni = :idlotacaoInicial order by i.hisDtIni desc"),
+		@NamedQuery(name = "maisRecentesLotacao", query = "from GcInformacao i where i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.hisIdIni = :idlotacaoInicial order by i.hisDtIni desc"),
 		@NamedQuery(name = "maisVisitados", query = "select (select j from GcInformacao j where j = i) from GcInformacao i inner join i.movs m where m.tipo.id = 11 and i.hisDtFim is null and i.elaboracaoFim is not null group by i order by count(*) desc"),
-		@NamedQuery(name = "maisVisitadosLotacao", query = "select (select j from GcInformacao j where j = i) from GcInformacao i inner join i.movs m where m.tipo.id = 11 and i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.idLotacaoIni = :idlotacaoInicial group by i order by count(*) desc"),
-		@NamedQuery(name = "principaisAutores", query = "select p.nomePessoa, p.idPessoaIni, i.lotacao.siglaLotacao, i.lotacao.idLotacaoIni, count(*) from GcInformacao i inner join i.autor p where i.hisDtFim is null and i.elaboracaoFim is not null group by p.nomePessoa, p.idPessoaIni, i.lotacao.siglaLotacao, i.lotacao.idLotacaoIni order by count(*) desc"),
-		@NamedQuery(name = "principaisAutoresLotacao", query = "select p.nomePessoa, p.idPessoaIni, i.lotacao.siglaLotacao, i.lotacao.idLotacaoIni, count(*) from GcInformacao i inner join i.autor p where i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.idLotacaoIni = :idlotacaoInicial group by p.nomePessoa, p.idPessoaIni, i.lotacao.siglaLotacao, i.lotacao.idLotacaoIni order by count(*) desc"),
-		@NamedQuery(name = "principaisLotacoes", query = "select l.nomeLotacao, l.idLotacaoIni, l.siglaLotacao, count(*) from GcInformacao i inner join i.lotacao l where i.hisDtFim is null and i.elaboracaoFim is not null group by l.nomeLotacao, l.idLotacaoIni, l.siglaLotacao order by count(*) desc"),
+		@NamedQuery(name = "maisVisitadosLotacao", query = "select (select j from GcInformacao j where j = i) from GcInformacao i inner join i.movs m where m.tipo.id = 11 and i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.hisIdIni = :idlotacaoInicial group by i order by count(*) desc"),
+		@NamedQuery(name = "principaisAutores", query = "select p.nomePessoa, p.hisIdIni, i.lotacao.siglaLotacao, i.lotacao.hisIdIni, count(*) from GcInformacao i inner join i.autor p where i.hisDtFim is null and i.elaboracaoFim is not null group by p.nomePessoa, p.hisIdIni, i.lotacao.siglaLotacao, i.lotacao.hisIdIni order by count(*) desc"),
+		@NamedQuery(name = "principaisAutoresLotacao", query = "select p.nomePessoa, p.hisIdIni, i.lotacao.siglaLotacao, i.lotacao.hisIdIni, count(*) from GcInformacao i inner join i.autor p where i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.hisIdIni = :idlotacaoInicial group by p.nomePessoa, p.hisIdIni, i.lotacao.siglaLotacao, i.lotacao.hisIdIni order by count(*) desc"),
+		@NamedQuery(name = "principaisLotacoes", query = "select l.nomeLotacao, l.hisIdIni, l.siglaLotacao, count(*) from GcInformacao i inner join i.lotacao l where i.hisDtFim is null and i.elaboracaoFim is not null group by l.nomeLotacao, l.hisIdIni, l.siglaLotacao order by count(*) desc"),
 		@NamedQuery(name = "principaisTags", query = "select (select distinct tt.titulo from GcTag tt where tt.titulo = t.titulo), count(*) from GcInformacao i inner join i.tags t where i.hisDtFim is null and i.elaboracaoFim is not null and t.tipo.id in (1,2) group by t.titulo order by count(*) desc"),
-		@NamedQuery(name = "principaisTagsLotacao", query = "select (select distinct tt.titulo from GcTag tt where tt.titulo = t.titulo), count(*) from GcInformacao i inner join i.tags t where i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.idLotacaoIni = :idlotacaoInicial and t.tipo.id in (1,2) group by t.titulo order by count(*) desc"),
+		@NamedQuery(name = "principaisTagsLotacao", query = "select (select distinct tt.titulo from GcTag tt where tt.titulo = t.titulo), count(*) from GcInformacao i inner join i.tags t where i.hisDtFim is null and i.elaboracaoFim is not null and i.lotacao.hisIdIni = :idlotacaoInicial and t.tipo.id in (1,2) group by t.titulo order by count(*) desc"),
 		@NamedQuery(name = "evolucaoNovos", query = "select month(inf.elaboracaoFim) as mes, year(inf.elaboracaoFim) as ano, count(*) as novas from GcInformacao inf where inf.elaboracaoFim is not null group by month(inf.elaboracaoFim), year(inf.elaboracaoFim)"),
-		@NamedQuery(name = "evolucaoNovosLotacao", query = "select month(inf.elaboracaoFim) as mes, year(inf.elaboracaoFim) as ano, count(*) as novas from GcInformacao inf where inf.elaboracaoFim is not null and inf.lotacao.idLotacaoIni = :idlotacaoInicial group by month(inf.elaboracaoFim), year(inf.elaboracaoFim)"),
+		@NamedQuery(name = "evolucaoNovosLotacao", query = "select month(inf.elaboracaoFim) as mes, year(inf.elaboracaoFim) as ano, count(*) as novas from GcInformacao inf where inf.elaboracaoFim is not null and inf.lotacao.hisIdIni = :idlotacaoInicial group by month(inf.elaboracaoFim), year(inf.elaboracaoFim)"),
 		@NamedQuery(name = "evolucaoVisitados", query = "select month(mov.hisDtIni) as mes, year(mov.hisDtIni) as ano, count(distinct inf.id) as visitadas from GcInformacao inf join inf.movs mov where mov.tipo = 11 and inf.elaboracaoFim is not null and inf.elaboracaoFim < mov.hisDtIni group by month(mov.hisDtIni), year(mov.hisDtIni)"),
-		@NamedQuery(name = "evolucaoVisitadosLotacao", query = "select month(mov.hisDtIni) as mes, year(mov.hisDtIni) as ano, count(distinct inf.id) as visitadas from GcInformacao inf join inf.movs mov where mov.tipo = 11 and inf.elaboracaoFim is not null and inf.elaboracaoFim < mov.hisDtIni and inf.lotacao.idLotacaoIni = :idlotacaoInicial group by month(mov.hisDtIni), year(mov.hisDtIni)"),
+		@NamedQuery(name = "evolucaoVisitadosLotacao", query = "select month(mov.hisDtIni) as mes, year(mov.hisDtIni) as ano, count(distinct inf.id) as visitadas from GcInformacao inf join inf.movs mov where mov.tipo = 11 and inf.elaboracaoFim is not null and inf.elaboracaoFim < mov.hisDtIni and inf.lotacao.hisIdIni = :idlotacaoInicial group by month(mov.hisDtIni), year(mov.hisDtIni)"),
 		@NamedQuery(name = "dadosParaRecuperacaoDeInformacao", query = "select inf, arq,  mov.hisDtIni, mov.id, (mov.tipo.id) as ativo from GcInformacao as inf join inf.arq as arq join inf.movs mov where ((mov.tipo in (1, 10) and mov.arq = inf.arq) or (mov.tipo = 3)) and inf.elaboracaoFim is not null and ((mov.hisDtIni > :dt) or (mov.hisDtIni = :dt and mov.id > :desempate)) order by mov.hisDtIni, mov.id"),
-		@NamedQuery(name = "postloadgcmarcas", query = "SELECT m FROM GcMarca m where m.inf.id = :idInf and (m.dtFimMarca is null or m.dtFimMarca > 	:dbDatetime) order by dtIniMarca, cpMarcador.descrMarcador"),
 		@NamedQuery(name = "pontosDeEntrada", query = "select inf, arq from GcInformacao as inf join inf.arq as arq where inf.tipo.id = 4 and inf.elaboracaoFim is not null and inf.hisDtFim is null and arq.titulo like :texto order by arq.titulo") })
 
 
@@ -126,9 +124,6 @@ public class GcInformacao extends Objeto {
 	@JoinColumn(name = "ID_ARQUIVO")
 	private GcArquivo arq;
 
-	@Transient
-	private java.util.List<GcMarca> marcas;
-
 	@SortNatural
 	@OneToMany(mappedBy = "inf")
 	private SortedSet<GcMovimentacao> movs;
@@ -191,10 +186,6 @@ public class GcInformacao extends Objeto {
 		this.arq = arq;
 	}
 
-	public void setMarcas(java.util.List<GcMarca> marcas) {
-		this.marcas = marcas;
-	}
-
 	public void setMovs(SortedSet<GcMovimentacao> movs) {
 		this.movs = movs;
 	}
@@ -215,14 +206,6 @@ public class GcInformacao extends Objeto {
 	@JoinColumn(name = "HIS_IDC_INI")
 	private CpIdentidade hisIdcIni;
 
-	@PostLoad
-	private void onLoad() {
-		Query query = em().createNamedQuery("postloadgcmarcas");
-		query.setParameter("idInf", this.id);
-		query.setParameter("dbDatetime", CpDao.getInstance().consultarDataEHoraDoServidor());
-		marcas = query.getResultList();
-	}
-
 	public String getDtIniString() {
 		SigaCalendar cal = new SigaCalendar();
 		cal.setTime(hisDtIni);
@@ -233,14 +216,6 @@ public class GcInformacao extends Objeto {
 		SigaCalendar cal = new SigaCalendar();
 		cal.setTime(elaboracaoFim);
 		return cal.getTempoTranscorridoString(true);
-	}
-
-	public String getDescricaoCompletaEMarcadoresEmHtml(DpPessoa pess,
-			DpLotacao lota) {
-		String m = getMarcadoresEmHtml(pess, lota);
-		if (m == null)
-			return getSigla();
-		return getSigla() + " - " + getMarcadoresEmHtml(pess, lota);
 	}
 
 	public String getSigla() {
@@ -543,54 +518,6 @@ public class GcInformacao extends Objeto {
 		}
 	}
 
-	public String getMarcadoresEmHtml(DpPessoa pess, DpLotacao lota) {
-		
-		//Edson: usa um critério para impedir que marcas com um número muito grande de ocorrências
-		//polua a tela
-		Map<CpMarcador, GcMarca> marcasUmaPorMarcador = new HashMap<CpMarcador, GcMarca>();
-		for (GcMarca m : marcas){
-			//Se já tem uma marca elencada para exibição que se refira à pessoa ou lotação que
-			//está visualizando, não mostra as demais que tenham o mesmo marcador
-			GcMarca marcaJaEscolhida = marcasUmaPorMarcador.get(m.getCpMarcador());
-			if (marcaJaEscolhida != null && 
-					((marcaJaEscolhida.getDpPessoaIni() != null && marcaJaEscolhida.getDpPessoaIni().equivale(pess))
-					|| (marcaJaEscolhida.getDpLotacaoIni() != null && marcaJaEscolhida.getDpLotacaoIni().equivale(lota)))){
-				continue;
-			}
-			marcasUmaPorMarcador.put(m.getCpMarcador(), m);
-		}
-		
-		StringBuilder sb = new StringBuilder();
-        
-        for (GcMarca mar : marcasUmaPorMarcador.values()) {
-            if (sb.length() > 0)
-                sb.append(", ");
-            sb.append(mar.getCpMarcador().getDescrMarcador());
-            if (mar.getDpPessoaIni() != null || mar.getDpLotacaoIni() != null){
-            	sb.append(" (");
-            	StringBuilder subSb = new StringBuilder();
-            	if (mar.getDpPessoaIni() != null) {
-            		String nome = mar.getDpPessoaIni().getDescricaoIniciaisMaiusculas();
-            		subSb.append(nome.substring(0, nome.indexOf(" ")));
-            	}
-            	if (mar.getDpLotacaoIni() != null) {
-            		if (subSb.length() > 0)
-            			subSb.append(", ");
-            		DpLotacao atual = mar.getDpLotacaoIni().getLotacaoAtual();
-            		if (atual == null)
-            			atual = mar.getDpLotacaoIni();
-            		subSb.append(atual.getSigla());
-            	}
-            	sb.append(subSb);
-            	sb.append(")");
-            }
-        }
-
-        if (sb.length() == 0)
-            return null;
-        return sb.toString();
-	}
-
 	public String getConteudoHTML() throws Exception {
 		if (this.arq == null || this.arq.getConteudo() == null)
 			return null;
@@ -715,7 +642,7 @@ public class GcInformacao extends Objeto {
 		sigla = sigla.trim().toUpperCase();
 
 		Map<String, CpOrgaoUsuario> mapAcronimo = new TreeMap<String, CpOrgaoUsuario>();
-		for (CpOrgaoUsuario ou : CpDao.getInstance().listarOrgaosUsuarios()) {
+		for (CpOrgaoUsuario ou : dao.listarOrgaosUsuarios()) {
 			mapAcronimo.put(ou.getAcronimoOrgaoUsu(), ou);
 			mapAcronimo.put(ou.getSiglaOrgaoUsu(), ou);
 		}
@@ -826,10 +753,6 @@ public class GcInformacao extends Objeto {
 
 	public GcArquivo getArq() {
 		return arq;
-	}
-
-	public java.util.List<GcMarca> getMarcas() {
-		return marcas;
 	}
 
 	public SortedSet<GcMovimentacao> getMovs() {

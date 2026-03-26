@@ -31,9 +31,7 @@ import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Post;
 import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.base.RegraNegocioException;
 import br.gov.jfrj.siga.base.SigaModal;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExTipoDespacho;
 import br.gov.jfrj.siga.vraptor.builder.ExTipoDespachoBuilder;
 
@@ -52,14 +50,14 @@ public class ExTipoDespachoController extends ExController {
 	@Inject
 	public ExTipoDespachoController(HttpServletRequest request, HttpServletResponse response, ServletContext context, Result result, SigaObjects so,
 			EntityManager em) {
-		super(request, response, context, result, CpDao.getInstance(), so, em);
+		super(request, response, context, result, cpDao, so, em);
 	}
 
 	@Get("app/despacho/tipodespacho/listar")
 	public void lista() {
 		assertAcesso(CAMINHO_ACESSO);
 
-		List<ExTipoDespacho> tiposDespacho = dao().listarExTiposDespacho();
+		List<ExTipoDespacho> tiposDespacho = cpDao.listarExTiposDespacho();
 
 		result.include("tiposDespacho", tiposDespacho);
 	}
@@ -67,10 +65,10 @@ public class ExTipoDespachoController extends ExController {
 	@Get("app/despacho/tipodespacho/editar")
 	public ExTipoDespacho edita(final Long id) {
 		assertAcesso(CAMINHO_ACESSO);
-		List<ExTipoDespacho> tiposDespacho = dao().listarExTiposDespacho();
+		List<ExTipoDespacho> tiposDespacho = cpDao.listarExTiposDespacho();
 		result.include("tiposDespacho", tiposDespacho);
 		if (id != null) {
-			return dao().consultar(id, ExTipoDespacho.class, false);
+			return cpDao.consultar(id, ExTipoDespacho.class, false);
 		} else {
 			final ExTipoDespachoBuilder builder = ExTipoDespachoBuilder.novaInstancia();
 			return builder.construir(dao());
@@ -82,14 +80,11 @@ public class ExTipoDespachoController extends ExController {
 	public void exclui(final Long id) {
 		assertAcesso(CAMINHO_ACESSO);
 		if (id != null) {
-			ExTipoDespacho tipo = dao().consultar(id, ExTipoDespacho.class, false);
+			ExTipoDespacho tipo = cpDao.consultar(id, ExTipoDespacho.class, false);
 			try {
-				dao().iniciarTransacao();
-				dao().excluir(tipo);
-				dao().commitTransacao();
+				cpDao.excluir(tipo);
 				result.redirectTo(this).lista();
 			} catch (Exception e) {
-				dao().rollbackTransacao();
 				throw new AplicacaoException("Ocorreu um Erro durante a remoção.", 0, e);
 			}
 		}
@@ -112,13 +107,10 @@ public class ExTipoDespachoController extends ExController {
 		builder.setAtivo(exTipoDespacho.getFgAtivo());
 		
 		try {
-			dao().iniciarTransacao();
-			dao().gravar(builder.construir(dao()));
-			dao().commitTransacao();
+			cpDao.gravar(builder.construir(dao()));
 			result.redirectTo(this).lista();
 					
 		} catch (Exception e) {
-			dao().rollbackTransacao();
 			throw new AplicacaoException("Ocorreu um Erro durante a gravação", 0, e);
 		}
 

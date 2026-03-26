@@ -55,7 +55,7 @@ public class ExProcessoConsultaPublicaController extends ExController {
 	@Inject
 	public ExProcessoConsultaPublicaController(HttpServletRequest request, HttpServletResponse response,
 			ServletContext context, Result result, SigaObjects so, EntityManager em) {
-		super(request, response, context, result, ExDao.getInstance(), so, em);
+		super(request, response, context, result, dao, so, em);
 	}
 
 	private void setDefaultResults() {
@@ -112,8 +112,8 @@ public class ExProcessoConsultaPublicaController extends ExController {
 		ExMobil mob = doc.isProcesso() ? doc.getUltimoVolume() : doc.getPrimeiraVia();
 
 		
-		List<ExMobil> lstMobil = dao().consultarMobilPorDocumento(doc);
-		List<ExMovimentacao> lista = dao().consultarMovimentoIncluindoJuntadaPorMobils(lstMobil);
+		List<ExMobil> lstMobil = cpDao.consultarMobilPorDocumento(doc);
+		List<ExMovimentacao> lista = cpDao.consultarMovimentoIncluindoJuntadaPorMobils(lstMobil);
 		DpPessoa p = new DpPessoa();
 		DpLotacao l = new DpLotacao();
 		p = doc.getSubscritor();
@@ -184,16 +184,16 @@ public class ExProcessoConsultaPublicaController extends ExController {
 				&& exDocumentoDto.getSigla().length() != 0) {
 			final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
 			filter.setSigla(exDocumentoDto.getSigla());
-			exDocumentoDto.setMob((ExMobil) dao().consultarPorSigla(filter));
+			exDocumentoDto.setMob((ExMobil) cpDao.consultarPorSigla(filter));
 			if (exDocumentoDto.getMob() != null) {
 				exDocumentoDto.setDoc(exDocumentoDto.getMob().getExDocumento());
 			}
 		} else if (exDocumentoDto.getMob() == null && exDocumentoDto.getDocumentoViaSel().getId() != null) {
 			exDocumentoDto.setIdMob(exDocumentoDto.getDocumentoViaSel().getId());
-			exDocumentoDto.setMob(dao().consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
+			exDocumentoDto.setMob(cpDao.consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
 		} else if (exDocumentoDto.getMob() == null && exDocumentoDto.getIdMob() != null
 				&& exDocumentoDto.getIdMob() != 0) {
-			exDocumentoDto.setMob(dao().consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
+			exDocumentoDto.setMob(cpDao.consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
 		}
 		if (exDocumentoDto.getMob() != null) {
 			exDocumentoDto.setDoc(exDocumentoDto.getMob().doc());

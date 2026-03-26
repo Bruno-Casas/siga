@@ -3,10 +3,12 @@ package br.gov.jfrj.siga.wf.model.enm;
 import java.util.Date;
 
 import br.gov.jfrj.siga.cp.CpPerfil;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
+import br.gov.jfrj.siga.wf.bl.WfConfiguracaoBL;
 import br.gov.jfrj.siga.wf.model.WfDefinicaoDeProcedimento;
+
+import javax.enterprise.inject.spi.CDI;
 
 public enum WfAcessoDeInicializacao {
 
@@ -59,7 +61,8 @@ public enum WfAcessoDeInicializacao {
 			if (pd.getLotaResponsavel().equivale(lotaTitular))
 				return true;
 			try {
-				for (CpPerfil perfil : Cp.getInstance().getConf().consultarPerfisPorPessoaELotacao(titular, lotaTitular,
+				WfConfiguracaoBL conf = CDI.current().select(WfConfiguracaoBL.class).get();
+				for (CpPerfil perfil : conf.consultarPerfisPorPessoaELotacao(titular, lotaTitular,
 						new Date())) {
 					if (perfil.equivale(pd.getGrupo()))
 						return true;

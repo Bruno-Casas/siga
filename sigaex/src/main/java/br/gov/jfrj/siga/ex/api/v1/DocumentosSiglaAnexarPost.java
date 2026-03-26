@@ -4,7 +4,6 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaAnexarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAnexarArquivo;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -42,14 +41,10 @@ public class DocumentosSiglaAnexarPost implements IDocumentosSiglaAnexarPost {
             throw new AplicacaoException("Não é permitida a anexação de arquivos com mais de 10MB.");
         }
 
-        ExMovimentacao mov = Ex.getInstance().getBL().anexarArquivo(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob,
+        ExMovimentacao mov = this.bl.anexarArquivo(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob,
                 null, null, req.descricaodocumento, ctx.getTitular(), ctx.getLotaTitular(), baArquivo,
                 "application/pdf", null, null);
         resp.id = mov.getIdMov().toString();
-    }
-
-    protected ExDao dao() {
-        return ExDao.getInstance();
     }
 
     @Override

@@ -40,7 +40,6 @@ import br.gov.jfrj.siga.ex.ExNivelAcesso;
 import br.gov.jfrj.siga.ex.ExPapel;
 import br.gov.jfrj.siga.ex.ExTipoDocumento;
 import br.gov.jfrj.siga.ex.ExTipoFormaDoc;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.ex.bl.ExConfiguracaoComparator;
 import br.gov.jfrj.siga.ex.model.enm.ExParamCfg;
@@ -66,7 +65,7 @@ public class ExConfiguracaoController extends ExController {
 	@Inject
 	public ExConfiguracaoController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
 			Result result, SigaObjects so, EntityManager em) {
-		super(request, response, context, result, ExDao.getInstance(), so, em);
+		super(request, response, context, result, dao, so, em);
 	}
 
 	@Get("app/configuracao/listar")
@@ -98,7 +97,7 @@ public class ExConfiguracaoController extends ExController {
 		}
 
 		if (idOrgaoUsu != null && idOrgaoUsu != 0) {
-			config.setOrgaoUsuario(dao().consultar(idOrgaoUsu, CpOrgaoUsuario.class, false));
+			config.setOrgaoUsuario(cpDao.consultar(idOrgaoUsu, CpOrgaoUsuario.class, false));
 		} else
 			config.setOrgaoUsuario(null);
 
@@ -108,16 +107,16 @@ public class ExConfiguracaoController extends ExController {
 			config.setExTipoMovimentacao(null);
 
 		if (idFormaDoc != null && idFormaDoc != 0) {
-			config.setExFormaDocumento(dao().consultar(idFormaDoc, ExFormaDocumento.class, false));
+			config.setExFormaDocumento(cpDao.consultar(idFormaDoc, ExFormaDocumento.class, false));
 		} else
 			config.setExFormaDocumento(null);
 
 		if (idMod != null && idMod != 0) {
-			config.setExModelo(dao().consultar(idMod, ExModelo.class, false));
+			config.setExModelo(cpDao.consultar(idMod, ExModelo.class, false));
 		} else
 			config.setExModelo(null);
 
-		List<ExConfiguracao> listConfig = Ex.getInstance().getConf().buscarConfiguracoesVigentes(config);
+		List<ExConfiguracao> listConfig = this.cpConf.buscarConfiguracoesVigentes(config);
 
 		Collections.sort(listConfig, new ExConfiguracaoComparator());
 
@@ -203,13 +202,10 @@ public class ExConfiguracaoController extends ExController {
 
 		if (id != null) {
 			try {
-				dao().iniciarTransacao();
 				ExConfiguracao config = daoCon(id);
-				config.setHisDtFim(dao().consultarDataEHoraDoServidor());
-				dao().gravarComHistorico(config, getIdentidadeCadastrante());
-				dao().commitTransacao();
+				config.setHisDtFim(cpDao.consultarDataEHoraDoServidor());
+				cpDao.gravarComHistorico(config, getIdentidadeCadastrante());
 			} catch (final Exception e) {
-				dao().rollbackTransacao();
 				throw new AplicacaoException("Erro na gravação", 0, e);
 			}
 		} else
@@ -329,12 +325,9 @@ public class ExConfiguracaoController extends ExController {
 		}
 
 		try {
-			dao().iniciarTransacao();
-			config.setHisDtIni(dao().consultarDataEHoraDoServidor());
-			dao().gravarComHistorico(config, getIdentidadeCadastrante());
-			dao().commitTransacao();
+			config.setHisDtIni(cpDao.consultarDataEHoraDoServidor());
+			cpDao.gravarComHistorico(config, getIdentidadeCadastrante());
 		} catch (final Exception e) {
-			dao().rollbackTransacao();
 			throw new AplicacaoException("Erro na gravação", 0, e);
 		}
 	}
@@ -395,7 +388,7 @@ public class ExConfiguracaoController extends ExController {
 
 	private Set<ExConfiguracao> gerarPublicadores() {
 		Set<ExConfiguracao> publicadores = new HashSet<ExConfiguracao>();
-		TreeSet<CpConfiguracaoCache> listaConfigs = Ex.getInstance().getConf()
+		TreeSet<CpConfiguracaoCache> listaConfigs = conf
 				.getListaPorTipo(ExTipoDeConfiguracao.MOVIMENTAR);
 		if (listaConfigs == null)
 			return new TreeSet<ExConfiguracao>();
@@ -407,7 +400,7 @@ public class ExConfiguracaoController extends ExController {
 				if (config.exTipoMovimentacao != null
 						&& config.exTipoMovimentacao == ExTipoDeMovimentacao.AGENDAMENTO_DE_PUBLICACAO_BOLETIM
 						&& config.podeAdicionarComoPublicador(getTitular(), getLotaTitular())) {
-					publicadores.add(dao.consultar(config.idConfiguracao, ExConfiguracao.class, false));
+					publicadores.add(cpDao.consultar(config.idConfiguracao, ExConfiguracao.class, false));
 				}
 			}
 		}
@@ -415,20 +408,20 @@ public class ExConfiguracaoController extends ExController {
 	}
 
 	private void validarPodeGerenciarBoletim() {
-		if (!Ex.getInstance().getConf().podePorConfiguracao(getTitular(), getLotaTitular(),
+		if (!this.cpConf.podePorConfiguracao(getTitular(), getLotaTitular(),
 				ExTipoDeConfiguracao.GERENCIAR_PUBLICACAO_BOLETIM))
 			throw new AplicacaoException("Operação restrita");
 	}
 
 	private Set<ExFormaDocumento> getListaFormas() throws Exception {
-		ExBL bl = Ex.getInstance().getBL();
+		ExBL bl = bl;
 		return bl.obterFormasDocumento(
 				bl.obterListaModelos(null, null, false, false, null, null, false, null, null, false), null, null);
 	}
 
 	private Set<ExModelo> getListaModelosPorForma(Integer idFormaDoc) throws Exception {
 		if (idFormaDoc != null && idFormaDoc != 0) {
-			ExFormaDocumento forma = ExDao.getInstance().consultar(idFormaDoc, ExFormaDocumento.class, false);
+			ExFormaDocumento forma = dao.consultar(idFormaDoc, ExFormaDocumento.class, false);
 			return forma.getExModeloSet();
 		}
 		return getListaModelos();
@@ -436,7 +429,7 @@ public class ExConfiguracaoController extends ExController {
 
 	private Set<ExModelo> getListaModelos() throws Exception {
 		TreeSet<ExModelo> s = new TreeSet<ExModelo>(getExModeloComparator());
-		s.addAll(dao().listarExModelos());
+		s.addAll(cpDao.listarExModelos());
 		return s;
 	}
 
@@ -460,7 +453,7 @@ public class ExConfiguracaoController extends ExController {
 	}
 
 	private ExConfiguracao daoCon(long id) {
-		return dao().consultar(id, ExConfiguracao.class, false);
+		return cpDao.consultar(id, ExConfiguracao.class, false);
 	}
 
 	protected void escreverForm(ExConfiguracao c) throws Exception {
@@ -539,22 +532,22 @@ public class ExConfiguracaoController extends ExController {
 	}
 
 	private List<ExTipoFormaDoc> getTiposFormaDoc() throws Exception {
-		return dao().listarExTiposFormaDoc();
+		return cpDao.listarExTiposFormaDoc();
 	}
 
 	private List<ExNivelAcesso> getListaNivelAcesso() throws Exception {
-		return dao().listarOrdemNivel();
+		return cpDao.listarOrdemNivel();
 	}
 
 	private List<ExPapel> getListaPapel() throws Exception {
-		return dao().listarExPapel();
+		return cpDao.listarExPapel();
 	}
 
 	private List<ExTipoDocumento> getListaTiposDocumento() throws Exception {
-		return dao().listarExTiposDocumento();
+		return cpDao.listarExTiposDocumento();
 	}
 
 	private List<CpTipoLotacao> getListaTiposLotacao() throws Exception {
-		return dao().listarTiposLotacao();
+		return cpDao.listarTiposLotacao();
 	}
 }

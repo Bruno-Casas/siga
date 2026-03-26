@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.base.RegraNegocioException;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.ex.ExFormaDocumento;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.INumeracaoExpedientePost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -32,7 +31,7 @@ public class NumeracaoExpedientePost implements INumeracaoExpedientePost {
             ExFormaDocumento exFormaDocumento = new ExFormaDocumento();
             exFormaDocumento.setSigla(req.formadoc.trim().toUpperCase());
             try {
-                exFormaDocumento = dao().consultarPorSigla(exFormaDocumento);
+                exFormaDocumento = dao.consultarPorSigla(exFormaDocumento);
             } catch (NoResultException e) {
                 throw new AplicacaoException("Não foi encontrada Forma de Documento: " + req.formadoc);
             }
@@ -49,7 +48,7 @@ public class NumeracaoExpedientePost implements INumeracaoExpedientePost {
             CpOrgaoUsuario cpOrgaoUsuario = new CpOrgaoUsuario();
             cpOrgaoUsuario.setSigla(req.siglaorgao.trim().toUpperCase());
             try {
-                cpOrgaoUsuario = dao().consultarPorSigla(cpOrgaoUsuario);
+                cpOrgaoUsuario = dao.consultarPorSigla(cpOrgaoUsuario);
             } catch (NoResultException e) {
                 throw new AplicacaoException("Não foi encontrada Órgão: " + req.siglaorgao);
             }
@@ -68,7 +67,7 @@ public class NumeracaoExpedientePost implements INumeracaoExpedientePost {
     }
 
     protected ExDao dao() {
-        return ExDao.getInstance();
+        return dao;
     }
 
     @Override

@@ -1,19 +1,24 @@
 package br.gov.jfrj.siga.ex.logic;
 
 import br.gov.jfrj.siga.ex.ExMobil;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import com.crivano.jlogic.Expression;
 import com.crivano.jlogic.JLogic;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class ExTemTemporalidadePermanente implements Expression {
-    ExMobil mob;
+    private final ExMobil mob;
+    private final ExMobilBL mobBl;
 
     public ExTemTemporalidadePermanente(ExMobil mob) {
         this.mob = mob;
+        this.mobBl = CDI.current().select(ExMobilBL.class).get();
     }
 
     @Override
     public boolean eval() {
-        return mob.isDestinacaoGuardaPermanente();
+        return mobBl.isDestinacaoGuardaPermanente(mob);
     }
 
     @Override

@@ -35,8 +35,6 @@ import javax.persistence.MappedSuperclass;
 import br.gov.jfrj.siga.dp.CpLocalidade;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.model.Objeto;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.NaoRecursivo;
 
 @SuppressWarnings("serial")
 @MappedSuperclass
@@ -44,7 +42,6 @@ public abstract class AbstractCpComplexo extends Objeto implements Serializable 
 
 	@Id
 	@Column(name = "ID_COMPLEXO", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idComplexo;
 
 	@Column(name = "NOME_COMPLEXO", length = 100)
@@ -52,7 +49,6 @@ public abstract class AbstractCpComplexo extends Objeto implements Serializable 
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_LOCALIDADE")
-	@NaoRecursivo
 	private CpLocalidade localidade;
 
 	@ManyToOne(fetch = FetchType.LAZY)

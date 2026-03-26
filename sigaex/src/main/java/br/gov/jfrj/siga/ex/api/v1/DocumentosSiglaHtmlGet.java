@@ -4,6 +4,7 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Map;
 
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import org.apache.http.HttpHeaders;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -22,14 +23,24 @@ import br.gov.jfrj.siga.ex.util.ProcessadorHtml;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.persistencia.ExMobilDaoFiltro;
 
+import javax.inject.Inject;
+
 @AcessoPublicoEPrivado
 public class DocumentosSiglaHtmlGet implements IDocumentosSiglaHtmlGet {
+
+	@Inject
+	private ExMobilBL mobBl;
+
+	@Inject
+	private ExDao dao;
+
+
 	@Override
 	public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
 		String jwt = CurrentRequest.get().getRequest().getHeader(HttpHeaders.AUTHORIZATION);
 		ExMobilDaoFiltro flt = new ExMobilDaoFiltro();
 		flt.setSigla(req.sigla);
-		ExMobil mob = ExDao.getInstance().consultarPorSigla(flt);
+		ExMobil mob = dao.consultarPorSigla(flt);
 		if (mob == null) {
 			throw new SwaggerException("Documento não encontrado: " + req.sigla, 404, null, req, resp, null);
 		}
@@ -45,11 +56,11 @@ public class DocumentosSiglaHtmlGet implements IDocumentosSiglaHtmlGet {
 
 		if (jwtBodyJson.has("n")) {
 			String n = verifyJwtToken(jwt).get("n").toString();
-			ExProtocolo protocolo = ExDao.getInstance().obterProtocoloPorCodigo(n);
+			ExProtocolo protocolo = dao.obterProtocoloPorCodigo(n);
 			ExDocumento docPai = protocolo.getExDocumento();
 			if (!((docPai.getIdDoc() == mob.getExMobilPai().getDoc().getIdDoc() 
 						|| mob.getDoc().isDescricaoEspecieDespacho())
-					&& mob.isExibirNoAcompanhamento())) {
+					&& mobBl.isExibirNoAcompanhamento(mob))) {
 				throw new SwaggerException("Documento não permitido para visualização: " + req.sigla, 403, null, req,
 						resp, null);
 			}

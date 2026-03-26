@@ -36,22 +36,17 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Formula;
 
 import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Historico;
 import br.gov.jfrj.siga.model.Selecionavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 @SuppressWarnings("serial")
 @Entity
 @Table(name = "corporativo.cp_orgao")
 @Cache(region = CpDao.CACHE_CORPORATIVO, usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 public class CpOrgao extends AbstractCpOrgao implements Serializable,
-		Selecionavel, Historico, Sincronizavel {
+		Selecionavel, Historico {
 
 	@Formula(value = "REMOVE_ACENTO(NM_ORGAO)")
-	@Desconsiderar
 	private String nmOrgaoAI;
 
 	public CpOrgao() {
@@ -141,10 +136,6 @@ public class CpOrgao extends AbstractCpOrgao implements Serializable,
 		// return getOrgaoUsuario().getId().toString();
 	}
 
-	public int getNivelDeDependencia() {
-		return SincronizavelSuporte.getNivelDeDependencia(this);
-	}
-
 	public void setDataFim(Date dataFim) {
 		super.setHisDtFim(dataFim);
 
@@ -169,14 +160,6 @@ public class CpOrgao extends AbstractCpOrgao implements Serializable,
 	}
 
 	public void setLoteDeImportacao(String loteDeImportacao) {
-	}
-
-	/*
-	 * public boolean semelhante(Assemelhavel obj, int profundidade) { return
-	 * SincronizavelSuporte.semelhante(this, obj, profundidade); }
-	 */
-	public boolean semelhante(Assemelhavel obj, int nivel) {
-		return SincronizavelSuporte.semelhante(this, obj, nivel);
 	}
 
 	public boolean equivale(Object other) {

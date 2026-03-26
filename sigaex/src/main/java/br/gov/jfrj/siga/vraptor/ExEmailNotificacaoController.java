@@ -44,12 +44,11 @@ import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExEmailNotificacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
 @Controller
-public class ExEmailNotificacaoController extends SigaController{
+public class ExEmailNotificacaoController extends VraptorController {
 
 	private static final Logger LOGGER = Logger.getLogger(ExEmailNotificacaoController.class);
 	private static final String VERIFICADOR_ACESSO = "DOC:Módulo de Documentos;FE:Ferramentas;EMAIL:Email de Notificação";
@@ -63,18 +62,18 @@ public class ExEmailNotificacaoController extends SigaController{
 
 	@Inject
 	public ExEmailNotificacaoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
+		super(request, result, cpDao, so, em);
 	}
 
 	public ExEmailNotificacao daoEmail(long id) {
-		return dao().consultar(id, ExEmailNotificacao.class, false);
+		return cpDao.consultar(id, ExEmailNotificacao.class, false);
 	}
 
 	@Get("app/expediente/emailNotificacao/listar")
 	public void lista() {
 		try {
 			assertAcesso(VERIFICADOR_ACESSO);
-			result.include("itens", ExDao.getInstance().listarTodos(ExEmailNotificacao.class, null));
+			result.include("itens", dao.listarTodos(ExEmailNotificacao.class, null));
 		} catch (AplicacaoException e) {
 			throw new AplicacaoException(e.getMessage(), 0, e);
 		}catch (Exception ex) { 
@@ -95,12 +94,9 @@ public class ExEmailNotificacaoController extends SigaController{
 		
 		if (id != null) {
 			try {
-				dao().iniciarTransacao();
 				ExEmailNotificacao email = daoEmail(id);				
-				dao().excluir(email);				
-				dao().commitTransacao();				
+				cpDao.excluir(email);
 			} catch (final Exception e) {
-				dao().rollbackTransacao();
 				throw new AplicacaoException("Erro na exclusão do email", 0, e);
 			}
 		} else
@@ -148,11 +144,8 @@ public class ExEmailNotificacaoController extends SigaController{
 		recuperaInteressado(lotaEmailSel, pessEmailSel, tipoEmail, emailTela,exEmail);
 	
 		try {
-			dao().iniciarTransacao();
-			dao().gravar(exEmail);
-			dao().commitTransacao();			
+			cpDao.gravar(exEmail);
 		} catch (final Exception e) {
-			dao().rollbackTransacao();
 			throw new AplicacaoException("Erro na gravação", 0, e);
 		}
 		

@@ -12,6 +12,9 @@ import br.gov.jfrj.siga.cp.CpConfiguracaoCache;
 import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 
+import javax.enterprise.inject.Specializes;
+
+@Specializes
 public class SrConfiguracaoBL extends CpConfiguracaoBL {
 
     public static final int ITEM_CONFIGURACAO = 31;
@@ -25,10 +28,6 @@ public class SrConfiguracaoBL extends CpConfiguracaoBL {
     public static final int ATENDENTE = 35;
 
     public static final int PRIORIDADE = 36;
-
-    public static SrConfiguracaoBL get() {
-        return (SrConfiguracaoBL) Sr.getInstance().getConf();
-    }
 
     public SrConfiguracaoBL() {
         super();
@@ -152,7 +151,7 @@ public class SrConfiguracaoBL extends CpConfiguracaoBL {
             SrConfiguracao srConf = (SrConfiguracao) conf;
 
             if (srConf.getAtendente() != null) {
-                srConf.getAtendente().getLotacaoAtual();
+                srConf.getAtendente().getHistoricoAtual();
                 if (srConf.getAtendente().getOrgaoUsuario() != null)
                     srConf.getAtendente().getOrgaoUsuario().getSiglaOrgaoUsu();
             }

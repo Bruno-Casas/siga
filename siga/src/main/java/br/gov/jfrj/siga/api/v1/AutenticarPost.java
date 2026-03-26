@@ -7,7 +7,7 @@ import br.gov.jfrj.siga.base.SigaMessages;
 import br.gov.jfrj.siga.context.AcessoPublico;
 import br.gov.jfrj.siga.cp.AbstractCpAcesso;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.gi.service.GiService;
 import br.gov.jfrj.siga.idp.jwt.AuthJwtFormFilter;
@@ -16,6 +16,7 @@ import br.gov.jfrj.siga.vraptor.Transacional;
 import com.crivano.swaggerservlet.PresentableUnloggedException;
 import com.crivano.swaggerservlet.SwaggerServlet;
 
+import javax.inject.Inject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +28,13 @@ import java.util.regex.Pattern;
 @AcessoPublico
 @Transacional
 public class AutenticarPost implements IAutenticarPost {
+
+    @Inject
+    private CpBL bl;
+
+    @Inject
+    private CpDao dao;
+
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
         try {
@@ -47,7 +55,7 @@ public class AutenticarPost implements IAutenticarPost {
             String usuarioLogado = giService.login(username, password);
 
             if (Pattern.matches("\\d+", username) && username.length() == 11) {
-                List<CpIdentidade> lista = new CpDao().consultaIdentidadesCadastrante(username, Boolean.TRUE);
+                List<CpIdentidade> lista = dao.consultaIdentidadesCadastrante(username, Boolean.TRUE);
                 if (lista.size() > 1) {
                     throw new RuntimeException("Pessoa com mais de um usuário, favor efetuar login com a matrícula!");
                 }
@@ -70,7 +78,7 @@ public class AutenticarPost implements IAutenticarPost {
             String token = jwtBL.criarToken(username, null, null, AuthJwtFormFilter.TIME_TO_EXPIRE_IN_S);
 
             Map<String, Object> decodedToken = jwtBL.validarToken(token);
-            Cp.getInstance().getBL().logAcesso(AbstractCpAcesso.CpTipoAcessoEnum.AUTENTICACAO,
+            bl.logAcesso(AbstractCpAcesso.CpTipoAcessoEnum.AUTENTICACAO,
                     (String) decodedToken.get("sub"), (Integer) decodedToken.get("iat"),
                     (Integer) decodedToken.get("exp"), HttpRequestUtils.getIpAudit(request));
 

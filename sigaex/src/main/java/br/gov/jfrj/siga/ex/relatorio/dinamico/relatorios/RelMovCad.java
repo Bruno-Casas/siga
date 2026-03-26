@@ -11,7 +11,6 @@ import java.util.Map;
 
 import javax.persistence.Query;
 
-import ar.com.fdvs.dj.domain.AutoText;
 import ar.com.fdvs.dj.domain.builders.DJBuilderException;
 import br.gov.jfrj.relatorio.dinamico.AbstractRelatorioBaseBuilder;
 import br.gov.jfrj.relatorio.dinamico.RelatorioRapido;
@@ -24,7 +23,6 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import net.sf.jasperreports.engine.JRException;
@@ -54,7 +52,7 @@ public class RelMovCad extends RelatorioTemplate {
 	}
 	
 	private DpLotacao buscarLotacaoPor(Long id) {
-		CpDao dao = CpDao.getInstance();
+		CpDao dao = dao;
 		DpLotacao lotacao = dao.consultar(id, DpLotacao.class, false);
 		return lotacao;
  	}
@@ -83,14 +81,14 @@ public class RelMovCad extends RelatorioTemplate {
 		DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
 		
 		Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-				"from DpLotacao lot " + "where lot.dataFimLotacao is null "
+				"from DpLotacao lot " + "where lot.hisDtFim is null "
 						+ "and lot.orgaoUsuario = "
 						+ parametros.get("orgaoUsuario")
 						+ " and lot.siglaLotacao = '"
 						+ parametros.get("lotacaoTitular") + "'");
 		DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-		DpPessoa titular = ExDao.getInstance().consultar(
+		DpPessoa titular = dao.consultar(
 				new Long((String) parametros.get("idTit")), DpPessoa.class,
 				false);
 
@@ -106,7 +104,7 @@ public class RelMovCad extends RelatorioTemplate {
 								+ "and mov.lotaCadastrante.idLotacao = :id "
 								+ "and mov.dtIniMov >= :dtini "
 								+ "and mov.dtIniMov <= :dtfim "
-								+ "order by mov.cadastrante.idPessoaIni, mob.idMobil, mov.dtIniMov");
+								+ "order by mov.cadastrante.hisIdIni, mob.idMobil, mov.dtIniMov");
 
 		query.setParameter("id",
 				Long.valueOf((String) parametros.get("lotacao")));
@@ -129,7 +127,7 @@ public class RelMovCad extends RelatorioTemplate {
 			ExMovimentacao mov = (ExMovimentacao) obj[0];
 			ExMobil mob = (ExMobil) obj[1];
 			ExDocumento doc = (ExDocumento) obj[2];
-			if (Ex.getInstance().getBL().exibirQuemTemAcessoDocumentosLimitados(
+			if (this.bl.exibirQuemTemAcessoDocumentosLimitados(
 					doc, titular, 
 							lotaTitular)) {
 				if (mov.getCadastrante().getIdPessoa() != null) {

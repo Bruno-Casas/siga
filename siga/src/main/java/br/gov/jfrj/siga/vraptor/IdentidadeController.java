@@ -4,35 +4,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
-
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
-import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 
 @Controller
 public class IdentidadeController extends GiControllerSupport {
-
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public IdentidadeController() {
-		super();
-	}
-
-	@Inject
-	public IdentidadeController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
-	}
 	
 	@Get("/app/gi/identidade/listar")
 	public void lista(DpPessoaSelecao pessoaSel) throws Exception {
@@ -40,7 +20,7 @@ public class IdentidadeController extends GiControllerSupport {
 		DpPessoa pes = definirPessoa(pessoaSel);
 
 		if (pes != null) {
-			result.include("itens", dao().consultaIdentidades(pes));
+			result.include("itens", cpDao.consultaIdentidades(pes));
 		}
 		result.include("pessoaSel", enviarPessoaSelecao(pessoaSel));
 	}
@@ -65,7 +45,7 @@ public class IdentidadeController extends GiControllerSupport {
 		}
 
 		CpIdentidade ident = daoId(id);
-		Cp.getInstance().getBL().alterarIdentidade(ident, dataExpiracao, getIdentidadeCadastrante());
+		this.cpBl.alterarIdentidade(ident, dataExpiracao, getIdentidadeCadastrante());
 		
 		result.forwardTo(this).lista(pessoaSel);
 	}
@@ -78,7 +58,7 @@ public class IdentidadeController extends GiControllerSupport {
 			throw new AplicacaoException("Não foi informada id");
 
 		CpIdentidade ident = daoId(id);
-		Cp.getInstance().getBL().cancelarIdentidade(ident, getIdentidadeCadastrante());
+		this.cpBl.cancelarIdentidade(ident, getIdentidadeCadastrante());
 		
 		result.forwardTo(this).lista(pessoaSel);
 	}
@@ -89,7 +69,7 @@ public class IdentidadeController extends GiControllerSupport {
 		assertAcesso("ID:Gerenciar identidades");
 		if (id != null) {
 			CpIdentidade ident = daoId(id);
-			Cp.getInstance().getBL().bloquearIdentidade(ident, getIdentidadeCadastrante(), true);
+			this.cpBl.bloquearIdentidade(ident, getIdentidadeCadastrante(), true);
 			result.forwardTo(this).lista(pessoaSel);
 		} else
 			throw new AplicacaoException("Não foi informada id");
@@ -101,7 +81,7 @@ public class IdentidadeController extends GiControllerSupport {
 		assertAcesso("ID:Gerenciar identidades");
 		if (id != null) {
 			CpIdentidade ident = daoId(id);
-			Cp.getInstance().getBL().bloquearIdentidade(ident,getIdentidadeCadastrante(), false);
+			this.cpBl.bloquearIdentidade(ident,getIdentidadeCadastrante(), false);
 			result.forwardTo(this).lista(pessoaSel);
 		} else
 			throw new AplicacaoException("Não foi informada id");
@@ -114,7 +94,7 @@ public class IdentidadeController extends GiControllerSupport {
 		DpPessoa pes = definirPessoa(pessoaSel);
 
 		if (pes != null) {
-			Cp.getInstance().getBL().bloquearPessoa(pes,getIdentidadeCadastrante(), true);
+			this.cpBl.bloquearPessoa(pes,getIdentidadeCadastrante(), true);
 			result.forwardTo(this).lista(pessoaSel);
 		} else
 			throw new AplicacaoException("Não foi informada a pessoa");
@@ -127,14 +107,14 @@ public class IdentidadeController extends GiControllerSupport {
 		DpPessoa pes = definirPessoa(pessoaSel);
 
 		if (pes != null) {
-			Cp.getInstance().getBL().bloquearPessoa(pes,getIdentidadeCadastrante(), false);
+			this.cpBl.bloquearPessoa(pes,getIdentidadeCadastrante(), false);
 			result.forwardTo(this).lista(pessoaSel);
 		} else
 			throw new AplicacaoException("Não foi informada a pessoa");
 	}
 	
 	private CpIdentidade daoId(long id) {
-		return dao().consultar(id, CpIdentidade.class, false);
+		return cpDao.consultar(id, CpIdentidade.class, false);
 	}
 	
 	private DpPessoa definirPessoa(DpPessoaSelecao pessoaSel) {

@@ -200,16 +200,16 @@ public class ExConfiguracao extends CpConfiguracao {
     @Override
     public void atualizarObjeto() {
         super.atualizarObjeto();
-        setExModelo(atual(getExModelo()));
-        setExClassificacao(atual(getExClassificacao()));
-        setExVia(atual(getExVia()));
+        setExModelo(getExModelo().getHistoricoAtual());
+        setExClassificacao(getExClassificacao().getHistoricoAtual());
+        setExVia(getExVia().getHistoricoAtual());
     }
 
     public void substituirPorObjetoInicial() {
         super.substituirPorObjetoInicial();
-        setExModelo(inicial(getExModelo()));
-        setExClassificacao(inicial(getExClassificacao()));
-        setExVia(inicial(getExVia()));
+        setExModelo(getExModelo().getHistoricoInicial());
+        setExClassificacao(getExClassificacao().getHistoricoInicial());
+        setExVia(getExVia().getHistoricoInicial());
     }
 
     @Override

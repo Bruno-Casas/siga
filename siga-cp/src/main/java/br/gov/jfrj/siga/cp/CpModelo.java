@@ -29,8 +29,6 @@ import javax.persistence.PostLoad;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 @SuppressWarnings("serial")
 @Entity
@@ -64,10 +62,6 @@ public class CpModelo extends AbstractCpModelo {
 
 	public void setId(Long id) {
 		setIdMod(id);
-	}
-
-	public boolean semelhante(Assemelhavel obj, int nivel) {
-		return SincronizavelSuporte.semelhante(this, obj, nivel);
 	}
 
 	public String getConteudoBlobString() throws UnsupportedEncodingException {

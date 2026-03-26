@@ -42,18 +42,6 @@ public class RequisicaoRestController extends TpController {
     @Inject
     private AutorizacaoGI autorizacaoGI;
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RequisicaoRestController() {
-		super();
-	}
-	
-	@Inject
-    public RequisicaoRestController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/ver/{id}")
     public void ver(Long id) throws RestControllerException {
         try {
@@ -158,7 +146,7 @@ public class RequisicaoRestController extends TpController {
 
             hackSimularUsuarioLogadoParaRevInfo(dpPessoa);
 
-            req.save();
+            dao.gravar(req);
 
             // gravar andamento
             req.refresh();
@@ -168,7 +156,7 @@ public class RequisicaoRestController extends TpController {
             andamento.setEstadoRequisicao(EstadoRequisicao.ABERTA);
             andamento.setRequisicaoTransporte(req);
             andamento.setResponsavel(dpPessoa);
-            andamento.save();
+            dao.gravar(andamento);
 
             ver(req.getId());
         } catch (Exception e) {
@@ -212,7 +200,7 @@ public class RequisicaoRestController extends TpController {
 
             hackSimularUsuarioLogadoParaRevInfo(dpPessoa);
 
-            requisicaoAAlterar.save();
+            dao.gravar(requisicaoAAlterar);
 
             ver(requisicaoAAlterar.getId());
         } catch (Exception e) {
@@ -240,7 +228,7 @@ public class RequisicaoRestController extends TpController {
             DpPessoa dpPessoa = DpPessoa.AR.findById(idSolicitante);
     		Map<String, Object> parametros = new HashMap<String,Object>();
     		parametros.put("idPessoaIni",dpPessoa.getIdInicial());
-            return DpPessoa.AR.find("idPessoaIni = :idPessoaIni and dataFimPessoa = null", parametros).first();
+            return DpPessoa.AR.find("idPessoaIni = :idPessoaIni and hisDtFim = null", parametros).first();
         } catch (Exception e) {
             throw new RestControllerException(e);
         }

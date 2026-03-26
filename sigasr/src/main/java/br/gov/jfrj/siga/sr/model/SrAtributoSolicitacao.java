@@ -14,11 +14,10 @@ import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 
 @Entity
 @Table(name="sr_atributo_solicitacao", schema = "sigasr")
@@ -143,11 +142,6 @@ public class SrAtributoSolicitacao extends HistoricoSuporte {
 		this.lotaCadastrante = lotaCadastrante;
 	}
 
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
-	}
-	
 	public List<SrAtributoSolicitacao> getHistoricoAtributoSolicitacao() {
 		if (getAtributoSolicitacaoInicial() != null)
 			return getAtributoSolicitacaoInicial().getMeuAtributoSolicitacaoHistorico();

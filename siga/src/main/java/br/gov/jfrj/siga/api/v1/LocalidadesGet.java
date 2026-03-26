@@ -14,7 +14,13 @@ import br.gov.jfrj.siga.dp.CpLocalidade;
 import br.gov.jfrj.siga.dp.CpUF;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class LocalidadesGet implements ILocalidadesGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (StringUtils.isEmpty(req.idUf) && StringUtils.isEmpty(req.texto))
@@ -30,10 +36,10 @@ public class LocalidadesGet implements ILocalidadesGet {
 		CpUF uf = new CpUF();
 		List<CpLocalidade> l;
 		if (StringUtils.isEmpty(req.idUf)) {
-			l = CpDao.getInstance().consultarLocalidades();
+			l = dao.consultarLocalidades();
 		} else {
 			uf.setIdUF(Long.valueOf(req.idUf));
-			l = CpDao.getInstance().consultarLocalidadesPorUF(uf);
+			l = dao.consultarLocalidadesPorUF(uf);
 		}
 		List<Localidade> listFull = l.stream().map(this::localidadeToResultadoPesquisa).collect(Collectors.toList());
 		if (StringUtils.isEmpty(req.texto))

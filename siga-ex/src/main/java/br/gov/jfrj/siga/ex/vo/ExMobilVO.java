@@ -29,7 +29,6 @@ import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMarca;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExParte;
 import br.gov.jfrj.siga.ex.logic.*;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
@@ -96,8 +95,8 @@ public class ExMobilVO extends ExVO {
         this.isGeral = mob.isGeral();
         this.id = mob.getId();
 
-        this.podeTramitar = Ex.getInstance().getComp().pode(ExPodeTransferir.class, titular, lotaTitular, mob);
-        this.podeAnotar = Ex.getInstance().getComp().pode(ExPodeFazerAnotacao.class, titular, lotaTitular, mob);
+        this.podeTramitar = comp.pode(ExPodeTransferir.class, titular, lotaTitular, mob);
+        this.podeAnotar = comp.pode(ExPodeFazerAnotacao.class, titular, lotaTitular, mob);
 
         if (!completo || mob.isEliminado())
             return;
@@ -105,7 +104,7 @@ public class ExMobilVO extends ExVO {
         long tempoIni = System.currentTimeMillis();
 
         this.marcasAtivas = new ArrayList<>();
-        marcasAtivas.addAll(mob.getExMarcaSetAtivas());
+        marcasAtivas.addAll(mobBl.getExMarcaSetAtivas(mob));
 
         marcadoresEmHtml = getMarcadoresEmHtml(titular, lotaTitular);
         descricaoCompleta = mob.getDescricaoCompleta();
@@ -754,7 +753,7 @@ public class ExMobilVO extends ExVO {
                 if (mar.getDpLotacaoIni() != null || mar.getDpPessoaIni() != null) {
                     sb.append(" [");
                     if (mar.getDpLotacaoIni() != null) {
-                        sb.append(mar.getDpLotacaoIni().getLotacaoAtual().getSigla());
+                        sb.append(mar.getDpLotacaoIni().getHistoricoAtual().getSigla());
                     }
                     if (mar.getDpPessoaIni() != null) {
                         if (mar.getDpLotacaoIni() != null) {

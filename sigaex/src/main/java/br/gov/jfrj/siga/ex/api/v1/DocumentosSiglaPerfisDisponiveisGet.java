@@ -14,7 +14,7 @@ public class DocumentosSiglaPerfisDisponiveisGet implements IDocumentosSiglaPerf
 
 	@Override
 	public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
-		List<ExPapel> perfis = ExDao.getInstance().listarExPapel();
+		List<ExPapel> perfis = dao.listarExPapel();
 
 		resp.list = new ArrayList<>();
 		for (ExPapel m : perfis) {

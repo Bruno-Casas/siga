@@ -5,10 +5,12 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.Notificacao;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.cp.CpArquivoTipoArmazenamentoEnum;
 import br.gov.jfrj.siga.cp.arquivo.ArmazenamentoHCP;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpCompetenciaBL;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.inject.Inject;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -20,16 +22,22 @@ public class NotificacoesGet implements INotificacoesGet {
     private Integer softQuotaPercent = 0;
     private String namespaceName = "Não identificado";
 
+    @Inject
+    private CpCompetenciaBL comp;
+
+    @Inject
+    private CpConfiguracaoBL conf;
+
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
         /* Cria Notificação de Pendência definição PIN para Pessoa Autenticada */
         if (ctx.getIdentidadeCadastrante() != null && ctx.getIdentidadeCadastrante().getPinIdentidade() == null) { /* TODO: Levar verificação para camada de Negócio */
-            if (Cp.getInstance().getComp().podeSegundoFatorPin(ctx.getCadastrante(), ctx.getLotaCadastrante())) {
+            if (comp.podeSegundoFatorPin(ctx.getCadastrante(), ctx.getLotaCadastrante())) {
                 resp.list.add(criaNotificacaoPendenciaDefinicaoPIN());
             }
         }
 
-        if (Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(ctx.getTitular(),ctx.getLotaTitular(),"SIGA;FE;ARMAZ:Armazenamento de Arquivos;ARMAZ_ESTAT:Estatística de Armazenamento")) {
+        if (conf.podeUtilizarServicoPorConfiguracao(ctx.getTitular(),ctx.getLotaTitular(),"SIGA;FE;ARMAZ:Armazenamento de Arquivos;ARMAZ_ESTAT:Estatística de Armazenamento")) {
             Notificacao notificacaoArmazenamento = criaNotificacaoArmazenanentoCritico();
             if (notificacaoArmazenamento != null)
                 resp.list.add(notificacaoArmazenamento);

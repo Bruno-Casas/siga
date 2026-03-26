@@ -1,6 +1,5 @@
 package br.gov.jfrj.siga.wf.model;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,23 +21,17 @@ import com.crivano.jflow.PausableTask;
 import com.crivano.jflow.model.TaskDefinitionDetour;
 
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.NaoRecursivo;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import br.gov.jfrj.siga.wf.util.NaoSerializar;
 import br.gov.jfrj.siga.wf.util.WfResp;
 
 @Entity
 @BatchSize(size = 500)
 @Table(name = "sigawf.wf_def_desvio")
-public class WfDefinicaoDeDesvio extends HistoricoAuditavelSuporte
-		implements TaskDefinitionDetour, Sincronizavel, Comparable<Sincronizavel> {
+public class WfDefinicaoDeDesvio extends HistoricoAuditavelSuporte<WfDefinicaoDeDesvio> implements TaskDefinitionDetour, SincronizavelSimples {
 	@Id
 	@GeneratedValue
 	@Column(name = "DEFD_ID", unique = true, nullable = false)
-	@Desconsiderar
 	private java.lang.Long id;
 
 	@Column(name = "DEFD_NM", length = 256)
@@ -56,13 +49,15 @@ public class WfDefinicaoDeDesvio extends HistoricoAuditavelSuporte
 	private WfDefinicaoDeTarefa definicaoDeTarefa;
 
 	@NaoSerializar
-	@NaoRecursivo
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "DEFT_ID_SEGUINTE")
 	private WfDefinicaoDeTarefa seguinte;
 
 	@Transient
 	private String seguinteIde;
+
+	@Transient
+	private String idExterno;
 
 	@Column(name = "DEFD_FG_ULTIMO")
 	private boolean ultimo;
@@ -169,71 +164,6 @@ public class WfDefinicaoDeDesvio extends HistoricoAuditavelSuporte
 		this.seguinteIde = seguinteIde;
 	}
 
-	@Override
-	public String getIdExterna() {
-		return this.getDefinicaoDeTarefa().getIdExterna() + "|" + getNome();
-	}
-
-	@Override
-	public void setIdExterna(String idExterna) {
-	}
-
-	@Override
-	public void setIdInicial(Long idInicial) {
-		this.setHisIdIni(idInicial);
-	}
-
-	@Override
-	public Date getDataInicio() {
-		return getHisDtIni();
-	}
-
-	@Override
-	public void setDataInicio(Date dataInicio) {
-		setHisDtIni(dataInicio);
-	}
-
-	@Override
-	public Date getDataFim() {
-		return getHisDtFim();
-	}
-
-	@Override
-	public void setDataFim(Date dataFim) {
-		setHisDtFim(dataFim);
-	}
-
-	@Override
-	public String getLoteDeImportacao() {
-		return null;
-	}
-
-	@Override
-	public void setLoteDeImportacao(String loteDeImportacao) {
-	}
-
-	@Override
-	public int getNivelDeDependencia() {
-		return SincronizavelSuporte.getNivelDeDependencia(this);
-	}
-
-	@Override
-	public String getDescricaoExterna() {
-		return getNome();
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return SincronizavelSuporte.semelhante(this, obj, profundidade);
-	}
-
-	@Override
-	public int compareTo(Sincronizavel o) {
-		if (!this.getClass().equals(o.getClass()))
-			return this.getClass().getName().compareTo(o.getClass().getName());
-		return this.getIdExterna().compareTo(o.getIdExterna());
-	}
-
 	@PostLoad
 	public void postLoad() {
 		if (this.getSeguinte() != null)
@@ -248,6 +178,23 @@ public class WfDefinicaoDeDesvio extends HistoricoAuditavelSuporte
 		if (isNo())
 			return "cancel";
 		return "bullet_go";
+	}
+
+	public String getIdExterna() {
+		return this.idExterno;
+	}
+
+	@Override
+	public String getIdSincronizacao() {
+		String idExt = getIdExterna();
+		if (idExt == null || "null".equals(idExt) || idExt.isEmpty()) {
+			return (getHisIdIni() != null) ? "DB:" + getHisIdIni() : "NEW:" + System.identityHashCode(this);
+		}
+		return "EXT:" + idExt;
+	}
+
+	public void setIdExterna(String idExterno) {
+		this.idExterno = idExterno;
 	}
 
 	public boolean isYes() {

@@ -127,12 +127,12 @@ public class MontadorQuery implements IMontadorQuery {
 
         if (flt.getDestinatarioSelId() != null
                 && flt.getDestinatarioSelId() != 0) {
-            sbf.append(" and doc.destinatario.idPessoaIni = :destinatarioSelId");
+            sbf.append(" and doc.destinatario.hisIdIni = :destinatarioSelId");
         }
 
         if (flt.getLotacaoDestinatarioSelId() != null
                 && flt.getLotacaoDestinatarioSelId() != 0) {
-            sbf.append(" and doc.lotaDestinatario.idLotacaoIni = :lotacaoDestinatarioSelId");
+            sbf.append(" and doc.lotaDestinatario.hisIdIni = :lotacaoDestinatarioSelId");
         }
 
         if (flt.getNmDestinatario() != null
@@ -146,16 +146,16 @@ public class MontadorQuery implements IMontadorQuery {
         }
 
         if (flt.getCadastranteSelId() != null && flt.getCadastranteSelId() != 0) {
-            sbf.append(" and doc.cadastrante.idPessoaIni = :cadastranteSelId");
+            sbf.append(" and doc.cadastrante.hisIdIni = :cadastranteSelId");
         }
 
         if (flt.getLotaCadastranteSelId() != null
                 && flt.getLotaCadastranteSelId() != 0) {
-            sbf.append(" and doc.lotaCadastrante.idLotacaoIni = :lotaCadastranteSelId");
+            sbf.append(" and doc.lotaCadastrante.hisIdIni = :lotaCadastranteSelId");
         }
 
         if (flt.getSubscritorSelId() != null && flt.getSubscritorSelId() != 0) {
-            sbf.append(" and doc.subscritor.idPessoaIni = :subscritorSelId");
+            sbf.append(" and doc.subscritor.hisIdIni = :subscritorSelId");
         }
 
         if (flt.getRequerenteDocSelId() != null && flt.getRequerenteDocSelId() != 0) {

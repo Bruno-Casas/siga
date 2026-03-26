@@ -21,19 +21,6 @@ public class AgendaController extends TpController {
     public static final Long NOVOVEICULO = null;
     public static final String ACTION_EDITAR = "Veiculos/Editar";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AgendaController() {
-		super();
-	}
-	
-	@Inject
-    public AgendaController(HttpServletRequest request, Result result, Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-
-    }
-
     @Path("/listar")
     public void listar() {
         result.redirectTo(this).emDesenvolvimento();

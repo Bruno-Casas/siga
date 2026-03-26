@@ -11,7 +11,6 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.ExPapel;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaDefinirPerfilPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import br.gov.jfrj.siga.vraptor.builder.ExMovimentacaoBuilder;
@@ -24,7 +23,7 @@ public class DocumentosSiglaDefinirPerfilPost implements IDocumentosSiglaDefinir
 		if (StringUtils.isNotEmpty(req.matricula)) {
 			pes = new DpPessoa();
 			pes.setSigla(req.matricula);
-			pes = dao().consultarPorSigla(pes);
+			pes = dao.consultarPorSigla(pes);
 		}
 		return pes;
 	}
@@ -34,7 +33,7 @@ public class DocumentosSiglaDefinirPerfilPost implements IDocumentosSiglaDefinir
 		if (StringUtils.isNotEmpty(req.lotacao)) {
 			lot = new DpLotacao();
 			lot.setSigla(req.lotacao);
-			lot = dao().consultarPorSigla(lot);
+			lot = dao.consultarPorSigla(lot);
 		}
 		return lot;
 	}
@@ -45,10 +44,10 @@ public class DocumentosSiglaDefinirPerfilPost implements IDocumentosSiglaDefinir
 
 		ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-		ExPapel m = dao().consultar(Long.parseLong(req.idPerfil), ExPapel.class, false);
+		ExPapel m = dao.consultar(Long.parseLong(req.idPerfil), ExPapel.class, false);
 		DpLotacao lot = getLotacao(req);
 		DpPessoa pes = getPessoa(req);
-		Date dt = dao().consultarDataEHoraDoServidor();
+		Date dt = dao.consultarDataEHoraDoServidor();
 
 		if (m == null)
 			throw new AplicacaoException("Perfil deve ser informado.");
@@ -62,14 +61,10 @@ public class DocumentosSiglaDefinirPerfilPost implements IDocumentosSiglaDefinir
 		mov.setExPapel(m);
 		mov.setResp(pes);
 		mov.setLotaResp(lot);
-		Ex.getInstance().getBL().vincularPapel(ctx.getCadastrante(), ctx.getLotaTitular(), mob, mov.getDtMov(),
+		this.bl.vincularPapel(ctx.getCadastrante(), ctx.getLotaTitular(), mob, mov.getDtMov(),
 				mov.getLotaResp(), mov.getResp(), mov.getSubscritor(), mov.getTitular(), mov.getDescrMov(),
 				mov.getNmFuncaoSubscritor(), mov.getExPapel());
 		resp.status = "OK";
-	}
-
-	public ExDao dao() {
-		return ExDao.getInstance();
 	}
 
 	@Override

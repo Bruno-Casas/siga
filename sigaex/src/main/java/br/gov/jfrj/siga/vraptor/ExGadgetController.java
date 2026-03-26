@@ -54,14 +54,14 @@ public class ExGadgetController extends ExController {
     @Inject
     public ExGadgetController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
                               Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     @Get("app/expediente/gadget")
     public void execute(final String idTpMarcadorExcluir, boolean apenasQuadro)
             throws Exception {
 
-        List listEstados = dao().consultarPaginaInicial(getTitular(), getLotaTitular());
+        List listEstados = cpDao.consultarPaginaInicial(getTitular(), getLotaTitular());
 
         if (listEstados.size() > 0) {
 

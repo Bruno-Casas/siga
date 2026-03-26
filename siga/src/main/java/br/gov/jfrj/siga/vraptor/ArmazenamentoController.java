@@ -43,7 +43,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 @Controller
-public class ArmazenamentoController extends SigaController {
+public class ArmazenamentoController extends VraptorController {
 
     private static final String ACESSO_ARMAZ = "FE: Ferramentas;ARMAZ: Armazenamento de Arquivos;";
     private static final String ACESSO_ESTATISTICA = "ARMAZ_ESTAT:Estatística de Armazenamento;";
@@ -53,19 +53,6 @@ public class ArmazenamentoController extends SigaController {
     private Integer softQuotaPercent = 0;
     private Long objectCount = 0L;
     private String namespaceName = "Não identificado";
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ArmazenamentoController() {
-        super();
-    }
-
-    @Inject
-    public ArmazenamentoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so,
-                                   EntityManager em) {
-        super(request, result, dao, so, em);
-    }
 
     @Get({"/app/armazenamento/estatistica"})
     public void estatistica() throws Exception {

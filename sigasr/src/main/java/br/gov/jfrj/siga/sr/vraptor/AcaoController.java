@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 
+import br.gov.jfrj.siga.base.AplicacaoException;
 import org.jboss.logging.Logger;
 import org.jfree.util.Log;
 
@@ -30,17 +31,6 @@ import br.gov.jfrj.siga.vraptor.Transacional;
 @Controller
 @Path("app/acao")
 public class AcaoController extends SrController {
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AcaoController() {
-		super();
-	}
-	
-	@Inject	
-	public AcaoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, dao, so, em, srValidator);
-	}
 
 	private static final String ACAO = "acao";
 	private static final String ACOES = "acoes";
@@ -77,7 +67,14 @@ public class AcaoController extends SrController {
 	public void gravar(SrAcao acao, TipoAcaoSelecao tipoAcaoSel) throws Exception {
 		validarFormEditarAcao(acao);
 		acao.setTipoAcao(tipoAcaoSel.buscarObjeto());
-		acao.salvarComHistorico();
+
+		if (acao.getNivel() > 1) {
+			SrAcao pai = acao.getPaiPorSigla();
+			if (pai == null)
+				throw new AplicacaoException("Ainda não há categoria para a ação a ser criada.");
+			acao.setPai(pai);
+		}
+		dao.salvarComHistorico(acao);
 		
 		try{
 			// Chama o webservice do SIGA-GC para atualizar as tags dos conhecimentos relacionados
@@ -98,7 +95,7 @@ public class AcaoController extends SrController {
 	@Path("/desativar")
 	public void desativar(Long id, boolean mostrarDesativados) throws Exception {
 		SrAcao acao = SrAcao.AR.findById(id);
-		acao.finalizar();
+		dao.finalizar(acao);
 
 		result.use(Results.http()).body(acao.toJson());
 	}
@@ -108,7 +105,14 @@ public class AcaoController extends SrController {
 	@Path("/reativar")
 	public void reativar(Long id, boolean mostrarDesativados) throws Exception {
 		SrAcao acao = SrAcao.AR.findById(id);
-		acao.salvarComHistorico();
+
+		if (acao.getNivel() > 1) {
+			SrAcao pai = acao.getPaiPorSigla();
+			if (pai == null)
+				throw new AplicacaoException("Ainda não há categoria para a ação a ser criada.");
+			acao.setPai(pai);
+		}
+		dao.salvarComHistorico(acao);
 
 		result.use(Results.http()).body(acao.toJson());
 	}

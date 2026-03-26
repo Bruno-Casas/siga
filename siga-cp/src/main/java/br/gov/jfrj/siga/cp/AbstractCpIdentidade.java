@@ -20,23 +20,11 @@ package br.gov.jfrj.siga.cp;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 
 @SuppressWarnings("serial")
 @MappedSuperclass
@@ -46,8 +34,8 @@ import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
         @NamedQuery(
                 name = "consultarIdentidadeCadastrante",
                 query = "select u from CpIdentidade u, DpPessoa pes"
-                        + " where pes.dataFimPessoa is null"
-                        + " and u.dpPessoa.idPessoaIni = pes.idPessoaIni"
+                        + " where pes.hisDtFim is null"
+                        + " and u.dpPessoa.hisIdIni = pes.hisIdIni"
                         + " and ("
                         + "   ("
                         + "     u.nmLoginIdentidade = :nmUsuario"
@@ -76,14 +64,14 @@ import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
                         + "     and pes.cpfPessoa = :cpf"
                         + "   )"
                         + " )"
-                        + " and u.dpPessoa.idPessoaIni = pes.idPessoaIni"
+                        + " and u.dpPessoa.hisIdIni = pes.hisIdIni"
                         + " and u.hisDtFim is null"
                         + " and u.dtCancelamentoIdentidade is null"
                         + " and (u.dtExpiracaoIdentidade is null or u.dtExpiracaoIdentidade > current_date())"
-                        + " and pes.dataFimPessoa is null"
+                        + " and pes.hisDtFim is null"
         ),
         @NamedQuery(name = "consultarIdentidades", query = "select u from CpIdentidade u , DpPessoa pes "
-                + "     where pes.idPessoaIni = :idPessoaIni"
+                + "     where pes.hisIdIni = :idPessoaIni"
                 + "      and u.dpPessoa = pes"
                 + "      and u.hisDtFim is null"),
         @NamedQuery(name = "consultarIdentidadeAtualPelaInicial", query = "from CpIdentidade u "
@@ -93,11 +81,11 @@ import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
         @NamedQuery(name = "consultarIdentidadeCpfEmail", query = "select u from CpIdentidade u , DpPessoa pes "
                 + "where (pes.cpfPessoa is not null and pes.cpfPessoa <> :cpfZero and pes.cpfPessoa = :cpf)"
                 + "and pes.emailPessoa = :email "
-                + "and u.dpPessoa.idPessoaIni = pes.idPessoaIni "
+                + "and u.dpPessoa.hisIdIni = pes.hisIdIni "
                 + "and u.hisDtFim is null "
                 + "and u.dtCancelamentoIdentidade is null "
                 + "and (u.dtExpiracaoIdentidade is null or u.dtExpiracaoIdentidade > current_date()) "
-                + "and pes.dataFimPessoa is null "
+                + "and pes.hisDtFim is null "
                 + "and (pes.situacaoFuncionalPessoa = :sfp1 "
                 + "or pes.situacaoFuncionalPessoa = :sfp2 "
                 + "or pes.situacaoFuncionalPessoa = :sfp4 "
@@ -106,13 +94,11 @@ import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
                 + "or pes.situacaoFuncionalPessoa = :sfp31 "
                 + "or pes.situacaoFuncionalPessoa = :sfp36)")})
 
-public abstract class AbstractCpIdentidade extends HistoricoAuditavelSuporte {
+public abstract class AbstractCpIdentidade extends HistoricoAuditavelSuporte<CpIdentidade> {
 
     @Id
-    @SequenceGenerator(name = "CP_IDENTIDADE_SEQ", sequenceName = "CORPORATIVO.CP_IDENTIDADE_SEQ")
-    @GeneratedValue(generator = "CP_IDENTIDADE_SEQ")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "ID_IDENTIDADE", unique = true, nullable = false)
-    @Desconsiderar
     private Long idIdentidade;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -134,7 +120,6 @@ public abstract class AbstractCpIdentidade extends HistoricoAuditavelSuporte {
     private String dscSenhaIdentidadeCripto;
 
     @Column(name = "SENHA_IDENTIDADE_CRIPTO_SINC")
-    @Desconsiderar
     private String dscSenhaIdentidadeCriptoSinc;
 
     @Temporal(TemporalType.TIMESTAMP)

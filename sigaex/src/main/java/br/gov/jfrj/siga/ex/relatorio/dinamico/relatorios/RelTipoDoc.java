@@ -56,7 +56,7 @@ public class RelTipoDoc extends RelatorioTemplate {
 	}
 
 	private DpLotacao buscarLotacaoPor(Long id) {
-		CpDao dao = CpDao.getInstance();
+		CpDao dao = dao;
 		DpLotacao lotacao = dao.consultar(id, DpLotacao.class, false);
 		return lotacao;
 	}
@@ -93,7 +93,7 @@ public class RelTipoDoc extends RelatorioTemplate {
 						+ "from ExMovimentacao mov inner join mov.exMobil mob "
 						+ "inner join mob.exDocumento doc "
 						+ "where mov.dtIniMov between :dtini and :dtfim "
-						+ "and mov.lotaResp.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :id) "
+						+ "and mov.lotaResp.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :id) "
 						+ "and mov.exTipoMovimentacao = :tpmov "
 						+ "group by doc.exFormaDocumento.exTipoFormaDoc.descTipoFormaDoc, "
 						+ "doc.exFormaDocumento.descrFormaDoc");

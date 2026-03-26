@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import br.gov.jfrj.siga.base.Prop;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.ex.xjus.XjusRecordAPIContext;
 import br.jus.trf2.xjus.record.api.IXjusRecordAPI;
 

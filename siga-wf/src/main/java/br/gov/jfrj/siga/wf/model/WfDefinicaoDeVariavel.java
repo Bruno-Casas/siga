@@ -21,10 +21,7 @@ import com.crivano.jflow.model.enm.VariableEditingKind;
 import com.crivano.jflow.model.enm.VariableKind;
 
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeAcessoDeVariavel;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeVariavel;
 import br.gov.jfrj.siga.wf.util.NaoSerializar;
@@ -33,11 +30,10 @@ import br.gov.jfrj.siga.wf.util.NaoSerializar;
 @BatchSize(size = 500)
 @Table(name = "sigawf.wf_def_variavel")
 public class WfDefinicaoDeVariavel extends HistoricoAuditavelSuporte
-		implements TaskDefinitionVariable, Sincronizavel, Comparable<Sincronizavel> {
+		implements TaskDefinitionVariable, SincronizavelSimples {
 	@Id
 	@GeneratedValue
 	@Column(name = "DEFV_ID", unique = true, nullable = false)
-	@Desconsiderar
 	private Long id;
 
 	@NotNull
@@ -64,8 +60,32 @@ public class WfDefinicaoDeVariavel extends HistoricoAuditavelSuporte
 	@Column(name = "DEFV_TP_ACESSO")
 	WfTipoDeAcessoDeVariavel acesso;
 
+	@javax.persistence.Transient
+	private java.lang.String hisIde;
+
 	@Column(name = "DEFV_NR_ORDEM")
 	private int ordem;
+
+	public String getIdExterna() {
+		return this.getHisIde();
+	}
+
+	@Override
+	public String getIdSincronizacao() {
+		String idExt = getIdExterna();
+		if (idExt == null || "null".equals(idExt) || idExt.isEmpty()) {
+			return (getHisIdIni() != null) ? "DB:" + getHisIdIni() : "NEW:" + System.identityHashCode(this);
+		}
+		return "EXT:" + idExt;
+	}
+
+	public java.lang.String getHisIde() {
+		return hisIde;
+	}
+
+	public void setHisIde(java.lang.String hisIde) {
+		this.hisIde = hisIde;
+	}
 
 	public WfDefinicaoDeVariavel() {
 		super();
@@ -176,71 +196,6 @@ public class WfDefinicaoDeVariavel extends HistoricoAuditavelSuporte
 
 	public void setDefinicaoDeTarefa(WfDefinicaoDeTarefa definicaoDeTarefa) {
 		this.definicaoDeTarefa = definicaoDeTarefa;
-	}
-
-	@Override
-	public String getIdExterna() {
-		return this.getDefinicaoDeTarefa().getIdExterna() + "|" + this.getIdentificador();
-	}
-
-	@Override
-	public void setIdExterna(String idExterna) {
-	}
-
-	@Override
-	public void setIdInicial(Long idInicial) {
-		this.setHisIdIni(idInicial);
-	}
-
-	@Override
-	public Date getDataInicio() {
-		return getHisDtIni();
-	}
-
-	@Override
-	public void setDataInicio(Date dataInicio) {
-		setHisDtIni(dataInicio);
-	}
-
-	@Override
-	public Date getDataFim() {
-		return getHisDtFim();
-	}
-
-	@Override
-	public void setDataFim(Date dataFim) {
-		setHisDtFim(dataFim);
-	}
-
-	@Override
-	public String getLoteDeImportacao() {
-		return null;
-	}
-
-	@Override
-	public void setLoteDeImportacao(String loteDeImportacao) {
-	}
-
-	@Override
-	public int getNivelDeDependencia() {
-		return SincronizavelSuporte.getNivelDeDependencia(this);
-	}
-
-	@Override
-	public String getDescricaoExterna() {
-		return getNome();
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return SincronizavelSuporte.semelhante(this, obj, profundidade);
-	}
-
-	@Override
-	public int compareTo(Sincronizavel o) {
-		if (!this.getClass().equals(o.getClass()))
-			return this.getClass().getName().compareTo(o.getClass().getName());
-		return (this.getIdExterna()).compareTo(o.getIdExterna());
 	}
 
 }

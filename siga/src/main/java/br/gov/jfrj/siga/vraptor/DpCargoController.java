@@ -4,35 +4,25 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Post;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.observer.download.Download;
 import br.com.caelum.vraptor.observer.download.InputStreamDownload;
 import br.com.caelum.vraptor.observer.upload.UploadedFile;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.base.SigaMessages;
 import br.gov.jfrj.siga.base.SigaModal;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpCargo;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpCargoDaoFiltro;
-import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
 import br.gov.jfrj.siga.model.Selecionavel;
 
 @Controller
@@ -41,21 +31,8 @@ public class DpCargoController extends
 	
 	private Long orgaoUsu;
 
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public DpCargoController() {
-		super();
-	}
-
-	@Inject
-	public DpCargoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em) {
-		super(request, result, dao, so, em);
-	}
-	
 	protected boolean temPermissaoParaExportarDados() {
-		return Boolean.valueOf(Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(),"SIGA;GI;CAD_CARGO;EXP_DADOS"));
+		return Boolean.valueOf(this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(),"SIGA;GI;CAD_CARGO;EXP_DADOS"));
 	}
 	
 	@Get
@@ -91,9 +68,9 @@ public class DpCargoController extends
 		flt.setNome(Texto.removeAcentoMaiusculas(getNome()));
 		flt.setIdOrgaoUsu(orgaoUsu);
 		try{
-			flt.setIdCargoIni(Long.valueOf(getNome()));
+			flt.setHisIdIni(Long.valueOf(getNome()));
 		}catch(Exception e){
-			flt.setIdCargoIni(null);
+			flt.setHisIdIni(null);
 		}
 		if (flt.getIdOrgaoUsu() == null)
 			flt.setIdOrgaoUsu(getLotaTitular().getOrgaoUsuario().getIdOrgaoUsu());
@@ -106,7 +83,7 @@ public class DpCargoController extends
 		// Procura por nome
 		flt.setNome(Texto.removeAcentoMaiusculas(flt.getSigla()));
 		flt.setSigla(null);
-		final List l = dao().consultarPorFiltro(flt);
+		final List l = cpDao.consultarPorFiltro(flt);
 		if (l != null)
 			if (l.size() == 1)
 				return (DpCargo) l.get(0);
@@ -132,9 +109,9 @@ public class DpCargoController extends
 	public void lista(Integer paramoffset, Long idOrgaoUsu, String nome) throws Exception {		
 		
 		if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-			result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+			result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 		} else {
-			CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+			CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
 			List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
 			list.add(ou);
 			result.include("orgaosUsu", list);
@@ -147,9 +124,9 @@ public class DpCargoController extends
 			dpCargo.setIdOrgaoUsu(idOrgaoUsu);
 			dpCargo.setNome(Texto.removeAcento(nome));
 			dpCargo.setBuscarInativos(Boolean.TRUE);
-			setItens(CpDao.getInstance().consultarPorFiltro(dpCargo, paramoffset, 15));
+			setItens(cpDao.consultarPorFiltro(dpCargo, paramoffset, 15));
 			result.include("itens", getItens());
-			result.include("tamanho", dao().consultarQuantidade(dpCargo));
+			result.include("tamanho", cpDao.consultarQuantidade(dpCargo));
 			
 			result.include("idOrgaoUsu", idOrgaoUsu);
 			result.include("nome", nome);
@@ -167,7 +144,7 @@ public class DpCargoController extends
 							 final String nmCargo, 
 							 final Long idOrgaoUsu) throws Exception{
 		assertAcesso("GI:Módulo de Gestão de Identidade;CAD_CARGO: Cadastrar Cargo");
-		Cp.getInstance().getBL().gravarCargo(getIdentidadeCadastrante(), id, nmCargo, idOrgaoUsu,null);
+		this.cpBl.gravarCargo(getIdentidadeCadastrante(), id, nmCargo, idOrgaoUsu,null);
 		this.result.redirectTo(this).lista(0, null, "");
 	}
 	
@@ -175,13 +152,13 @@ public class DpCargoController extends
 	@Post("/app/cargo/ativarInativar")
 	public void ativarInativar(final Long id) throws Exception {
 		assertAcesso("GI:Módulo de Gestão de Identidade;CAD_CARGO: Cadastrar Cargo");
-		DpCargo cargo = dao().consultar(id, DpCargo.class, false);
+		DpCargo cargo = cpDao.consultar(id, DpCargo.class, false);
 		
 		// ativar
-		if (cargo.getDataFimCargo() != null ) {		
-			Cp.getInstance().getBL().gravarCargo(getIdentidadeCadastrante(), id, null, null, Boolean.TRUE);
+		if (cargo.getHisDtFim() != null ) {
+			this.cpBl.gravarCargo(getIdentidadeCadastrante(), id, null, null, Boolean.TRUE);
 		} else {// inativar
-			Cp.getInstance().getBL().gravarCargo(getIdentidadeCadastrante(), id, null, null, Boolean.FALSE);
+			this.cpBl.gravarCargo(getIdentidadeCadastrante(), id, null, null, Boolean.FALSE);
 		}
 		
 		if (cargo.getOrgaoUsuario() != null)
@@ -198,8 +175,8 @@ public class DpCargoController extends
 		
 		if (id != null) {
 			try {
-				DpCargo cargo = dao().consultar(id, DpCargo.class, false);	
-				Cp.getInstance().getBL().excluirCargo(cargo);	
+				DpCargo cargo = cpDao.consultar(id, DpCargo.class, false);
+				this.cpBl.excluirCargo(cargo);
 				
 				if (cargo.getOrgaoUsuario() != null)
 					this.result.redirectTo(this).lista(0,cargo.getOrgaoUsuario().getIdOrgaoUsu(), "");
@@ -222,7 +199,7 @@ public class DpCargoController extends
  		if(idOrgaoUsu != null) {
 			DpCargoDaoFiltro dpCargo = new DpCargoDaoFiltro(nome, idOrgaoUsu);																
 															
-			List <DpCargo> lista = CpDao.getInstance().consultarPorFiltro(dpCargo, 0, 0);
+			List <DpCargo> lista = cpDao.consultarPorFiltro(dpCargo, 0, 0);
 			
 			if (lista.size() > 0) {				
 				InputStream inputStream = null;
@@ -241,9 +218,9 @@ public class DpCargoController extends
 			} else {
 				
 				if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-					result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+					result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 				} else {
-					CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+					CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
 					List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
 					list.add(ou);
 					result.include("orgaosUsu", list);
@@ -262,21 +239,21 @@ public class DpCargoController extends
 	@Get("/app/cargo/editar")
 	public void edita(final Long id){
 		if (id != null) {
-			DpCargo cargo = dao().consultar(id, DpCargo.class, false);
+			DpCargo cargo = cpDao.consultar(id, DpCargo.class, false);
 			result.include("nmCargo",cargo.getNomeCargo());
 			result.include("idOrgaoUsu", cargo.getOrgaoUsuario().getId());
 			result.include("nmOrgaousu", cargo.getOrgaoUsuario().getNmOrgaoUsu());
 			
-			List<DpPessoa> list = CpDao.getInstance().consultarPessoasComCargo(id);
+			List<DpPessoa> list = cpDao.consultarPessoasComCargo(id);
 			if(list.size() == 0) {
 				result.include("podeAlterarOrgao", Boolean.TRUE);
 			}
 		}
 		
 		if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-			result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+			result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 		} else {
-			CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+			CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
 			List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
 			list.add(ou);
 			result.include("orgaosUsu", list);
@@ -288,7 +265,7 @@ public class DpCargoController extends
 	@Get("/app/cargo/carregarExcel")
 	public void carregarExcel() {
 		if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-			result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+			result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 		} else {
 			result.include("nmOrgaousu", getTitular().getOrgaoUsuario().getNmOrgaoUsu());	
 		}

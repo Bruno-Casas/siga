@@ -12,7 +12,13 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.dp.CpLocalidade;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class LocalidadesIdGet implements ILocalidadesIdGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (req.id == null) {
@@ -22,7 +28,7 @@ public class LocalidadesIdGet implements ILocalidadesIdGet {
 	}
 
 	private Localidade pesquisarPorId(Request req, Response resp) throws SwaggerException {
-		List<CpLocalidade> l = (ArrayList<CpLocalidade>) CpDao.getInstance()
+		List<CpLocalidade> l = (ArrayList<CpLocalidade>) dao
 				.consultarPorIdOuIdInicial(CpLocalidade.class, "idLocalidade", null, Long.valueOf(req.id));
 		if (l.size() == 0)
 			throw new SwaggerException("Nenhuma localidade foi encontrada para os parâmetros informados.", 404, null,

@@ -57,11 +57,11 @@ public class ConfiguracaoGrupoCargo extends ConfiguracaoGrupo {
 		 * t_strUpper.substring(2, 7);
 		 * t_pesPessoaExemplo.setMatricula(Long.parseLong(t_strMatricula));
 		 * Cargo t_pesPessoa =
-		 * CpDao.getInstance().consultarPorSigla(t_pesPessoaExemplo);
+		 * dao.consultarPorSigla(t_pesPessoaExemplo);
 		 */
 
 		Long t_lngId = Long.parseLong(p_strConteudo);
-		DpCargo t_pesPessoa = CpDao.getInstance().consultar(t_lngId,
+		DpCargo t_pesPessoa = dao.consultar(t_lngId,
 				DpCargo.class, false);
 		setCargo(t_pesPessoa);
 		conteudoConfiguracao = p_strConteudo;

@@ -4,7 +4,6 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaArquivarCorrentePost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeArquivarCorrente;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -26,7 +25,7 @@ public class DocumentosSiglaArquivarCorrentePost implements IDocumentosSiglaArqu
 
         ctx.assertAcesso(mob, cadastrante, lotaTitular);
 
-        Ex.getInstance().getBL().arquivarCorrente(cadastrante, lotaCadastrante, mob, null, null, cadastrante, false);
+        this.bl.arquivarCorrente(cadastrante, lotaCadastrante, mob, null, null, cadastrante, false);
 
         resp.sigla = mob.doc().getCodigo();
         resp.status = "OK";

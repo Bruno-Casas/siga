@@ -51,12 +51,12 @@ public class WfConfiguracao extends CpConfiguracao {
 	@Override
 	public void atualizarObjeto() {
 		super.atualizarObjeto();
-		setDefinicaoDeProcedimento(atual(getDefinicaoDeProcedimento()));
+		setDefinicaoDeProcedimento(getDefinicaoDeProcedimento().getHistoricoAtual());
 	}
 
 	public void substituirPorObjetoInicial() {
 		super.substituirPorObjetoInicial();
-		setDefinicaoDeProcedimento(inicial(getDefinicaoDeProcedimento()));
+		setDefinicaoDeProcedimento(getDefinicaoDeProcedimento().getHistoricoInicial());
 	}
 
 	@Override

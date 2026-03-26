@@ -93,11 +93,11 @@ import net.sf.jasperreports.engine.JRException;
 
 			String queryLotacao = "";
 			if (parametros.get("lotacao") != null && !"".equals(parametros.get("lotacao"))) {
-				queryLotacao = " and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :idLotacao) ";
+				queryLotacao = " and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :idLotacao) ";
 			}
 			String queryUsuario = "";
 			if (parametros.get("usuario") != null && !"".equals(parametros.get("usuario"))) {
-				queryUsuario = "and mov.cadastrante.idPessoaIni in (select p.idPessoa from DpPessoa as p where p.idPessoaIni = :usuario) ";
+				queryUsuario = "and mov.cadastrante.hisIdIni in (select p.idPessoa from DpPessoa as p where p.idPessoaIni = :usuario) ";
 			}
 			
 			Query query = ContextoPersistencia.em().createQuery(
@@ -165,7 +165,7 @@ import net.sf.jasperreports.engine.JRException;
 				Set<DpPessoa> pessoaSet = new HashSet<DpPessoa>();
 				DpPessoa pessoa = (DpPessoa) qryPes.getResultList().get(0);
 				pessoaSet.add(pessoa);
-				query.setParameter("idUsuario", pessoa.getIdPessoaIni());
+				query.setParameter("idUsuario", pessoa.getHisIdIni());
 			}
 
 			Date dtini = formatter.parse((String) parametros.get("dataInicial"));
@@ -174,7 +174,7 @@ import net.sf.jasperreports.engine.JRException;
 			Date dtfimMaisUm = new Date( dtfim.getTime() + 86400000L );
 			query.setParameter("dtfim", dtfimMaisUm);
 			
-			query.setParameter("dbDatetime", ExDao.getInstance().consultarDataEHoraDoServidor());
+			query.setParameter("dbDatetime", dao.consultarDataEHoraDoServidor());
 			
 			Iterator it = query.getResultList().iterator();
 

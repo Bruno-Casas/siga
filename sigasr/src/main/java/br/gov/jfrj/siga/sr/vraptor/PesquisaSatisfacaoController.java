@@ -16,7 +16,6 @@ import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.cp.CpComplexo;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.sr.annotation.AssertAcesso;
 import br.gov.jfrj.siga.sr.model.SrConfiguracao;
 import br.gov.jfrj.siga.sr.model.SrPergunta;
@@ -32,18 +31,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 public class PesquisaSatisfacaoController extends SrController {
 
 	private static final String PESQUISA = "pesquisa";
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public PesquisaSatisfacaoController() {
-		super();
-	}
-	
-	@Inject
-	public PesquisaSatisfacaoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-	}
 
 	@AssertAcesso(ADM_ADMINISTRAR)
 	@SuppressWarnings("unchecked")
@@ -131,7 +118,7 @@ public class PesquisaSatisfacaoController extends SrController {
 	@Path("/desativarAssociacaoEdicao")
 	public void desativarAssociacaoEdicao(Long idAssociacao) throws Exception {
 		SrConfiguracao associacao = SrConfiguracao.AR.em().find(SrConfiguracao.class, idAssociacao);
-		associacao.finalizar();
+		dao.finalizar(associacao);
 		result.use(Results.http()).body(associacao.toJson());
 	}
 
@@ -139,7 +126,7 @@ public class PesquisaSatisfacaoController extends SrController {
 	@Path("/desativarAssociacaoPesquisaEdicao")
 	public void desativarAssociacaoPesquisaEdicao(Long idAssociacao) throws Exception {
 		SrConfiguracao associacao = SrConfiguracao.AR.em().find(SrConfiguracao.class, idAssociacao);
-		associacao.finalizar();
+		dao.finalizar(associacao);
 		result.use(Results.http()).body(associacao.toJson());
 	}
 

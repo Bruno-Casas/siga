@@ -38,7 +38,7 @@ public class ClassificacoesGet implements IClassificacoesGet {
 			throws SwaggerException {
 		List<ClassificacaoItem> resultado = new ArrayList<>();
 
-		ExDao dao = ExDao.getInstance();
+		ExDao dao = dao;
 		ExClassificacao c = dao.consultar(Long.valueOf(req.idClassificacaoIni), ExClassificacao.class, false);
 		ExClassificacao cIni = dao.obterAtual(c);
 
@@ -48,12 +48,12 @@ public class ClassificacoesGet implements IClassificacoesGet {
 
 	private List<ClassificacaoItem> pesquisarPorTexto(Request req, Response resp) throws PresentableUnloggedException {
 		String texto = Texto.removeAcentoMaiusculas(req.texto);
-		ExClassificacao c = (ExClassificacao) ExDao.getInstance().consultarExClassificacao(texto);
+		ExClassificacao c = (ExClassificacao) dao.consultarExClassificacao(texto);
 		List<ExClassificacao> l = new ArrayList<>();
 		if (c != null) {
 			l.add(c);
 		} else {
-			l = ExDao.getInstance().consultarExClassificacao("__.__.__.__", texto);
+			l = dao.consultarExClassificacao("__.__.__.__", texto);
 		}
 		if (l.isEmpty())
 			throw new PresentableUnloggedException("Nenhuma classificacao foi encontrada contendo o texto informado.");

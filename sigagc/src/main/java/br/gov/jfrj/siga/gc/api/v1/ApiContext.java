@@ -3,10 +3,11 @@ package br.gov.jfrj.siga.gc.api.v1;
 import java.io.Closeable;
 import java.io.IOException;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
 import br.gov.jfrj.siga.base.log.RequestLoggerFilter;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.gc.util.GcStarter;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
@@ -16,16 +17,16 @@ public class ApiContext implements Closeable {
 	EntityManager em;
 	boolean transacional;
 	long inicio = System.currentTimeMillis();
+	@Inject
+	private CpConfiguracaoBL conf;
 
 	public ApiContext(boolean transacional) {
 		this.transacional = transacional;
 		em = GcStarter.emf.createEntityManager();
 		ContextoPersistencia.setEntityManager(em);
 
-		ModeloDao.freeInstance();
-		CpDao.getInstance();
 		try {
-			Cp.getInstance().getConf().limparCacheSeNecessario();
+			conf.limparCacheSeNecessario();
 		} catch (Exception e1) {
 			throw new RuntimeException("Não foi possível atualizar o cache de configurações", e1);
 		}

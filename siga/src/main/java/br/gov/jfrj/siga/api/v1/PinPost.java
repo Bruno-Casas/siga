@@ -6,22 +6,35 @@ import java.util.List;
 import br.gov.jfrj.siga.api.v1.ISigaApiV1.IPinPost;
 import br.gov.jfrj.siga.base.RegraNegocioException;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpBL;
+import br.gov.jfrj.siga.cp.bl.CpCompetenciaBL;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
+import javax.inject.Inject;
+
 @Transacional
 public class PinPost implements IPinPost {
+
+	@Inject
+	private CpBL bl;
+
+	@Inject
+	private CpDao dao;
+
+	@Inject
+	private CpCompetenciaBL comp;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		final String pin = req.pin;
 
-		if (Cp.getInstance().getBL().consisteFormatoPin(pin)) {
+		if (bl.consisteFormatoPin(pin)) {
 			DpPessoa cadastrante = ctx.getCadastrante();
 			CpIdentidade identidadeCadastrante = ctx.getIdentidadeCadastrante();
 
-			if (!Cp.getInstance().getComp().podeSegundoFatorPin(cadastrante, cadastrante.getLotacao())) {
+			if (!comp.podeSegundoFatorPin(cadastrante, cadastrante.getLotacao())) {
 				throw new RegraNegocioException(
 						"PIN como Segundo Fator de Autenticação: Acesso não permitido a esse recurso.");
 			}
@@ -31,10 +44,10 @@ public class PinPost implements IPinPost {
 			}
 
 			List<CpIdentidade> listaIdentidades = new ArrayList<CpIdentidade>();
-			listaIdentidades = CpDao.getInstance().consultaIdentidadesPorCpf(cadastrante.getCpfPessoa().toString());
+			listaIdentidades = dao.consultaIdentidadesPorCpf(cadastrante.getCpfPessoa().toString());
 
-			Cp.getInstance().getBL().definirPinIdentidade(listaIdentidades, pin, identidadeCadastrante);
-			Cp.getInstance().getBL().enviarEmailDefinicaoPIN(cadastrante, "Novo PIN", "Você definiu um novo PIN.");
+			bl.definirPinIdentidade(listaIdentidades, pin, identidadeCadastrante);
+			bl.enviarEmailDefinicaoPIN(cadastrante, "Novo PIN", "Você definiu um novo PIN.");
 			resp.mensagem = "PIN foi definido.";
 		}
 	}

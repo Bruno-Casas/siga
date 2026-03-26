@@ -24,7 +24,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.service.ExService;
 import br.gov.jfrj.siga.jee.SoapContext;
 import br.gov.jfrj.siga.parser.PessoaLotacaoParser;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.bl.WfBL;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.model.WfDefinicaoDeProcedimento;
@@ -64,7 +63,7 @@ public class WfServiceImpl implements WfService {
 
         @Override
         public void initDao() {
-            WfDao.getInstance();
+            dao;
             try {
                 Wf.getInstance().getConf().limparCacheSeNecessario();
             } catch (Exception e1) {
@@ -86,7 +85,7 @@ public class WfServiceImpl implements WfService {
         // System.out.println("*** atualizarWorkflowsDeDocumento: " + siglaDoc);
         try (SoapContext ctx = new WfSoapContext(true)) {
             try {
-//				List<WfProcedimento> pis = WfDao.getInstance().consultarProcedimentosAtivosPorEvento(siglaDoc);
+//				List<WfProcedimento> pis = dao.consultarProcedimentosAtivosPorEvento(siglaDoc);
                 boolean f = false;
                 ExService exSvc = Service.getExService();
                 Boolean semEfeito = exSvc.isSemEfeito(siglaDoc);
@@ -95,9 +94,9 @@ public class WfServiceImpl implements WfService {
 //				for (WfProcedimento pi : pis) {
 //					if (semEfeito)
 //						Wf.getInstance().getBL().encerrarProcessInstance(pi.getId(),
-//								WfDao.getInstance().consultarDataEHoraDoServidor());
+//								dao.consultarDataEHoraDoServidor());
 //					else {
-//						new WfEngine(WfDao.getInstance(), new WfHandler(null, null, null)).resume(siglaDoc, null, null);
+//						new WfEngine(dao, new WfHandler(null, null, null)).resume(siglaDoc, null, null);
 //					}
 //					f = true;
 //				}
@@ -122,14 +121,14 @@ public class WfServiceImpl implements WfService {
                     throw new RuntimeException("Nome do procedimento precisa ser informado.");
                 WfDefinicaoDeProcedimento pd = null;
                 try {
-                    pd = WfDao.getInstance().consultarPorSigla(nomeProcedimento, WfDefinicaoDeProcedimento.class, null);
+                    pd = dao.consultarPorSigla(nomeProcedimento, WfDefinicaoDeProcedimento.class, null);
                 } catch (Exception ex) {
                     // Engolir a exceção que é gerada quando a sigla do processo é considerada
                     // inválida. Isso precisa ser feito porque também é permitido criar instância de
                     // procediemnto pelo título do diagrama.
                 }
                 if (pd == null)
-                    pd = WfDao.getInstance().consultarWfDefinicaoDeProcedimentoPorNome(nomeProcedimento);
+                    pd = dao.consultarWfDefinicaoDeProcedimentoPorNome(nomeProcedimento);
                 if (pd == null)
                     throw new RuntimeException(
                             "Não foi encontrado um procedimento com o nome '" + nomeProcedimento + "'");
@@ -137,7 +136,7 @@ public class WfServiceImpl implements WfService {
                 PessoaLotacaoParser titularParser = new PessoaLotacaoParser(siglaTitular);
 
                 CpIdentidade identidade = null;
-                List<CpIdentidade> l = WfDao.getInstance().consultaIdentidades(cadastranteParser.getPessoa());
+                List<CpIdentidade> l = dao.consultaIdentidades(cadastranteParser.getPessoa());
                 if (l.size() > 0)
                     identidade = l.get(0);
                 WfProcedimento pi = Wf.getInstance().getBL().criarProcedimento(pd.getId(), null,
@@ -157,7 +156,7 @@ public class WfServiceImpl implements WfService {
         try (SoapContext ctx = new WfSoapContext(false)) {
             if (siglaProcedimento == null)
                 throw new RuntimeException("Sigla do procedimento precisa ser informada.");
-            WfProcedimento pi = WfDao.getInstance().consultarPorSigla(siglaProcedimento, WfProcedimento.class, null);
+            WfProcedimento pi = dao.consultarPorSigla(siglaProcedimento, WfProcedimento.class, null);
             if (pi == null)
                 throw new RuntimeException(
                         "Não foi encontrado um procedimento com a sigla '" + siglaProcedimento + "'");

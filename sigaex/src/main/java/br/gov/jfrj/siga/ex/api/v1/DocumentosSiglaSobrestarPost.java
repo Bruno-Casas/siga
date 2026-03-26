@@ -4,7 +4,6 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaSobrestarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeSobrestar;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -28,7 +27,7 @@ public class DocumentosSiglaSobrestarPost implements IDocumentosSiglaSobrestarPo
 
         ctx.assertAcesso(mob, titular, lotaTitular);
 
-        Ex.getInstance().getBL().sobrestar(cadastrante, lotaCadastrante, mob, null, null, titular);
+        this.bl.sobrestar(cadastrante, lotaCadastrante, mob, null, null, titular);
 
         resp.sigla = mob.doc().getCodigo();
         resp.status = "OK";

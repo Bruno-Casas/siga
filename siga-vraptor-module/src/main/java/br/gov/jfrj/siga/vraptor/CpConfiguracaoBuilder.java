@@ -262,8 +262,4 @@ public class CpConfiguracaoBuilder<B extends CpConfiguracaoBuilder, T extends Cp
 		this.idTpLotacao = idTpLotacao;
 		return (B) this;
 	}
-
-	public D dao() {
-		return dao;
-	}
 }

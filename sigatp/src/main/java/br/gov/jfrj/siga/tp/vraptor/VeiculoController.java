@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
@@ -42,18 +43,6 @@ public class VeiculoController extends TpController {
 	private static final String LABEL_EDITAR = "views.cadastro.editar";
 	private static final String LABEL_INCLUIR = "views.cadastro.incluir";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public VeiculoController() {
-		super();
-	}
-	
-	@Inject
-	public VeiculoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listar")
 	public void listar() throws Exception {
 		CpOrgaoUsuario cpOrgaoUsuario = getTitular().getOrgaoUsuario();
@@ -69,14 +58,14 @@ public class VeiculoController extends TpController {
 		validarAntesDeSalvar(veiculo, lotacaoAtual);
 		redirecionarSeErroAoSalvar(veiculo, lotacaoAtual);
 		veiculo.setCpOrgaoUsuario(getTitular().getOrgaoUsuario());
-		veiculo.save();
+		dao.gravar(veiculo);
 
 		if (lotacaoDoVeiculoMudou(veiculo, lotacaoAtual)) {
 			LotacaoVeiculo.atualizarDataFimLotacaoAnterior(veiculo);
 		}
 		if (veiculoNaoTemLotacaoCadastrada(veiculo) || lotacaoDoVeiculoMudou(veiculo, lotacaoAtual)) {
 			LotacaoVeiculo novalotacao = new LotacaoVeiculo(null, veiculo, lotacaoAtual, Calendar.getInstance(), null, veiculo.getOdometroEmKmAtual());
-			novalotacao.save();
+			dao.gravar(novalotacao);
 		}
 		result.redirectTo(this).listar();
 	}
@@ -105,7 +94,7 @@ public class VeiculoController extends TpController {
 	@Path("/excluir/{id}")
 	public void excluir(Long id) throws Exception {
 		Veiculo veiculo = Veiculo.AR.findById(id);
-		veiculo.delete();
+		dao.excluir(veiculo);
 		result.redirectTo(this).listar();
 	}
 

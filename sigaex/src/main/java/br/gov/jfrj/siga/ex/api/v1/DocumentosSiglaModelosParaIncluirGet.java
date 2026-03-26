@@ -7,7 +7,6 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExModelo;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaModelosParaIncluirGet;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.ModeloItem;
-import br.gov.jfrj.siga.ex.bl.Ex;
 
 public class DocumentosSiglaModelosParaIncluirGet implements IDocumentosSiglaModelosParaIncluirGet {
 
@@ -25,7 +24,7 @@ public class DocumentosSiglaModelosParaIncluirGet implements IDocumentosSiglaMod
 
 		ExMobil mobPai = ctx.buscarEValidarMobil(req.sigla, req, resp, "Documento Principal");
 
-		List<ExModelo> modelos = Ex.getInstance().getBL().obterListaModelos(null, null, isEditandoAnexo,
+		List<ExModelo> modelos = this.bl.obterListaModelos(null, null, isEditandoAnexo,
 				isCriandoSubprocesso, mobPai, headerValue, true, ctx.getTitular(), ctx.getLotaTitular(), isAutuando);
 
 		resp.list = new ArrayList<>();

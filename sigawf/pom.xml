@@ -31,7 +31,7 @@
 								<artifactItem>
 									<groupId>${project.groupId}</groupId>
 									<artifactId>${project.artifactId}</artifactId>
-									<version>${revision}</version>
+									<version>${project.version}</version>
 									<type>${project.packaging}</type>
 								</artifactItem>
 							</artifactItems>

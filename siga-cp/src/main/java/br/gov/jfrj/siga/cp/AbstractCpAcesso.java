@@ -34,7 +34,6 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 
 @MappedSuperclass
 public abstract class AbstractCpAcesso implements Serializable {
@@ -47,7 +46,6 @@ public abstract class AbstractCpAcesso implements Serializable {
 	@SequenceGenerator(name = "CP_ACESSO_SEQ", sequenceName = "CORPORATIVO.CP_ACESSO_SEQ")
 	@GeneratedValue(generator = "CP_ACESSO_SEQ")
 	@Column(name = "ID_ACESSO", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idCpAcesso;
 
 	@ManyToOne(fetch = FetchType.LAZY)

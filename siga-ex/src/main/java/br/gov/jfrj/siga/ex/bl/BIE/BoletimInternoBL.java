@@ -7,9 +7,15 @@ import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.util.BIE.ManipuladorEntrevista;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.List;
 
+@ApplicationScoped
 public class BoletimInternoBL {
+
+    @Inject
+    private ExDao dao;
 
     //Edson: aqui ficam todos os métodos de negócio que manipulam objetos ExBoletimDoc
 
@@ -19,16 +25,12 @@ public class BoletimInternoBL {
         final List<ExDocumento> documentosNaoPublicar = meBIE.obterDocsNaoMarcados();
 
         ExBoletimDoc boletim;
-        ExDao dao = ExDao.getInstance();
-
         for (ExDocumento docPubl : documentosPublicar) {
 
-            if (docPubl
+            if (!docPubl
                     .getMobilGeral()
-                    .getMovimentacoesPorTipo(
-                            ExTipoDeMovimentacao.NOTIFICACAO_PUBL_BI, false)
-                    .size() > 0)
-
+                    .getMovimentacoesPorTipo(ExTipoDeMovimentacao.NOTIFICACAO_PUBL_BI, false).isEmpty()
+            )
                 throw new AplicacaoException(
                         "O documento "
                                 + docPubl.getCodigo()
@@ -49,8 +51,6 @@ public class BoletimInternoBL {
     }
 
     public void excluirBIE(ExDocumento docBIE) throws Exception {
-        ExDao dao = ExDao.getInstance();
-
         final List<ExBoletimDoc> documentosDoBoletim = dao
                 .consultarBoletim(docBIE);
         for (ExBoletimDoc docBol : documentosDoBoletim) {
@@ -61,8 +61,6 @@ public class BoletimInternoBL {
 
     public void finalizarBIE(ExDocumento docBIE) throws Exception {
         final List<ExDocumento> documentosPublicar = new ManipuladorEntrevista(docBIE).obterDocsMarcados();
-        ExDao dao = ExDao.getInstance();
-
         for (ExDocumento exDoc : documentosPublicar) {
             ExBoletimDoc boletim = dao.consultarBoletimEmQueODocumentoEstaIncluso(exDoc);
             if (boletim == null) {
@@ -91,12 +89,10 @@ public class BoletimInternoBL {
     public void deixarDocDisponivelParaInclusaoEmBoletim(ExDocumento doc) {
         ExBoletimDoc boletim = new ExBoletimDoc();
         boletim.setExDocumento(doc);
-        ExDao.getInstance().gravar(boletim);
     }
 
     public void deixarDocIndisponivelParaInclusaoEmBoletim(ExDocumento doc) throws Exception {
         ExBoletimDoc boletim;
-        ExDao dao = ExDao.getInstance();
         boletim = dao.consultarBoletimEmQueODocumentoEstaIncluso(doc);
         dao.excluir(boletim);
     }

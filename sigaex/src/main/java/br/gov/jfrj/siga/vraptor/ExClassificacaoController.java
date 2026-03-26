@@ -47,7 +47,6 @@ import br.gov.jfrj.siga.ex.ExClassificacao;
 import br.gov.jfrj.siga.ex.ExTemporalidade;
 import br.gov.jfrj.siga.ex.ExTipoDestinacao;
 import br.gov.jfrj.siga.ex.ExVia;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.util.MascaraUtil;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.Selecionavel;
@@ -71,7 +70,7 @@ public class ExClassificacaoController
 	@Inject
 	public ExClassificacaoController(HttpServletRequest request, Result result,
 			SigaObjects so, EntityManager em) {
-		super(request, result, ExDao.getInstance(), so, em);
+		super(request, result, dao, so, em);
 		int totalItens = getTotalDeNiveis();
 		nivelSelecionado = new String[totalItens];
 	}
@@ -235,7 +234,7 @@ public class ExClassificacaoController
 					Ex.getInstance()
 							.getBL()
 							.alterarExClassificacao(exClassNovo, exClassAntiga,
-									dao().consultarDataEHoraDoServidor(),
+									cpDao.consultarDataEHoraDoServidor(),
 									getIdentidadeCadastrante());
 					// System.out.println(exClassNovo);
 					// System.out.println(exClassAntiga);
@@ -279,19 +278,18 @@ public class ExClassificacaoController
 			throw new AplicacaoException(
 					"A destinação da via deve ser definida!");
 		}
-		dao().iniciarTransacao();
 		try {
 
-			Date dt = dao().consultarDataEHoraDoServidor();
+			Date dt = cpDao.consultarDataEHoraDoServidor();
 
 			ExClassificacao exClassAntiga = buscarExClassificacao(codificacao);
-			ExVia via = idVia != null ? dao().consultar(idVia, ExVia.class, false) : new ExVia();
+			ExVia via = idVia != null ? cpDao.consultar(idVia, ExVia.class, false) : new ExVia();
 			if (exClassAntiga == null){
 				throw new AplicacaoException("Erro ao obter a classificação");
 			}
 			ExClassificacao exClassNovo = Ex.getInstance().getBL()
 					.getCopia(exClassAntiga);
-			dao().gravarComHistorico(exClassNovo, exClassAntiga, dt,
+			cpDao.gravarComHistorico(exClassNovo, exClassAntiga, dt,
 					getIdentidadeCadastrante());
 
 			ExVia exVia = null;
@@ -309,7 +307,7 @@ public class ExClassificacaoController
 				dtHist = null;
 			} else {
 				// alterar via existente
-				exVia = dao().consultar(via.getId(), ExVia.class, false);
+				exVia = cpDao.consultar(via.getId(), ExVia.class, false);
 				ExVia exViaNova = new ExVia();
 				try {
 					PropertyUtils.copyProperties(exViaNova, exVia);
@@ -326,18 +324,18 @@ public class ExClassificacaoController
 				}
 
 			}
-			ExTipoDestinacao destino = !idDestino.equals(-1L) ? dao()
+			ExTipoDestinacao destino = !idDestino.equals(-1L) ? dao
 					.consultar(idDestino, ExTipoDestinacao.class, false) : null;
 
-			ExTipoDestinacao destFinal = !idDestinacaoFinal.equals(-1L) ? dao()
+			ExTipoDestinacao destFinal = !idDestinacaoFinal.equals(-1L) ? dao
 					.consultar(idDestinacaoFinal, ExTipoDestinacao.class, false)
 					: null;
 
-			ExTemporalidade tempCorrente = !idTemporalidadeArqCorr.equals(-1L) ? dao()
+			ExTemporalidade tempCorrente = !idTemporalidadeArqCorr.equals(-1L) ? dao
 					.consultar(idTemporalidadeArqCorr, ExTemporalidade.class,
 							false) : null;
 
-			ExTemporalidade tempInterm = !idTemporalidadeArqInterm.equals(-1L) ? dao()
+			ExTemporalidade tempInterm = !idTemporalidadeArqInterm.equals(-1L) ? dao
 					.consultar(idTemporalidadeArqInterm, ExTemporalidade.class,
 							false) : null;
 
@@ -349,7 +347,7 @@ public class ExClassificacaoController
 
 			exViaGravar.setObs(obsVia);		
 	
-			dao().gravarComHistorico(exViaGravar, exVia, dtHist, getIdentidadeCadastrante());
+			cpDao.gravarComHistorico(exViaGravar, exVia, dtHist, getIdentidadeCadastrante());
 	
 			exClassNovo.getExViaSet().add(exViaGravar);		
 			
@@ -361,11 +359,9 @@ public class ExClassificacaoController
 					.getBL()
 					.copiarReferencias(exClassNovo, exClassAntiga, dt,
 							getIdentidadeCadastrante());
-			dao().commitTransacao();
 
 			result.redirectTo("editar?codificacao="+codificacao+"&acao="+acao);
 		} catch (Exception e) {
-			dao().rollbackTransacao();
 			throw new AplicacaoException(
 					"Não foi possível gravar via no banco de dados."
 							+ e.getMessage());
@@ -377,10 +373,9 @@ public class ExClassificacaoController
 	public void excluirVia(Long idVia, String codificacao, String acao)
 			throws Exception {
 		assertAcesso(ACESSO_SIGA_DOC_FE_PC);
-		dao().iniciarTransacao();
 		try {
-			ExVia exVia = dao().consultar(idVia, ExVia.class, false);
-			dao().excluirComHistorico(exVia, null, getIdentidadeCadastrante());
+			ExVia exVia = cpDao.consultar(idVia, ExVia.class, false);
+			cpDao.excluirComHistorico(exVia, null, getIdentidadeCadastrante());
 
 			ExClassificacao exClassAntiga = buscarExClassificacao(codificacao);
 			if (exClassAntiga == null) {
@@ -392,13 +387,11 @@ public class ExClassificacaoController
 			Ex.getInstance()
 					.getBL()
 					.alterarExClassificacao(exClassNovo, exClassAntiga,
-							dao().consultarDataEHoraDoServidor(),
+							cpDao.consultarDataEHoraDoServidor(),
 							getIdentidadeCadastrante());
 
-			dao().commitTransacao();
 
 		} catch (Exception e) {
-			dao().rollbackTransacao();
 			throw new AplicacaoException(
 					"Não foi possível excluir via do banco de dados."
 							+ e.getMessage());
@@ -413,7 +406,7 @@ public class ExClassificacaoController
 		// Procura por nome
 		flt.setDescricao(Texto.removeAcentoMaiusculas(flt.getSigla()));
 		flt.setSigla(null);
-		final List l = ExDao.getInstance().consultarPorFiltro(flt);
+		final List l = dao.consultarPorFiltro(flt);
 		if (l != null)
 			if (l.size() == 1)
 				return (ExClassificacao) l.get(0);
@@ -428,20 +421,20 @@ public class ExClassificacaoController
 	}
 
 	private List<ExClassificacao> getClassificacaoVigente() {
-		return ExDao.getInstance().consultarExClassificacaoVigente();
+		return dao.consultarExClassificacaoVigente();
 	}
 
 	private List<ExTipoDestinacao> getListaExTipoDestinacao() {
-		return ExDao.getInstance().listarExTiposDestinacao();
+		return dao.listarExTiposDestinacao();
 	}
 
 	private List<ExTemporalidade> getListaExTemporalidade() {
-		return ExDao.getInstance().listarAtivos(ExTemporalidade.class,
+		return dao.listarAtivos(ExTemporalidade.class,
 				"descTemporalidade");
 	}
 
 	private ExClassificacao buscarExClassificacao(String codificacao) {
-		return ExDao.getInstance().consultarExClassificacao(codificacao);
+		return dao.consultarExClassificacao(codificacao);
 	}
 
 	private Integer getTotalDeNiveis() {
@@ -465,7 +458,7 @@ public class ExClassificacaoController
 
 		// se primeira lista, carrega incondicionalmente
 		if (nivel == 0) {
-			return ExDao.getInstance().listarExClassificacaoPorNivel(
+			return dao.listarExClassificacaoPorNivel(
 					MascaraUtil.getInstance().getMscTodosDoNivel(1));
 		}
 
@@ -474,7 +467,7 @@ public class ExClassificacaoController
 		if (nivelSelecionado != null && nivelSelecionado.length > (nivel - 1)) {
 			String nivelListaAnterior = nivelSelecionado[nivel - 1];
 			if (nivelListaAnterior != null && !nivelListaAnterior.equals("-1")) {
-				return ExDao.getInstance().listarExClassificacaoPorNivel(
+				return dao.listarExClassificacaoPorNivel(
 						MascaraUtil.getInstance().getMscFilho(
 								nivelListaAnterior, false), nivelListaAnterior);
 			}

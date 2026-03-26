@@ -20,7 +20,6 @@ package br.gov.jfrj.siga.wf.util;
 
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.model.WfDefinicaoDeDesvio;
 
 import java.util.ArrayList;

@@ -32,13 +32,13 @@ public class RelDocsClassificados extends RelatorioTemplate {
 		
 		try{
 			Long idLot = Long.valueOf((String) parametros.get("idLotacao"));
-			this.lotacao = CpDao.getInstance().consultar(idLot, DpLotacao.class, false);
+			this.lotacao = dao.consultar(idLot, DpLotacao.class, false);
 		}catch (Exception e) {
 		}
 		
 		try{
 			Long idOrgaoUsu = Long.valueOf((String)parametros.get("idOrgaoUsu"));
-			this.cpOrgaoUsu = CpDao.getInstance().consultar(idOrgaoUsu, CpOrgaoUsuario.class, false);
+			this.cpOrgaoUsu = dao.consultar(idOrgaoUsu, CpOrgaoUsuario.class, false);
 		}catch (Exception e) {
 		}
 
@@ -74,9 +74,9 @@ public class RelDocsClassificados extends RelatorioTemplate {
 		List<ExDocumento> listaDocs;
 		
 		if (this.codificacao!=null && this.codificacao.length()>0){
-			listaDocs = ExDao.getInstance().consultarExDocumentoPorClassificacao(this.lotacao,m.getMscFilho(this.codificacao, true),this.cpOrgaoUsu);	
+			listaDocs = dao.consultarExDocumentoPorClassificacao(this.lotacao,m.getMscFilho(this.codificacao, true),this.cpOrgaoUsu);	
 		}else{
-			listaDocs = ExDao.getInstance().consultarExDocumentoPorClassificacao(this.lotacao,m.getMscTodosDoMaiorNivel(),this.cpOrgaoUsu);
+			listaDocs = dao.consultarExDocumentoPorClassificacao(this.lotacao,m.getMscTodosDoMaiorNivel(),this.cpOrgaoUsu);
 		}
 		
 		

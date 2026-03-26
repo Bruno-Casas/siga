@@ -14,26 +14,11 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.dp.CpOrgao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.CpOrgaoDaoFiltro;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
 
 @Controller
 public class OrgaoController extends SigaSelecionavelControllerSupport<CpOrgao, DaoFiltroSelecionavel>{
-
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public OrgaoController() {
-		super();
-	}
-
-	@Inject
-	public OrgaoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
-		// TODO Auto-generated constructor stub
-	}
 
 	@Override
 	protected DaoFiltroSelecionavel createDaoFiltro() {
@@ -47,9 +32,9 @@ public class OrgaoController extends SigaSelecionavelControllerSupport<CpOrgao, 
 		if(paramoffset == null) {
 			paramoffset = 0;
 		}
-		setItens(CpDao.getInstance().consultarCpOrgaoOrdenadoPorNome(paramoffset, 15));
+		setItens(cpDao.consultarCpOrgaoOrdenadoPorNome(paramoffset, 15));
 		result.include("itens", getItens());
-		result.include("tamanho", dao().consultarQuantidadeOrgao());
+		result.include("tamanho", cpDao.consultarQuantidadeOrgao());
 		setItemPagina(15);
 		result.include("currentPageNumber", calculaPaginaAtual(paramoffset));
 	}
@@ -63,12 +48,9 @@ public class OrgaoController extends SigaSelecionavelControllerSupport<CpOrgao, 
 		assertAcesso("FE:Ferramentas;CAD_ORGAO: Cadastrar Orgãos");
 		if (id != null) {
 			try {
-				dao().iniciarTransacao();
 				CpOrgao orgao = daoOrgao(id);				
-				dao().excluir(orgao);				
-				dao().commitTransacao();				
+				cpDao.excluir(orgao);
 			} catch (final Exception e) {
-				dao().rollbackTransacao();
 				throw new AplicacaoException("Erro na exclusão de Orgão", 0, e);
 			}
 		} else
@@ -115,7 +97,7 @@ public class OrgaoController extends SigaSelecionavelControllerSupport<CpOrgao, 
 		orgao.setSigla(siglaOrgao);
 		if (idOrgaoUsu != null && idOrgaoUsu != 0) {
 			CpOrgaoUsuario orgaoUsuario = new CpOrgaoUsuario();
-			orgaoUsuario = dao().consultar(idOrgaoUsu, CpOrgaoUsuario.class, false);	
+			orgaoUsuario = cpDao.consultar(idOrgaoUsu, CpOrgaoUsuario.class, false);
 			orgao.setOrgaoUsuario(orgaoUsuario);
 		}else
 			orgao.setOrgaoUsuario(null);
@@ -123,18 +105,15 @@ public class OrgaoController extends SigaSelecionavelControllerSupport<CpOrgao, 
 		orgao.setAtivo(String.valueOf(ativo));
 		
 		try {
-			dao().iniciarTransacao();
-			dao().gravar(orgao);
-			dao().commitTransacao();			
+			cpDao.gravar(orgao);
 		} catch (final Exception e) {
-			dao().rollbackTransacao();
 			throw new AplicacaoException("Erro na gravação", 0, e);
 		}
 		this.result.redirectTo(this).lista(0);
 	}
 	
 	private CpOrgao daoOrgao(long id) {
-		return dao().consultar(id, CpOrgao.class, false);
+		return cpDao.consultar(id, CpOrgao.class, false);
 	}
 	
 	@Get

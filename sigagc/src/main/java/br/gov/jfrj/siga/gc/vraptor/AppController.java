@@ -3,7 +3,6 @@ package br.gov.jfrj.siga.gc.vraptor;
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Path;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.observer.download.ByteArrayDownload;
 import br.com.caelum.vraptor.observer.download.Download;
 import br.com.caelum.vraptor.observer.upload.UploadedFile;
@@ -19,7 +18,6 @@ import br.gov.jfrj.siga.dp.CpMarcador;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.gc.model.*;
 import br.gov.jfrj.siga.gc.util.*;
 import br.gov.jfrj.siga.gc.util.diff_match_patch.Diff;
@@ -27,7 +25,6 @@ import br.gov.jfrj.siga.gc.util.diff_match_patch.Operation;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.DadosRI;
 import br.gov.jfrj.siga.vraptor.SigaIdDescr;
-import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -35,10 +32,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TemporalType;
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -47,25 +42,11 @@ import java.util.*;
 @Controller
 public class AppController extends GcController {
 
+    @Inject
     private GcBL bl;
-    private Correio correio;
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public AppController() {
-        super();
-        this.bl = null;
-        this.correio = null;
-    }
 
     @Inject
-    public AppController(HttpServletRequest request, CpDao dao, Result result, GcBL bl, SigaObjects so, EntityManager em,
-                         Correio correio) {
-        super(request, dao, result, so, em);
-        this.bl = bl;
-        this.correio = correio;
-    }
+    private Correio correio;
 
     private static final String CATEGORIA_OUTRAS = "[Outros]";
     private static final String HTTP_LOCALHOST_8080 = "http://localhost:8080";
@@ -76,7 +57,7 @@ public class AppController extends GcController {
         Query query = em().createNamedQuery("contarGcMarcas");
         query.setParameter("idPessoaIni", getCadastrante().getIdInicial());
         query.setParameter("idLotacaoIni", getLotaTitular().getIdInicial());
-        query.setParameter("dbDatetime", dao().consultarDataEHoraDoServidor());
+        query.setParameter("dbDatetime", cpDao.consultarDataEHoraDoServidor());
         List contagens = query.getResultList();
         result.include("contagens", contagens);
     }
@@ -317,7 +298,7 @@ public class AppController extends GcController {
         for (GcTag t : tags) {
             t.setTitulo(t.getTitulo().replaceAll("^" + before + "(-.+|$)", after + "$1"));
             t.setTitulo(t.getTitulo().replaceAll("(.+-|^)" + before + "$", "$1" + after));
-            t.save();
+            cpDao.gravar(t);
         }
 
         // Edson: Atualizando os arquivos:
@@ -330,7 +311,7 @@ public class AppController extends GcController {
             } else {
                 arq.setClassificacao(arq.getClassificacao().replaceAll("(@" + before + ")(,|$)", "@" + after + "$2"));
             }
-            arq.save();
+            cpDao.gravar(arq);
         }
 
         result.use(Results.http()).body("OK");
@@ -410,21 +391,21 @@ public class AppController extends GcController {
         DpLotacao lotacao = getLotaTitular();
 
         Query query1 = em().createNamedQuery("maisRecentesLotacao");
-        query1.setParameter("idlotacaoInicial", lotacao.getIdLotacaoIni());
+        query1.setParameter("idlotacaoInicial", lotacao.getHisIdIni());
         query1.setMaxResults(5);
         List<Object[]> listaMaisRecentes = query1.getResultList();
         if (listaMaisRecentes.isEmpty())
             listaMaisRecentes = null;
 
         Query query2 = em().createNamedQuery("maisVisitadosLotacao");
-        query2.setParameter("idlotacaoInicial", lotacao.getIdLotacaoIni());
+        query2.setParameter("idlotacaoInicial", lotacao.getHisIdIni());
         query2.setMaxResults(5);
         List<Object[]> listaMaisVisitados = query2.getResultList();
         if (listaMaisVisitados.isEmpty())
             listaMaisVisitados = null;
 
         Query query3 = em().createNamedQuery("principaisAutoresLotacao");
-        query3.setParameter("idlotacaoInicial", lotacao.getIdLotacaoIni());
+        query3.setParameter("idlotacaoInicial", lotacao.getHisIdIni());
         query3.setMaxResults(5);
         List<Object[]> listaPrincipaisAutores = query3.getResultList();
         if (listaPrincipaisAutores.isEmpty())
@@ -432,7 +413,7 @@ public class AppController extends GcController {
 
         GcCloud cloud = new GcCloud(150.0, 60.0);
         Query query4 = em().createNamedQuery("principaisTagsLotacao");
-        query4.setParameter("idlotacaoInicial", lotacao.getIdLotacaoIni());
+        query4.setParameter("idlotacaoInicial", lotacao.getHisIdIni());
         query4.setMaxResults(50);
         List<Object[]> listaPrincipaisTags = query4.getResultList();
         if (listaPrincipaisTags.isEmpty())
@@ -444,14 +425,14 @@ public class AppController extends GcController {
         }
         GcGraficoEvolucao set = new GcGraficoEvolucao();
         Query query5 = em().createNamedQuery("evolucaoNovosLotacao");
-        query5.setParameter("idlotacaoInicial", lotacao.getIdLotacaoIni());
+        query5.setParameter("idlotacaoInicial", lotacao.getHisIdIni());
         List<Object[]> listaNovos = query5.getResultList();
         for (Object[] novos : listaNovos) {
             set.add(new GcGraficoEvolucaoItem((Integer) novos[0], (Integer) novos[1], (Long) novos[2], 0, 0));
         }
 
         Query query6 = em().createNamedQuery("evolucaoVisitadosLotacao");
-        query6.setParameter("idlotacaoInicial", lotacao.getIdLotacaoIni());
+        query6.setParameter("idlotacaoInicial", lotacao.getHisIdIni());
         List<Object[]> listaVisitados = query6.getResultList();
         for (Object[] visitados : listaVisitados) {
             set.add(new GcGraficoEvolucaoItem((Integer) visitados[0], (Integer) visitados[1], 0, (Long) visitados[2],
@@ -499,7 +480,7 @@ public class AppController extends GcController {
 
         List<GcTipoInformacao> tiposinformacao = GcTipoInformacao.AR.all().fetch();
         if (filtro.lotacao != null) {
-            DpLotacao lotacaoIni = DpLotacao.AR.findById(filtro.lotacao.getIdLotacaoIni());
+            DpLotacao lotacaoIni = DpLotacao.AR.findById(filtro.lotacao.getHisIdIni());
             filtro.getLotacao().getLotacaoInicial().setLotacoesPosteriores(lotacaoIni.getLotacoesPosteriores());
         }
 
@@ -1042,7 +1023,7 @@ public class AppController extends GcController {
         em().createQuery("delete from GcMovimentacao where inf.id = :id")
                 .setParameter("id", informacao.getId()).executeUpdate();
         ContextoPersistencia.flushTransaction();
-        informacao.delete();
+        cpDao.excluir(informacao);
         redirectToHome();
     }
 
@@ -1065,13 +1046,13 @@ public class AppController extends GcController {
             pessoa = null;
 
         if (pessoa != null && pessoa.getId() != null)
-            pessoa = dao().consultar(pessoa.getId(), DpPessoa.class, false);
+            pessoa = cpDao.consultar(pessoa.getId(), DpPessoa.class, false);
 
         if (lotacao != null && lotacao.getId() == null)
             lotacao = null;
 
         if (lotacao != null && lotacao.getId() != null)
-            lotacao = dao().consultar(lotacao.getId(), DpLotacao.class, false);
+            lotacao = cpDao.consultar(lotacao.getId(), DpLotacao.class, false);
 
         if (pessoa != null || lotacao != null || email != null) {
 
@@ -1364,7 +1345,7 @@ public class AppController extends GcController {
         try {
             CpOrgaoUsuario ouDefault = null;
             if (matricula != null) {
-                DpPessoa pes = dao().getPessoaFromSigla(matricula);
+                DpPessoa pes = cpDao.getPessoaFromSigla(matricula);
                 if (pes != null)
                     ouDefault = pes.getOrgaoUsuario();
 

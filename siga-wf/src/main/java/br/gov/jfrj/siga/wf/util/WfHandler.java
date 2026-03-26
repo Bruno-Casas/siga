@@ -4,7 +4,6 @@ import br.gov.jfrj.siga.base.Correio;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.bl.WfBL;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.model.WfProcedimento;
@@ -61,12 +60,12 @@ public class WfHandler implements Handler<WfProcedimento, WfResp> {
     public void sendEmail(WfResp responsible, String subject, String text) {
         List<String> destinatarios = new ArrayList<>();
         if (responsible.getPessoa() != null) {
-            destinatarios.add(responsible.getPessoa().getEmailPessoaAtual());
+            destinatarios.add(responsible.getPessoa().getHistoricoAtual().getEmailPessoa());
         } else if (responsible.getLotacao() != null) {
             List<DpPessoa> l = null;
-            l = WfDao.getInstance().pessoasPorLotacao(responsible.getLotacao().getId(), false, true);
+            l = dao.pessoasPorLotacao(responsible.getLotacao().getId(), false, true);
             for (DpPessoa pessoa : l) {
-                destinatarios.add(pessoa.getEmailPessoaAtual());
+                destinatarios.add(pessoa.getHistoricoAtual().getEmailPessoa());
             }
         }
         try {
@@ -105,7 +104,7 @@ public class WfHandler implements Handler<WfProcedimento, WfResp> {
         // Sinalizar para todos os subprocedimentos que podem estar esperando a
         // conclusão desse
         try {
-            new WfEngine(WfDao.getInstance(), this).resume(pi.getSigla(), null, null);
+            new WfEngine(dao, this).resume(pi.getSigla(), null, null);
         } catch (Exception e) {
             throw new RuntimeException("Erro sinalizando subprocedimentos", e);
         }

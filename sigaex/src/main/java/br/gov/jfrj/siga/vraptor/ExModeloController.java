@@ -37,7 +37,6 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExFormaDocumento;
 import br.gov.jfrj.siga.ex.ExModelo;
 import br.gov.jfrj.siga.ex.ExNivelAcesso;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
@@ -91,7 +90,7 @@ public class ExModeloController extends ExSelecionavelController {
 	public void lista(final String script) throws Exception {
 		try {
 			assertAcesso(VERIFICADOR_ACESSO);
-			List<ExModelo> modelos = dao().listarTodosModelosOrdenarPorNome(null, 
+			List<ExModelo> modelos = cpDao.listarTodosModelosOrdenarPorNome(null,
 					script);
 			result.include("itens", modelos);
 			result.include("script", script);
@@ -178,11 +177,11 @@ public class ExModeloController extends ExSelecionavelController {
 				modelo.setConteudoBlobMod2(conteudo.getBytes(UTF8));
 			}
 			if (forma != null && forma != 0) {
-				modelo.setExFormaDocumento(dao().consultar(forma,
+				modelo.setExFormaDocumento(cpDao.consultar(forma,
 						ExFormaDocumento.class, false));
 			}
 			if (nivel != null && nivel != 0) {
-				modelo.setExNivelAcesso(dao().consultar(nivel,
+				modelo.setExNivelAcesso(cpDao.consultar(nivel,
 						ExNivelAcesso.class, false));
 			}
 			else
@@ -204,15 +203,13 @@ public class ExModeloController extends ExSelecionavelController {
 	@Transacional
 	@Get("app/modelo/desativar")
 	public void desativar(final Long id) throws Exception {
-		ModeloDao.iniciarTransacao();
 		assertAcesso(VERIFICADOR_ACESSO);
 		if (id == null) {
 			throw new AplicacaoException("ID não informada");
 		}
-		final ExModelo modelo = dao().consultar(id, ExModelo.class, false);
-		dao().excluirComHistorico(modelo, dao().consultarDataEHoraDoServidor(),
+		final ExModelo modelo = cpDao.consultar(id, ExModelo.class, false);
+		cpDao.excluirComHistorico(modelo, cpDao.consultarDataEHoraDoServidor(),
 				getIdentidadeCadastrante());
-		ModeloDao.commitTransacao();
 
 		result.redirectTo(ExModeloController.class).lista(null);
 	}
@@ -227,7 +224,7 @@ public class ExModeloController extends ExSelecionavelController {
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				ZipOutputStream zos = new ZipOutputStream(baos)) {
 
-			final List<ExModelo> l = dao().listarTodosModelosOrdenarPorNome(null, null);
+			final List<ExModelo> l = cpDao.listarTodosModelosOrdenarPorNome(null, null);
 	
 			for (final ExModelo m : l) {
 				final KXmlSerializer serializer = new KXmlSerializer();
@@ -266,7 +263,7 @@ public class ExModeloController extends ExSelecionavelController {
 					if (m.getUuid() == null) {
 						m.setUuid(UUID.randomUUID().toString());
 				        SigaTransacionalInterceptor.upgradeParaTransacional();
-						dao().gravar(m);
+						cpDao.gravar(m);
 					}
 					if (m.getUuid() != null) {
 						serializer.attribute(null, "uuid", m.getUuid());
@@ -338,7 +335,7 @@ public class ExModeloController extends ExSelecionavelController {
 			os.write('\n');
 			os.write('\n');
 
-			final List<CpModelo> lCp = dao().listarModelosOrdenarPorNome(null);
+			final List<CpModelo> lCp = cpDao.listarModelosOrdenarPorNome(null);
 
 			for (final CpModelo m : lCp) {
 				serializer.startTag(null, modeloGeral);
@@ -364,7 +361,7 @@ public class ExModeloController extends ExSelecionavelController {
 			os.write('\n');
 			os.write('\n');
 
-			final List<ExModelo> l = dao().listarTodosModelosOrdenarPorNome(null, 
+			final List<ExModelo> l = cpDao.listarTodosModelosOrdenarPorNome(null,
 					null);
 
 			for (final ExModelo m : l) {
@@ -400,7 +397,7 @@ public class ExModeloController extends ExSelecionavelController {
 				if (m.getUuid() == null) {
 			        m.setUuid(UUID.randomUUID().toString());
 			        SigaTransacionalInterceptor.upgradeParaTransacional();
-			        dao().gravar(m);
+			        cpDao.gravar(m);
 				}
 				if (m.getUuid() != null) {
 					serializer.attribute(null, "uuid", m.getUuid());
@@ -435,7 +432,7 @@ public class ExModeloController extends ExSelecionavelController {
 	private ExModelo buscarModelo(final Long id) {
 		if (id != null) {
 			return Ex.getInstance().getBL()
-					.getCopia(dao().consultar(id, ExModelo.class, false));
+					.getCopia(cpDao.consultar(id, ExModelo.class, false));
 		}
 		return new ExModelo();
 	}
@@ -443,8 +440,8 @@ public class ExModeloController extends ExSelecionavelController {
 	private ExModelo copiarModeloAtual(final Long id) {
 		ExModelo modelo = buscarModelo(id);
 		if(modelo.getIdInicial()!=null) {
-			return Ex.getInstance().getBL().getCopia(
-					dao().consultar(modelo.getIdInicial(), ExModelo.class, false).getModeloAtual()
+			return this.cpBl.getCopia(
+					cpDao.consultar(modelo.getIdInicial(), ExModelo.class, false).getModeloAtual()
 					);
 		} else 
 			return modelo;
@@ -452,18 +449,18 @@ public class ExModeloController extends ExSelecionavelController {
 	
 	private ExModelo buscarModeloAntigo(final Long idInicial) {
 		if (idInicial != null) {
-			return dao().consultar(idInicial, ExModelo.class, false)
+			return cpDao.consultar(idInicial, ExModelo.class, false)
 					.getModeloAtual();
 		}
 		return null;
 	}
 	
 	private List<ExNivelAcesso> getListaNivelAcesso() {
-		return dao().listarOrdemNivel();
+		return cpDao.listarOrdemNivel();
 	}
 
 	private List<ExFormaDocumento> getListaForma() {
-		return dao().listarExFormasDocumento();
+		return cpDao.listarExFormasDocumento();
 	}
 
 	@Override
@@ -480,7 +477,7 @@ public class ExModeloController extends ExSelecionavelController {
 		if (paraIncluir) {
 			List<ExModelo> lExcluir = new ArrayList<>();
 			for (ExModelo mod : (List<ExModelo>)getItens()) {
-				if (!Ex.getInstance().getConf().podePorConfiguracao(getTitular(), getLotaTitular(), mod,
+				if (!this.cpConf.podePorConfiguracao(getTitular(), getLotaTitular(), mod,
 						ExTipoDeConfiguracao.DESPACHAVEL)) {
 					lExcluir.add(mod);
 				}
@@ -489,7 +486,7 @@ public class ExModeloController extends ExSelecionavelController {
 		} else if (paraAutuar) {
 			List<ExModelo> lExcluir = new ArrayList<>();
 			for (ExModelo mod : (List<ExModelo>) getItens()) {
-				if (!Ex.getInstance().getConf().podePorConfiguracao(getTitular(), getLotaTitular(), mod,
+				if (!this.cpConf.podePorConfiguracao(getTitular(), getLotaTitular(), mod,
 				ExTipoDeConfiguracao.AUTUAVEL)) {
 					lExcluir.add(mod);
 				}

@@ -3,18 +3,22 @@ version: '3.8'
 services:
   traefik:
     command:
-      - "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.swarmMode=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.useBindPortIP=true"
-      - "--providers.docker.network=traefik-public"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.test.address=:8181"
-      - "--entrypoints.dev.address=:9990"
-      - "--entrypoints.debug.address=:8787"
-      - "--entrypoints.jmx.address=:20200"
+    - "--log.level=DEBUG"
+
+    - "--api.insecure=true"
+
+    # Provider Swarm (substitui docker.swarmMode)
+    - "--providers.swarm=true"
+    - "--providers.swarm.exposedbydefault=false"
+    - "--providers.swarm.network=traefik-public"
+    - "--providers.swarm.useBindPortIP=true"
+
+    # EntryPoints (sem mudança)
+    - "--entrypoints.web.address=:80"
+    - "--entrypoints.test.address=:8181"
+    - "--entrypoints.dev.address=:9990"
+    - "--entrypoints.debug.address=:8787"
+    - "--entrypoints.jmx.address=:20200"
     ports:
       - target: 8787
         published: 8787

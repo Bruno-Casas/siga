@@ -123,15 +123,15 @@ public abstract class AbstractCPMarca extends Objeto implements Serializable {
     @Column(name = "ID_LOTACAO_INI", insertable = false, updatable = false)
     private Long idLotacaoIni;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_TP_MARCA", insertable = false, updatable = false)
-    private CpTipoMarca cpTipoMarca;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ID_TP_MARCA", insertable = false, updatable = false)
+    private TipoMarca cpTipoMarca;
 
-    public CpTipoMarca getCpTipoMarca() {
+    public TipoMarca getCpTipoMarca() {
         return cpTipoMarca;
     }
 
-    public void setCpTipoMarca(CpTipoMarca cpTipoMarca) {
+    public void setCpTipoMarca(TipoMarca cpTipoMarca) {
         this.cpTipoMarca = cpTipoMarca;
     }
 

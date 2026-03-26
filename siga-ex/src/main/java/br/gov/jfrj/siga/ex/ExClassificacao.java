@@ -24,12 +24,12 @@ package br.gov.jfrj.siga.ex;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.ex.util.MascaraUtil;
 import br.gov.jfrj.siga.hibernate.ExDao;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -105,7 +105,8 @@ public class ExClassificacao extends AbstractExClassificacao implements
      *
      */
     public String getDescricao() {
-        return ExDao.getInstance().consultarDescricaoExClassificacao(this);
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        return dao.consultarDescricaoExClassificacao(this);
     }
 
     /**
@@ -133,12 +134,6 @@ public class ExClassificacao extends AbstractExClassificacao implements
         return "";
     }
 
-    public ExClassificacao getClassificacaoAtual() {
-        if (this.getHisDtFim() != null)
-            return ExDao.getInstance().obterClassificacaoAtual(this);
-        return this;
-    }
-
     /**
      * Verifica se uma classificação está fechada.
      *
@@ -150,17 +145,9 @@ public class ExClassificacao extends AbstractExClassificacao implements
         return getHisDtFim() != null;
     }
 
-    public ExClassificacao getAtual() {
-        return getClassificacaoAtual();
-    }
-
     public void setId(Long id) {
         setIdClassificacao(id);
 
-    }
-
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return false;
     }
 
     public int getNivel() {

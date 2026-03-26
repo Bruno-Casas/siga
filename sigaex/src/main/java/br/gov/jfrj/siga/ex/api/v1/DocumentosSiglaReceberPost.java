@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaReceberPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeReceber;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -29,7 +28,7 @@ public class DocumentosSiglaReceberPost implements IDocumentosSiglaReceberPost {
 
         Ex.getInstance().getComp().afirmar("Documento não pode ser recebido", ExPodeReceber.class, titular, lotaTitular, mob);
 
-        Ex.getInstance().getBL().receber(cadastrante, titular, lotaTitular, mob, mov.getDtMov());
+        this.bl.receber(cadastrante, titular, lotaTitular, mob, mov.getDtMov());
 
         resp.status = "OK";
     }

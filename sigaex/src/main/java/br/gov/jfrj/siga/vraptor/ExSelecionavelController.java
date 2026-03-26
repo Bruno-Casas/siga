@@ -25,10 +25,12 @@ import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.CpMarcador;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExTipoDocumento;
+import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -38,20 +40,11 @@ public abstract class ExSelecionavelController<T extends Selecionavel, DaoFiltro
 
     private static ResourceBundle bundle;
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExSelecionavelController() {
-        super();
-    }
+    @Inject
+    protected ExDao exDao;
 
-    public ExSelecionavelController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-    }
-
-    protected ExDao dao() {
-        return ExDao.getInstance();
-    }
+    @Inject
+    protected ExBL bl;
 
     protected List<CpMarcador> getEstados(Long ultMovIdEstadoDoc) throws AplicacaoException {
         Long[] ids = {
@@ -107,8 +100,8 @@ public abstract class ExSelecionavelController<T extends Selecionavel, DaoFiltro
                 ids = a.toArray(new Long[a.size()]);
             }
         }
-        List<CpMarcador> l = dao().listarMarcadores(ids);
-        l.addAll(dao().listarCpMarcadoresPorLotacaoEGeral(getLotaTitular(), true));
+        List<CpMarcador> l = cpDao.listarMarcadores(ids);
+        l.addAll(cpDao.listarCpMarcadoresPorLotacaoEGeral(getLotaTitular(), true));
         l.sort(CpMarcador.GRUPO_COMPARATOR);
         return l;
     }
@@ -121,7 +114,7 @@ public abstract class ExSelecionavelController<T extends Selecionavel, DaoFiltro
     }
 
     protected List<ExTipoDocumento> getTiposDocumento() {
-        return dao().listarExTiposDocumento();
+        return exDao.listarExTiposDocumento();
     }
 
     protected void assertAcesso(final String pathServico) {

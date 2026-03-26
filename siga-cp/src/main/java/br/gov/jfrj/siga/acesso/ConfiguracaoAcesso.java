@@ -22,13 +22,13 @@ import java.util.Date;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import org.hibernate.proxy.HibernateProxy;
 
 import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpConfiguracaoCache;
 import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
@@ -66,9 +66,9 @@ public class ConfiguracaoAcesso implements Comparable {
 		return getServico().getIdServico().compareTo(srv.getIdServico());
 	}
 
-	static public ConfiguracaoAcesso gerar(CpPerfil perfil, DpPessoa pessoa,
-			DpLotacao lotacao, CpOrgaoUsuario orgao, CpServico servico,
-			Date dtEvn) throws Exception {
+	static public ConfiguracaoAcesso gerar(CpDao dao, CpConfiguracaoBL conf, CpPerfil perfil, DpPessoa pessoa,
+										   DpLotacao lotacao, CpOrgaoUsuario orgao, CpServico servico,
+										   Date dtEvn) throws Exception {
 		CpConfiguracao cfgFiltro = new CpConfiguracao();
 		cfgFiltro.setCpGrupo(perfil);
 		cfgFiltro.setDpPessoa(pessoa);
@@ -76,14 +76,13 @@ public class ConfiguracaoAcesso implements Comparable {
 		cfgFiltro.setOrgaoUsuario(orgao);
 		cfgFiltro.setCpServico(servico);
 		cfgFiltro.setCpTipoConfiguracao(CpTipoDeConfiguracao.UTILIZAR_SERVICO);
-		CpConfiguracaoCache cache = Cp.getInstance().getConf().buscaConfiguracao(
-				cfgFiltro, new int[0], dtEvn);
+		CpConfiguracaoCache cache = conf.buscaConfiguracao(cfgFiltro, new int[0], dtEvn);
 		ConfiguracaoAcesso ac = new ConfiguracaoAcesso();
 		if (cache == null) {
 			ac.setSituacao(CpTipoDeConfiguracao.UTILIZAR_SERVICO.getSituacaoDefault());
 			ac.setDefault(true);
 		} else {
-			CpConfiguracao cfg = CpDao.getInstance().consultar(cache.idConfiguracao, CpConfiguracao.class, false);
+			CpConfiguracao cfg = dao.consultar(cache.idConfiguracao, CpConfiguracao.class, false);
 			ac.setSituacao(cfg.getCpSituacaoConfiguracao());
 			ac.setDefault(!cfg.isEspecifica(cfgFiltro));
 			if (cfg.getCpGrupo() != null) {

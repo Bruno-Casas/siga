@@ -49,6 +49,7 @@ import br.gov.jfrj.siga.model.dao.ModeloDao;
 import br.gov.jfrj.siga.persistencia.*;
 import org.jboss.logging.Logger;
 
+import javax.enterprise.inject.Specializes;
 import javax.persistence.LockModeType;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
@@ -60,22 +61,18 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
+@Specializes
 public class ExDao extends CpDao {
 
     public static final String CACHE_EX = "ex";
 
     private static final Logger log = Logger.getLogger(ExDao.class);
 
-    public static ExDao getInstance() {
-        return ModeloDao.getInstance(ExDao.class);
-    }
-
     public ExDao() {
     }
 
     public List<ExDocumento> consultarDocsInclusosNoBoletim(ExDocumento doc) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarDocsInclusosNoBoletim");
         query.setHint("org.hibernate.cacheable", true);
         query.setHint("org.hibernate.cacheRegion", ExDao.CACHE_QUERY_SECONDS);
@@ -86,7 +83,7 @@ public class ExDao extends CpDao {
 
     public ExBoletimDoc consultarBoletimEmQueODocumentoEstaIncluso(
             ExDocumento doc) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarBoletimEmQueODocumentoEstaIncluso");
 
         query.setParameter("idDoc", doc.getIdDoc());
@@ -100,14 +97,14 @@ public class ExDao extends CpDao {
 
     public List<ExDocumento> consultarDocsDisponiveisParaInclusaoEmBoletim(
             CpOrgaoUsuario orgaoUsu) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarDocsDisponiveisParaInclusaoEmBoletim");
         query.setParameter("idOrgaoUsu", orgaoUsu.getIdOrgaoUsu());
         return query.getResultList();
     }
 
     public List<ExBoletimDoc> consultarBoletim(ExDocumento doc) {
-        final Query query = em().createNamedQuery("consultarBoletim");
+        final Query query = em.createNamedQuery("consultarBoletim");
 
         query.setParameter("idDoc", doc.getIdDoc());
 
@@ -125,7 +122,7 @@ public class ExDao extends CpDao {
                 if (k == 0)
                     clausula = " or ";
             }
-            Query query = em().createQuery(appender.toString());
+            Query query = em.createQuery(appender.toString());
             return query.getResultList();
         }
         return null;
@@ -133,7 +130,7 @@ public class ExDao extends CpDao {
 
     public Long obterProximoNumero(final ExDocumento doc, Long anoEmissao)
             throws SQLException {
-        Query query = em().createNamedQuery("obterProximoNumero");
+        Query query = em.createNamedQuery("obterProximoNumero");
         query.setParameter("idOrgaoUsu", doc.getOrgaoUsuario().getId());
         query.setParameter("idFormaDoc", doc.getExFormaDocumento().getId());
         query.setParameter("anoEmissao", anoEmissao);
@@ -146,7 +143,7 @@ public class ExDao extends CpDao {
     public ExDocumentoNumeracao obterNumeroDocumento(Long idOrgaoUsu, Long idFormaDoc, Long anoEmissao, Boolean lock)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExDocumentoNumeracao.obterDocumentoNumeracao");
+        final Query query = em.createNamedQuery("ExDocumentoNumeracao.obterDocumentoNumeracao");
         query.setParameter("idOrgaoUsu", idOrgaoUsu);
         query.setParameter("idFormaDoc", idFormaDoc);
         query.setParameter("anoEmissao", anoEmissao);
@@ -165,7 +162,7 @@ public class ExDao extends CpDao {
 
     public Long obterNumeroGerado(Long idOrgaoUsu, Long idFormaDoc, Long anoEmissao)
             throws SQLException {
-        Query query = em().createNamedQuery("ExDocumentoNumeracao.obterNumeroGerado");
+        Query query = em.createNamedQuery("ExDocumentoNumeracao.obterNumeroGerado");
         query.setParameter("idOrgaoUsu", idOrgaoUsu);
         query.setParameter("idFormaDoc", idFormaDoc);
         query.setParameter("anoEmissao", anoEmissao);
@@ -177,7 +174,7 @@ public class ExDao extends CpDao {
     public void incrementNumeroDocumento(Long docNumeracao)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExDocumentoNumeracao.incrementaNumeroDocumento");
+        final Query query = em.createNamedQuery("ExDocumentoNumeracao.incrementaNumeroDocumento");
         query.setParameter("increment", 1L);
         query.setParameter("id", docNumeracao);
 
@@ -188,7 +185,7 @@ public class ExDao extends CpDao {
     public void insertNumeroDocumento(Long idOrgaoUsu, Long idFormaDoc, Long anoEmissao)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExDocumentoNumeracao.insertRangeNumeroDocumento");
+        final Query query = em.createNamedQuery("ExDocumentoNumeracao.insertRangeNumeroDocumento");
         query.setParameter("idOrgaoUsu", idOrgaoUsu);
         query.setParameter("idFormaDoc", idFormaDoc);
         query.setParameter("anoEmissao", anoEmissao);
@@ -200,7 +197,7 @@ public class ExDao extends CpDao {
     public Long existeRangeNumeroDocumento(Long idOrgaoUsu, Long idFormaDoc)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExDocumentoNumeracao.existeRangeDocumentoNumeracao");
+        final Query query = em.createNamedQuery("ExDocumentoNumeracao.existeRangeDocumentoNumeracao");
         query.setParameter("idOrgaoUsu", idOrgaoUsu);
         query.setParameter("idFormaDoc", idFormaDoc);
         query.setMaxResults(1);
@@ -216,7 +213,7 @@ public class ExDao extends CpDao {
     public void updateMantemRangeNumeroDocumento(Long docNumeracao)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExDocumentoNumeracao.mantemRangeNumeroDocumento");
+        final Query query = em.createNamedQuery("ExDocumentoNumeracao.mantemRangeNumeroDocumento");
 
         Calendar c = Calendar.getInstance();
 
@@ -230,7 +227,7 @@ public class ExDao extends CpDao {
     }
 
     public ExTipoSequencia obterTipoSequencia(String nomeTipoSequencia) {
-        final Query query = em().createNamedQuery("ExTipoSequencia.obterTipoSequencia");
+        final Query query = em.createNamedQuery("ExTipoSequencia.obterTipoSequencia");
         query.setParameter("nomeTipoSequencia", nomeTipoSequencia);
 
         try {
@@ -246,7 +243,7 @@ public class ExDao extends CpDao {
     public ExSequencia obterSequencia(Integer tipoSequencia, Long anoEmissao, Boolean lock)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExSequencia.obterSequencia");
+        final Query query = em.createNamedQuery("ExSequencia.obterSequencia");
         query.setParameter("tipoSequencia", tipoSequencia);
         query.setParameter("anoEmissao", anoEmissao);
         query.setParameter("flAtivo", "1");
@@ -265,7 +262,7 @@ public class ExDao extends CpDao {
     public Long obterNumeroGerado(Integer tipoSequencia, Long anoEmissao)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExSequencia.obterNumeroGerado");
+        final Query query = em.createNamedQuery("ExSequencia.obterNumeroGerado");
         query.setParameter("tipoSequencia", tipoSequencia);
         query.setParameter("anoEmissao", anoEmissao);
         query.setParameter("flAtivo", "1");
@@ -280,7 +277,7 @@ public class ExDao extends CpDao {
     public void incrementNumero(Long idSeq)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExSequencia.incrementaSequencia");
+        final Query query = em.createNamedQuery("ExSequencia.incrementaSequencia");
         query.setParameter("increment", 1L);
         query.setParameter("id", idSeq);
 
@@ -291,7 +288,7 @@ public class ExDao extends CpDao {
     public ExSequencia existeRangeSequencia(Integer tipoSequencia)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExSequencia.existeRangeSequencia");
+        final Query query = em.createNamedQuery("ExSequencia.existeRangeSequencia");
         query.setParameter("tipoSequencia", tipoSequencia);
         query.setMaxResults(1);
         try {
@@ -304,7 +301,7 @@ public class ExDao extends CpDao {
     public void updateMantemRangeSequencia(Long idSeq)
             throws SQLException {
 
-        final Query query = em().createNamedQuery("ExSequencia.mantemRangeNumero");
+        final Query query = em.createNamedQuery("ExSequencia.mantemRangeNumero");
 
         Calendar c = Calendar.getInstance();
 
@@ -321,7 +318,7 @@ public class ExDao extends CpDao {
      * Adicionado dia 23/01/2020
      */
     public ExProtocolo obterProtocoloPorNumero(Long numero, Integer ano) {
-        final Query query = em().createNamedQuery("ExProtocolo.obterProtocoloPorNumeroAno");
+        final Query query = em.createNamedQuery("ExProtocolo.obterProtocoloPorNumeroAno");
         query.setParameter("numero", numero);
         query.setParameter("ano", ano);
         return (ExProtocolo) query.getSingleResult();
@@ -329,7 +326,7 @@ public class ExDao extends CpDao {
 
     public ExProtocolo obterProtocoloPorCodigo(String codigo) {
 
-        CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<ExProtocolo> criteriaQuery = criteriaBuilder.createQuery(ExProtocolo.class);
         Root<ExProtocolo> cpExProtocoloRoot = criteriaQuery.from(ExProtocolo.class);
 
@@ -339,7 +336,7 @@ public class ExDao extends CpDao {
         predicateAnd = criteriaBuilder.and(predicateEqualTipoMarcador);
         criteriaQuery.where(predicateAnd);
 
-        List<ExProtocolo> l = em().createQuery(criteriaQuery).getResultList();
+        List<ExProtocolo> l = em.createQuery(criteriaQuery).getResultList();
         if (l.size() > 0) {
             return l.get(0);
         } else {
@@ -349,7 +346,7 @@ public class ExDao extends CpDao {
 
     public List<ExMobil> consultarMobilPorDocumento(ExDocumento doc) {
 
-        CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<ExMobil> criteriaQuery = criteriaBuilder.createQuery(ExMobil.class);
         Root<ExMobil> cpExMobilRoot = criteriaQuery.from(ExMobil.class);
 
@@ -358,11 +355,11 @@ public class ExDao extends CpDao {
 
         predicateAnd = criteriaBuilder.and(predicateEqualTipoMarcador);
         criteriaQuery.where(predicateAnd);
-        return em().createQuery(criteriaQuery).getResultList();
+        return em.createQuery(criteriaQuery).getResultList();
     }
 
     public List<ExMovimentacao> consultarMovimentoPorMobil(ExMobil mob) {
-        CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<ExMovimentacao> criteriaQuery = criteriaBuilder.createQuery(ExMovimentacao.class);
         Root<ExMovimentacao> cpExMovimentacaoRoot = criteriaQuery.from(ExMovimentacao.class);
         Predicate predicateAnd;
@@ -370,11 +367,11 @@ public class ExDao extends CpDao {
 
         predicateAnd = criteriaBuilder.and(predicateEqualTipoMarcador);
         criteriaQuery.where(predicateAnd);
-        return em().createQuery(criteriaQuery).getResultList();
+        return em.createQuery(criteriaQuery).getResultList();
     }
 
     public List<ExMovimentacao> consultarMovimentoIncluindoJuntadaPorMobils(List<ExMobil> mobils) {
-        CriteriaBuilder builder = em().getCriteriaBuilder();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<ExMovimentacao> query = builder.createQuery(ExMovimentacao.class);
         Root<ExMovimentacao> root = query.from(ExMovimentacao.class);
 
@@ -393,7 +390,7 @@ public class ExDao extends CpDao {
         query.where(predicate)
                 .orderBy(builder.desc(root.get("dtTimestamp")));
 
-        return em().createQuery(query).getResultList();
+        return em.createQuery(query).getResultList();
     }
 
     public String gerarCodigoProtocolo() {
@@ -434,7 +431,7 @@ public class ExDao extends CpDao {
         Root<ExProtocolo> c = q.from(ExProtocolo.class);
         q.where(cb().equal(c.get("exDocumento"), doc));
         q.select(c);
-        List<ExProtocolo> l = em().createQuery(q).getResultList();
+        List<ExProtocolo> l = em.createQuery(q).getResultList();
         if (l.size() > 0)
             return l.get(0);
         else
@@ -474,7 +471,7 @@ public class ExDao extends CpDao {
                                    final int offset, final int itemPagina, DpPessoa titular,
                                    DpLotacao lotaTitular) {
 
-        Query query = em().createNamedQuery("consultarPorFiltro");
+        Query query = em.createNamedQuery("consultarPorFiltro");
         if (offset > 0) {
             query.setFirstResult(offset);
         }
@@ -483,11 +480,11 @@ public class ExDao extends CpDao {
         }
         HibernateBeanProperties.setQueryProperties(query, flt);
         query.setParameter("titular",
-                titular.getIdPessoaIni() != null ? titular.getIdPessoaIni() : 0);
+                titular.getHisIdIni() != null ? titular.getHisIdIni() : 0);
         query.setParameter(
                 "lotaTitular",
-                lotaTitular.getIdLotacaoIni() != null ? lotaTitular
-                        .getIdLotacaoIni() : 0);
+                lotaTitular.getHisIdIni() != null ? lotaTitular
+                        .getHisIdIni() : 0);
         List l = query.getResultList();
         return l;
     }
@@ -497,7 +494,7 @@ public class ExDao extends CpDao {
         if (flt.getUltMovIdEstadoDoc() != null && flt.getUltMovIdEstadoDoc() != 0) {
 
 //			query.setParameter("ultMovIdEstadoDoc", flt.getUltMovIdEstadoDoc());
-            CpMarcador marcador = ExDao.getInstance().consultar(flt.getUltMovIdEstadoDoc(), CpMarcador.class, false);
+            CpMarcador marcador = consultar(flt.getUltMovIdEstadoDoc(), CpMarcador.class, false);
             query.setParameter("idMarcadorIni", marcador.getHisIdIni());
             query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
 
@@ -631,7 +628,7 @@ public class ExDao extends CpDao {
         }
 
         if (flt.getIdMod() != null && flt.getIdMod() != 0) {
-            ExModelo mod = ExDao.getInstance().consultar(flt.getIdMod(),
+            ExModelo mod = consultar(flt.getIdMod(),
                     ExModelo.class, false);
             query.setParameter("hisIdIni", mod.getHisIdIni());
         }
@@ -655,7 +652,7 @@ public class ExDao extends CpDao {
         Query query = null;
 
         if (itemPagina > 0) {
-            query = em().createQuery(
+            query = em.createQuery(
                     montadorQuery.montaQueryConsultaporFiltro(flt, false));
             preencherParametros(flt, query);
 
@@ -668,7 +665,7 @@ public class ExDao extends CpDao {
             List l = query.getResultList();
 
             if (l != null && l.size() > 0) {
-                query = em().createQuery("select doc, mob, label from ExMarca label"
+                query = em.createQuery("select doc, mob, label from ExMarca label"
                         + " inner join label.exMobil mob inner join mob.exDocumento doc"
                         + " where label.idMarca in (:listIdMarca)");
                 query.setParameter("listIdMarca", l);
@@ -678,7 +675,7 @@ public class ExDao extends CpDao {
             }
         } else { //exportar excel
             flt.setOrdem(-1);
-            query = em().createQuery("select doc, mob, label from ExMarca label"
+            query = em.createQuery("select doc, mob, label from ExMarca label"
                     + " inner join label.exMobil mob inner join mob.exDocumento doc"
                     + " where label.idMarca in (" + montadorQuery.montaQueryConsultaporFiltro(flt, false) + ")");
             preencherParametros(flt, query);
@@ -716,7 +713,7 @@ public class ExDao extends CpDao {
         long tempoIni = System.nanoTime();
         IMontadorQuery montadorQuery = carregarPlugin();
         String s = montadorQuery.montaQueryConsultaporFiltro(flt, true);
-        Query query = em().createQuery(s);
+        Query query = em.createQuery(s);
 
         preencherParametros(flt, query);
 
@@ -731,7 +728,7 @@ public class ExDao extends CpDao {
                                       final int offset, final int itemPagina, DpPessoa titular,
                                       DpLotacao lotaTitular) {
         try {
-            final Query query = em().createNamedQuery("consultarPorFiltro");
+            final Query query = em.createNamedQuery("consultarPorFiltro");
             if (offset > 0) {
                 query.setFirstResult(offset);
             }
@@ -739,12 +736,12 @@ public class ExDao extends CpDao {
                 query.setMaxResults(itemPagina);
             }
             HibernateBeanProperties.setQueryProperties(query, flt);
-            if (titular.getIdPessoaIni() != null)
-                query.setParameter("titular", titular.getIdPessoaIni());
+            if (titular.getHisIdIni() != null)
+                query.setParameter("titular", titular.getHisIdIni());
             else
                 query.setParameter("titular", 0);
-            if (lotaTitular.getIdLotacaoIni() != null)
-                query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+            if (lotaTitular.getHisIdIni() != null)
+                query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
             else
                 query.setParameter("lotaTitular", 0);
 
@@ -760,10 +757,10 @@ public class ExDao extends CpDao {
 
     public Integer consultarQuantidadePorFiltro(final ExMobilDaoFiltro flt,
                                                 DpPessoa titular, DpLotacao lotaTitular) {
-        Query query = em().createNamedQuery("consultarQuantidadePorFiltro");
+        Query query = em.createNamedQuery("consultarQuantidadePorFiltro");
         HibernateBeanProperties.setQueryProperties(query, flt);
-        query.setParameter("titular", titular.getIdPessoaIni());
-        query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+        query.setParameter("titular", titular.getHisIdIni());
+        query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
         long tempoIni = System.nanoTime();
         Long l = (Long) query.getSingleResult();
         long tempoTotal = System.nanoTime() - tempoIni;
@@ -796,7 +793,7 @@ public class ExDao extends CpDao {
                 flt.setAnoEmissao(Long.valueOf(new Date().getYear()) + 1900);
 
             if (flt.getNumSequencia() == null) {
-                final Query query = em().createNamedQuery(
+                final Query query = em.createNamedQuery(
                         "consultarPorSiglaDocumento");
                 HibernateBeanProperties.setQueryProperties(query, flt);
 
@@ -808,7 +805,7 @@ public class ExDao extends CpDao {
                 return l.get(0).getMobilGeral();
             }
 
-            final Query query = em().createNamedQuery("consultarPorSigla");
+            final Query query = em.createNamedQuery("consultarPorSigla");
             HibernateBeanProperties.setQueryProperties(query, flt);
 
             final List<ExMobil> l = query.getResultList();
@@ -836,7 +833,7 @@ public class ExDao extends CpDao {
         Root<ExFormaDocumento> c = q.from(ExFormaDocumento.class);
         q.select(c);
         q.orderBy(cb().asc(c.get("descrFormaDoc")));
-        return em().createQuery(q).getResultList();
+        return em.createQuery(q).getResultList();
     }
 
     public List<ExFormaDocumento> listarTodosOrdenarPorSigla() {
@@ -844,7 +841,7 @@ public class ExDao extends CpDao {
         Root<ExFormaDocumento> c = q.from(ExFormaDocumento.class);
         q.select(c);
         q.orderBy(cb().asc(c.get("siglaFormaDoc")));
-        return em().createQuery(q).getResultList();
+        return em.createQuery(q).getResultList();
     }
 
     public List<ExFormaDocumento> listarPorEspecieOrdenarPorSigla(ExTipoFormaDoc tpFormaDoc) {
@@ -854,14 +851,14 @@ public class ExDao extends CpDao {
         if (tpFormaDoc != null)
             q.where(cb().equal(c.get("exTipoFormaDoc"), tpFormaDoc));
         q.orderBy(cb().asc(c.get("siglaFormaDoc")));
-        return em().createQuery(q).getResultList();
+        return em.createQuery(q).getResultList();
     }
 
     public List<ExDocumento> consultarPorModeloEAssinatura(
             CpOrgaoUsuario orgaoUsu, ExModelo mod, Date dtAssinaturaIni,
             Date dtAssinaturaFim) {
         if (mod != null) {
-            final Query query = em().createNamedQuery(
+            final Query query = em.createNamedQuery(
                     "consultarPorModeloEAssinatura");
             query.setParameter("idOrgaoUsu", orgaoUsu.getIdOrgaoUsu());
             query.setParameter("idMod", mod.getIdMod());
@@ -874,7 +871,7 @@ public class ExDao extends CpDao {
     }
 
     public List<ExDocumento> listarAgendados() {
-        final Query query = em().createNamedQuery("listarAgendados");
+        final Query query = em.createNamedQuery("listarAgendados");
         return query.getResultList();
     }
 
@@ -883,10 +880,10 @@ public class ExDao extends CpDao {
         final Query query;
 
         if (pess != null) {
-            query = em().createNamedQuery("consultarEmailporPessoa");
+            query = em.createNamedQuery("consultarEmailporPessoa");
             query.setParameter("idPessoaIni", pess.getIdInicial());
         } else {
-            query = em().createNamedQuery("consultarEmailporLotacao");
+            query = em.createNamedQuery("consultarEmailporLotacao");
 
             query.setParameter("idLotacaoIni", lot.getIdInicial());
         }
@@ -909,13 +906,13 @@ public class ExDao extends CpDao {
 
     public List consultarPaginaInicial(DpPessoa pes, DpLotacao lot) {
         try {
-            Query sql = em().createNamedQuery("consultarPaginaInicial");
+            Query sql = em.createNamedQuery("consultarPaginaInicial");
 
             Date dt = super.consultarDataEHoraDoServidor();
             Date amanha = new Date(dt.getTime() + 24 * 60 * 60 * 1000L);
             sql.setParameter("amanha", amanha, TemporalType.DATE);
-            sql.setParameter("idPessoaIni", pes.getIdPessoaIni());
-            sql.setParameter("idLotacaoIni", lot.getIdLotacaoIni());
+            sql.setParameter("idPessoaIni", pes.getHisIdIni());
+            sql.setParameter("idLotacaoIni", lot.getHisIdIni());
 
             List result = sql.getResultList();
 
@@ -938,7 +935,7 @@ public class ExDao extends CpDao {
     }
 
     public List<ExNivelAcesso> listarOrdemNivel() {
-        Query query = em().createNamedQuery("listarOrdemNivel");
+        Query query = em.createNamedQuery("listarOrdemNivel");
         query.setHint("org.hibernate.cacheable", true);
         query.setHint("org.hibernate.cacheRegion", "query.ExNivelAcesso");
         return query.getResultList();
@@ -948,12 +945,12 @@ public class ExDao extends CpDao {
         try {
             final Query query;
             if (exPreenchimento.getNomePreenchimento() != null) {
-                query = em().createNamedQuery(
+                query = em.createNamedQuery(
                         "consultarPorFiltroExPreenchimento");
                 query.setParameter("nomePreenchimento", exPreenchimento
                         .getNomePreenchimento().toUpperCase().replace(' ', '%'));
             } else if (exPreenchimento.getDpLotacao() != null) {
-                query = em().createNamedQuery(
+                query = em.createNamedQuery(
                         "consultarPorLotacaoModeloExPreenchimento");
                 if (exPreenchimento.getDpLotacao() != null)
                     query.setParameter("lotacao", exPreenchimento.getDpLotacao()
@@ -961,7 +958,7 @@ public class ExDao extends CpDao {
                 else
                     query.setParameter("lotacao", 0);
             } else {
-                query = em().createNamedQuery(
+                query = em.createNamedQuery(
                         "consultarPorModeloExPreenchimento");
             }
             if (exPreenchimento.getExModelo() != null)
@@ -980,11 +977,11 @@ public class ExDao extends CpDao {
         try {
             final Query query;
 
-            query = em().createNamedQuery(
+            query = em.createNamedQuery(
                     "consultarQtdeLotacaoModeloNomeExPreenchimento");
 
             if (exPreenchimento.getDpLotacao() != null)
-                query.setParameter("lotacao", exPreenchimento.getDpLotacao().getIdLotacaoIni());
+                query.setParameter("lotacao", exPreenchimento.getDpLotacao().getHisIdIni());
             else
                 query.setParameter("lotacao", 0);
             if (exPreenchimento.getExModelo() != null)
@@ -1008,7 +1005,7 @@ public class ExDao extends CpDao {
     }
 
     public List consultarAtivos() {
-        final Query query = em().createNamedQuery("consultarAtivos");
+        final Query query = em.createNamedQuery("consultarAtivos");
         return query.getResultList();
     }
 
@@ -1091,7 +1088,7 @@ public class ExDao extends CpDao {
 
         }
 
-        Query query = em().createNativeQuery(sbf.toString(), ExConfiguracao.class);
+        Query query = em.createNativeQuery(sbf.toString(), ExConfiguracao.class);
         query.setHint("org.hibernate.cacheable", true);
         query.setHint("org.hibernate.cacheRegion", "query.ExConfiguracao");
         return query.getResultList();
@@ -1100,7 +1097,7 @@ public class ExDao extends CpDao {
 
     public List<ExClassificacao> listarExClassificacaoPorNivel(String mascara,
                                                                String exceto) {
-        Query q = em().createNamedQuery(
+        Query q = em.createNamedQuery(
                 "consultarExClassificacaoComExcecao");
         q.setParameter("mascara", mascara);
         q.setParameter("exceto", exceto);
@@ -1109,7 +1106,7 @@ public class ExDao extends CpDao {
     }
 
     public List<ExClassificacao> listarExClassificacaoPorNivel(String mascara) {
-        Query q = em().createNamedQuery(
+        Query q = em.createNamedQuery(
                 "consultarExClassificacaoPorMascara");
         q.setParameter("mascara", mascara);
         q.setParameter("descrClassificacao", "");
@@ -1138,7 +1135,7 @@ public class ExDao extends CpDao {
             }
         }
 
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarPorFiltroExClassificacao");
         if (offset > 0) {
             query.setFirstResult(offset);
@@ -1180,7 +1177,7 @@ public class ExDao extends CpDao {
             }
         }
 
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarQuantidadeExClassificacao");
 
         if (flt.getSigla() == null || flt.getSigla().equals("")) {
@@ -1204,7 +1201,7 @@ public class ExDao extends CpDao {
 
     public ExClassificacao consultarPorSigla(final ExClassificacao o) {
         try {
-            final Query query = em().createNamedQuery(
+            final Query query = em.createNamedQuery(
                     "consultarPorSiglaExClassificacao");
             query.setParameter("codificacao",
                     MascaraUtil.getInstance().formatar(o.getSigla()));
@@ -1213,17 +1210,6 @@ public class ExDao extends CpDao {
             if (l.size() != 1)
                 return null;
             return l.get(0);
-        } catch (final NullPointerException e) {
-            return null;
-        }
-    }
-
-    public ExClassificacao consultarAtual(final ExClassificacao o) {
-        try {
-            final Query query = em()
-                    .createNamedQuery("consultarAtualPorId");
-            query.setParameter("idRegIni", o.getHisIdIni());
-            return (ExClassificacao) query.getSingleResult();
         } catch (final NullPointerException e) {
             return null;
         }
@@ -1238,10 +1224,10 @@ public class ExDao extends CpDao {
     public List consultarMovimentacoesPorLotacaoEntreDatas(// DpPessoa titular,
                                                            DpLotacao lotaTitular, Date dtIni, Date dtFim) {
         try {
-            final Query query = em().createNamedQuery(
+            final Query query = em.createNamedQuery(
                     "consultarMovimentacoesPorLotacaoEntreDatas");
-            if (lotaTitular.getIdLotacaoIni() != null)
-                query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+            if (lotaTitular.getHisIdIni() != null)
+                query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
             else
                 query.setParameter("lotaTitular", 0);
 
@@ -1252,28 +1238,28 @@ public class ExDao extends CpDao {
     }
 
     public ExTpDocPublicacao consultarPorModelo(ExModelo mod) {
-        final Query query = em().createNamedQuery("consultarPorModelo");
+        final Query query = em.createNamedQuery("consultarPorModelo");
         query.setParameter("idMod", mod.getHisIdIni());
         return (ExTpDocPublicacao) query.getResultList().get(0);
     }
 
     public List<ExDocumento> listarSolicitados(CpOrgaoUsuario orgaoUsu) {
-        final Query query = em().createNamedQuery("listarSolicitados");
+        final Query query = em.createNamedQuery("listarSolicitados");
         query.setParameter("idOrgaoUsu", orgaoUsu.getIdOrgaoUsu());
         return query.getResultList();
     }
 
     public List<ExMobil> consultarParaArquivarCorrenteEmLote(DpLotacao lot) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
 
                 "consultarParaArquivarCorrenteEmLote");
-        query.setParameter("lotaIni", lot.getIdLotacaoIni());
+        query.setParameter("lotaIni", lot.getHisIdIni());
         return query.getResultList();
     }
 
     public List<ExItemDestinacao> consultarParaArquivarIntermediarioEmLote(
             DpLotacao lot, int offset) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarParaArquivarIntermediarioEmLote");
         query.setParameter("idOrgaoUsu", lot.getOrgaoUsuario().getIdOrgaoUsu());
         query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
@@ -1289,7 +1275,7 @@ public class ExDao extends CpDao {
     }
 
     public int consultarQuantidadeParaArquivarIntermediarioEmLote(DpLotacao lot) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarQuantidadeParaArquivarIntermediarioEmLote");
         query.setParameter("idOrgaoUsu", lot.getOrgaoUsuario().getIdOrgaoUsu());
         query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
@@ -1299,7 +1285,7 @@ public class ExDao extends CpDao {
 
     public List<ExItemDestinacao> consultarParaArquivarPermanenteEmLote(
             DpLotacao lot, int offset) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarParaArquivarPermanenteEmLote");
         query.setParameter("idOrgaoUsu", lot.getOrgaoUsuario().getIdOrgaoUsu());
         query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
@@ -1315,7 +1301,7 @@ public class ExDao extends CpDao {
     }
 
     public int consultarQuantidadeParaArquivarPermanenteEmLote(DpLotacao lot) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarQuantidadeParaArquivarPermanenteEmLote");
         query.setParameter("idOrgaoUsu", lot.getOrgaoUsuario().getIdOrgaoUsu());
         query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
@@ -1324,8 +1310,8 @@ public class ExDao extends CpDao {
     }
 
     public List<ExMobil> consultarParaTransferirEmLote(DpLotacao lot, Integer offset, Integer tamPagina) {
-        final Query query = em().createNamedQuery("consultarParaTransferirEmLote").setParameter("lotaIni",
-                lot.getIdLotacaoIni());
+        final Query query = em.createNamedQuery("consultarParaTransferirEmLote").setParameter("lotaIni",
+                lot.getHisIdIni());
         if (Objects.nonNull(offset)) {
             query.setFirstResult(offset);
         }
@@ -1337,20 +1323,20 @@ public class ExDao extends CpDao {
     }
 
     public Long consultarQuantidadeParaTransferirEmLote(DpLotacao lot) {
-        return (Long) em().createNamedQuery("consultarQuantidadeParaTransferirEmLote", Long.class)
-                .setParameter("lotaIni", lot.getIdLotacaoIni()).getSingleResult();
+        return (Long) em.createNamedQuery("consultarQuantidadeParaTransferirEmLote", Long.class)
+                .setParameter("lotaIni", lot.getHisIdIni()).getSingleResult();
     }
 
     public List<ExMobil> consultarParaAnotarEmLote(DpLotacao lot) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarParaAnotarEmLote");
-        query.setParameter("lotaIni", lot.getIdLotacaoIni());
+        query.setParameter("lotaIni", lot.getHisIdIni());
         return query.getResultList();
     }
 
     public List<ExItemDestinacao> consultarAEliminar(CpOrgaoUsuario orgaoUsu,
                                                      Date dtIni, Date dtFim) {
-        final Query query = em().createNamedQuery("consultarAEliminar");
+        final Query query = em.createNamedQuery("consultarAEliminar");
         query.setParameter("idOrgaoUsu", orgaoUsu.getIdOrgaoUsu());
         query.setParameter("dtIni", dtIni);
         query.setParameter("dtFim", dtFim);
@@ -1368,7 +1354,7 @@ public class ExDao extends CpDao {
 
     public int consultarQuantidadeAEliminar(CpOrgaoUsuario orgaoUsu,
                                             Date dtIni, Date dtFim) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarQuantidadeAEliminar");
         query.setParameter("idOrgaoUsu", orgaoUsu.getIdOrgaoUsu());
         query.setParameter("dtIni", dtIni);
@@ -1380,7 +1366,7 @@ public class ExDao extends CpDao {
 
     public List<ExItemDestinacao> consultarEmEditalEliminacao(
             CpOrgaoUsuario orgaoUsu, Date dtIni, Date dtFim) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarEmEditalEliminacao");
         query.setParameter("idOrgaoUsu", orgaoUsu.getIdOrgaoUsu());
         query.setParameter("dtIni", dtIni);
@@ -1394,7 +1380,7 @@ public class ExDao extends CpDao {
     }
 
     public ExFormaDocumento consultarPorSigla(ExFormaDocumento o) {
-        final Query query = em().createNamedQuery("consultarSiglaForma");
+        final Query query = em.createNamedQuery("consultarSiglaForma");
         query.setParameter("sigla", o.getSigla());
 
         query.setHint("org.hibernate.cacheable", true);
@@ -1415,16 +1401,16 @@ public class ExDao extends CpDao {
     }
 
     public List<ExMobil> consultarParaReceberEmLote(DpLotacao lot) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarParaReceberEmLote");
-        query.setParameter("lotaIni", lot.getIdLotacaoIni());
+        query.setParameter("lotaIni", lot.getHisIdIni());
         return query.getResultList();
     }
 
     public List<ExMobil> consultarParaViaDeProtocolo(DpLotacao lot) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarParaViaDeProtocolo");
-        query.setParameter("lotaIni", lot.getIdLotacaoIni());
+        query.setParameter("lotaIni", lot.getHisIdIni());
         return query.getResultList();
     }
 
@@ -1435,9 +1421,9 @@ public class ExDao extends CpDao {
                     "A pessoa e/ou a data informada para a realização da consulta é nula.");
         }
 
-        final Query query = em().createNamedQuery("consultarMovimentacoes");
+        final Query query = em.createNamedQuery("consultarMovimentacoes");
 
-        query.setParameter("pessoaIni", pes.getIdPessoaIni());
+        query.setParameter("pessoaIni", pes.getHisIdIni());
         query.setParameter("data", dt);
         return query.getResultList();
     }
@@ -1451,13 +1437,13 @@ public class ExDao extends CpDao {
         Query q = null;
 
         if (tipo != null) {
-            q = em()
+            q = em
                     .createQuery(
                             "select m from ExModelo m left join m.exFormaDocumento as f join f.exTipoDocumentoSet as t where t = :tipo and m.hisAtivo = 1"
                                     + "order by m.nmMod");
             q.setParameter("tipo", tipo);
         } else {
-            q = em()
+            q = em
                     .createQuery(
                             "select m from ExModelo m where m.hisAtivo = 1"
                                     + "order by m.nmMod");
@@ -1498,7 +1484,7 @@ public class ExDao extends CpDao {
         }
         q.where(whereList.toArray(new Predicate[0]));
         try {
-            return em().createQuery(q).getSingleResult();
+            return em.createQuery(q).getSingleResult();
         } catch (NoResultException ne) {
             return null;
         }
@@ -1510,7 +1496,7 @@ public class ExDao extends CpDao {
         q.select(c);
 
         q.where(cb().equal(c.get("idFormaDoc"), idFormaDoc));
-        return (ExFormaDocumento) em().createQuery(q).getSingleResult();
+        return (ExFormaDocumento) em.createQuery(q).getSingleResult();
     }
 
     public ExFormaDocumento consultarExForma(String sForma) {
@@ -1518,11 +1504,11 @@ public class ExDao extends CpDao {
         Root<ExFormaDocumento> c = q.from(ExFormaDocumento.class);
         q.select(c);
         q.where(cb().equal(c.get("descrFormaDoc"), sForma));
-        return em().createQuery(q).getSingleResult();
+        return em.createQuery(q).getSingleResult();
     }
 
     public boolean isExFormaComDocumentoVinculado(Long idFormaDoc) {
-        Query query = em().createQuery("SELECT DISTINCT forma.idFormaDoc FROM ExFormaDocumento forma JOIN ExDocumento doc ON forma.idFormaDoc = doc.exFormaDocumento.idFormaDoc WHERE forma.idFormaDoc = :idFormaDoc")
+        Query query = em.createQuery("SELECT DISTINCT forma.idFormaDoc FROM ExFormaDocumento forma JOIN ExDocumento doc ON forma.idFormaDoc = doc.exFormaDocumento.idFormaDoc WHERE forma.idFormaDoc = :idFormaDoc")
                 .setParameter("idFormaDoc", idFormaDoc);
 
         Long idFormaDocEncontrado = (Long) query.getResultStream().findFirst().orElse(0L);
@@ -1535,7 +1521,7 @@ public class ExDao extends CpDao {
         Root<ExTipoDocumento> c = q.from(ExTipoDocumento.class);
         q.select(c);
         q.where(cb().equal(c.get("descrTipoDocumento"), descricao));
-        return em().createQuery(q).getSingleResult();
+        return em.createQuery(q).getSingleResult();
     }
 
     public ExNivelAcesso consultarExNidelAcesso(String nome) {
@@ -1543,11 +1529,11 @@ public class ExDao extends CpDao {
         Root<ExNivelAcesso> c = q.from(ExNivelAcesso.class);
         q.select(c);
         q.where(cb().equal(c.get("nmNivelAcesso"), nome));
-        return em().createQuery(q).getSingleResult();
+        return em.createQuery(q).getSingleResult();
     }
 
     public ExModelo consultarModeloAtual(ExModelo mod) {
-        final Query query = em().createNamedQuery("consultarModeloAtual");
+        final Query query = em.createNamedQuery("consultarModeloAtual");
 
         query.setParameter("hisIdIni", mod.getHisIdIni());
         try {
@@ -1558,24 +1544,24 @@ public class ExDao extends CpDao {
     }
 
     public List<ExDocumento> listarDocPendenteAssinatura(DpPessoa pessoa, boolean apenasComSolicitacaoDeAssinatura) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "listarDocPendenteAssinatura" + (apenasComSolicitacaoDeAssinatura ? "ERevisado" : ""));
-        query.setParameter("idPessoaIni", pessoa.getIdPessoaIni());
+        query.setParameter("idPessoaIni", pessoa.getHisIdIni());
         return query.getResultList();
     }
 
     public List<ExMovimentacao> listarAnexoPendenteAssinatura(DpPessoa pessoa) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "listarAnexoPendenteAssinatura");
-        query.setParameter("idPessoaIni", pessoa.getIdPessoaIni());
+        query.setParameter("idPessoaIni", pessoa.getHisIdIni());
         query.setParameter("enumList", EnumSet.of(ExTipoDeMovimentacao.ANEXACAO));
         return query.getResultList();
     }
 
     public List<ExMovimentacao> listarDespachoPendenteAssinatura(DpPessoa pessoa) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "listarDespachoPendenteAssinatura");
-        query.setParameter("idPessoaIni", pessoa.getIdPessoaIni());
+        query.setParameter("idPessoaIni", pessoa.getHisIdIni());
         query.setParameter("enumList", EnumSet.of(ExTipoDeMovimentacao.DESPACHO, ExTipoDeMovimentacao.DESPACHO_TRANSFERENCIA,
                 ExTipoDeMovimentacao.DESPACHO_INTERNO, ExTipoDeMovimentacao.DESPACHO_INTERNO_TRANSFERENCIA, ExTipoDeMovimentacao.DESPACHO_TRANSFERENCIA_EXTERNA));
         return query.getResultList();
@@ -1590,7 +1576,7 @@ public class ExDao extends CpDao {
         // pais = Arrays.copyOf(pais, pais.length+1);
         // pais[pais.length-1]= exClass.getCodificacao();
 
-        Query q = em()
+        Query q = em
                 .createNamedQuery("consultarDescricaoExClassificacao");
         q.setParameter("listaCodificacao", Arrays.asList(pais));
         q.setHint("org.hibernate.cacheable", true);
@@ -1614,7 +1600,7 @@ public class ExDao extends CpDao {
 
     public List<ExClassificacao> consultarFilhos(ExClassificacao exClass,
                                                  boolean niveisAbaixo) {
-        final Query query = em().createNamedQuery(
+        final Query query = em.createNamedQuery(
                 "consultarFilhosExClassificacao");
         query.setParameter(
                 "mascara",
@@ -1626,7 +1612,7 @@ public class ExDao extends CpDao {
 
     public List<ExClassificacao> consultarExClassificacao(String mascaraLike,
                                                           String descrClassificacao) {
-        Query q = em().createNamedQuery(
+        Query q = em.createNamedQuery(
                 "consultarExClassificacaoPorMascara");
         q.setParameter("mascara", mascaraLike);
         q.setParameter("descrClassificacao", descrClassificacao.toUpperCase());
@@ -1637,16 +1623,16 @@ public class ExDao extends CpDao {
     public ExClassificacao consultarExClassificacao(String codificacao) {
         ExClassificacao flt = new ExClassificacao();
         flt.setSigla(codificacao);
-        return ExDao.getInstance().consultarPorSigla(flt);
+        return consultarPorSigla(flt);
     }
 
     public List<ExDocumento> consultarExDocumentoPorClassificacao(
             DpLotacao lotacao, String mascara, CpOrgaoUsuario orgaoUsu) {
         Query q;
         if (lotacao == null) {
-            q = em().createNamedQuery("consultarExDocumentoClassificados");
+            q = em.createNamedQuery("consultarExDocumentoClassificados");
         } else {
-            q = em().createNamedQuery(
+            q = em.createNamedQuery(
                     "consultarExDocumentoClassificadosPorLotacao");
             q.setParameter("idLotacao", lotacao.getId());
         }
@@ -1667,7 +1653,7 @@ public class ExDao extends CpDao {
 //	public List<CpMarcador> listarCpMarcadoresGerais() {
 //		CpTipoMarcadorEnum marcador = CpTipoMarcadorEnum.TIPO_MARCADOR_GERAL;
 //
-//		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+//		CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
 //		CriteriaQuery<CpMarcador> criteriaQuery = criteriaBuilder.createQuery(CpMarcador.class);
 //		Root<CpMarcador> cpMarcadorRoot = criteriaQuery.from(CpMarcador.class);
 //		Predicate predicateAnd;
@@ -1690,7 +1676,7 @@ public class ExDao extends CpDao {
 //		}
 //
 //		criteriaQuery.where(predicateAnd);
-//		List<CpMarcador> resultList = em().createQuery(criteriaQuery).getResultList();
+//		List<CpMarcador> resultList = em.createQuery(criteriaQuery).getResultList();
 //		resultList.sort(CpMarcador.ORDEM_COMPARATOR);
 //		resultList.removeIf(m -> m.getHisDtFim() != null);
 //		return resultList;
@@ -1700,7 +1686,7 @@ public class ExDao extends CpDao {
 //
 //	public List<CpMarcador> listarCpMarcadoresDaLotacao(DpLotacao lot) {
 //		DpLotacao lotIni = lot.getLotacaoInicial();
-//		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+//		CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
 //		CriteriaQuery<CpMarcador> criteriaQuery = criteriaBuilder.createQuery(CpMarcador.class);
 //		Root<CpMarcador> cpMarcadorRoot = criteriaQuery.from(CpMarcador.class);
 //		Predicate predicateAnd;
@@ -1710,7 +1696,7 @@ public class ExDao extends CpDao {
 //		predicateAnd = criteriaBuilder.and(predicateEqualTipoMarcador, predicateEqualLotacaoIni);
 //
 //		criteriaQuery.where(predicateAnd);
-//		return em().createQuery(criteriaQuery).getResultList();
+//		return em.createQuery(criteriaQuery).getResultList();
 //	}
 
     public List<CpMarcador> listarCpMarcadoresDisponiveis(DpLotacao lot) {
@@ -1781,21 +1767,7 @@ public class ExDao extends CpDao {
         q.select(c);
         q.where(cb().equal(c.get("exClassificacao"), cl));
         q.orderBy(cb().asc(c.get("idDoc")));
-        return em().createQuery(q).getResultList();
-    }
-
-    public ExClassificacao obterClassificacaoAtual(
-            final ExClassificacao classificacao) {
-        try {
-            final Query qry = em().createNamedQuery("consultarAtualPorId");
-            qry.setParameter("hisIdIni", classificacao.getHisIdIni());
-            final ExClassificacao c = (ExClassificacao) qry.getSingleResult();
-            return c;
-        } catch (final IllegalArgumentException e) {
-            throw e;
-        } catch (final Exception e) {
-            return null;
-        }
+        return em.createQuery(q).getResultList();
     }
 
     public List listarDocumentosPorPessoaOuLotacao(DpPessoa titular,
@@ -1813,16 +1785,16 @@ public class ExDao extends CpDao {
                     + " and marcador <> 10";
         }
         long tempoIni = System.nanoTime();
-        Query query = em()
+        Query query = em
                 .createQuery(
                         q);
 
         if (titular != null)
-            query.setParameter("titular", titular.getIdPessoaIni());
+            query.setParameter("titular", titular.getHisIdIni());
         else
             query.setParameter("titular", null);
         if (lotaTitular != null)
-            query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+            query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
         else
             query.setParameter("lotaTitular", null);
 
@@ -1857,7 +1829,7 @@ public class ExDao extends CpDao {
         whereList.toArray(whereArray);
         q.where(whereArray);
         q.orderBy(cb().desc(c.get("nmMod")));
-        return em().createQuery(q).getResultList();
+        return em.createQuery(q).getResultList();
     }
 
     public int consultarQuantidade(final ExModeloDaoFiltro flt) {
@@ -1868,7 +1840,7 @@ public class ExDao extends CpDao {
                                                             DpLotacao lotaTitular) {
 
         long tempoIni = System.nanoTime();
-        Query query = em()
+        Query query = em
                 .createQuery(
                         "select marca, marcador, mobil from ExMarca marca"
                                 + " inner join marca.cpMarcador marcador"
@@ -1876,12 +1848,12 @@ public class ExDao extends CpDao {
                                 + " where (marca.dtIniMarca is null or marca.dtIniMarca < :dbDatetime)"
                                 + " and (marca.dtFimMarca is null or marca.dtFimMarca > :dbDatetime)"
                                 + " and (marca.cpMarcador.idMarcador = 14L)"
-                                + (titular != null ? " and (marca.dpPessoaIni.idPessoaIni = :titular)"
-                                : " and (marca.dpLotacaoIni.idLotacaoIni = :lotaTitular)"));
+                                + (titular != null ? " and (marca.dpPessoaIni.hisIdIni = :titular)"
+                                : " and (marca.dpLotacaoIni.hisIdIni = :lotaTitular)"));
         if (titular != null)
-            query.setParameter("titular", titular.getIdPessoaIni());
+            query.setParameter("titular", titular.getHisIdIni());
         else if (lotaTitular != null)
-            query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+            query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
 
         query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
 
@@ -1893,7 +1865,7 @@ public class ExDao extends CpDao {
     }
 
     public List<Long> arquivamentosEmVolumes(int primeiro, int ultimo) {
-        Query query = em().createQuery(
+        Query query = em.createQuery(
                 "select distinct(doc.idDoc) from ExMarca mar "
                         + "inner join mar.exMobil mob "
                         + "inner join mob.exDocumento doc "
@@ -1966,9 +1938,9 @@ public class ExDao extends CpDao {
             if (query.length() > 0) {
                 query = query.substring(0, query.length() - 10);
 
-                Query sql = em().createNativeQuery(query);
-                sql.setParameter("idPessoaIni", pes.getIdPessoaIni());
-                sql.setParameter("idLotacaoIni", lot.getIdLotacaoIni());
+                Query sql = em.createNativeQuery(query);
+                sql.setParameter("idPessoaIni", pes.getHisIdIni());
+                sql.setParameter("idLotacaoIni", lot.getHisIdIni());
                 sql.setParameter("marcaAssinSenha", CpMarcadorEnum.DOCUMENTO_ASSINADO_COM_SENHA.getId());
                 sql.setParameter("marcaMovAssinSenha", CpMarcadorEnum.MOVIMENTACAO_ASSINADA_COM_SENHA.getId());
                 sql.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
@@ -2014,20 +1986,20 @@ public class ExDao extends CpDao {
                         + queryMarcasAIgnorar
                         + " where (marca.dtIniMarca is null or marca.dtIniMarca < :dbDatetime)"
                         + " and (marca.dtFimMarca is null or marca.dtFimMarca > :dbDatetime)"
-                        + (!exibeLotacao && titular != null ? " and (marca.dpPessoaIni.idPessoaIni = :titular)" : "")
-                        + (exibeLotacao && lotaTitular != null ? " and (marca.dpLotacaoIni.idLotacaoIni = :lotaTitular)" : "")
+                        + (!exibeLotacao && titular != null ? " and (marca.dpPessoaIni.hisIdIni = :titular)" : "")
+                        + (exibeLotacao && lotaTitular != null ? " and (marca.dpLotacaoIni.hisIdIni = :lotaTitular)" : "")
                         + queryMarcasAIgnorarWhere
                         + " AND marca.cpMarcador.idMarcador <> :marcaAssinSenha "
                         + " AND marca.cpMarcador.idMarcador <> :marcaMovAssinSenha "
                         + " order by  doc.dtAltDoc " + ordem + ", marca ";
 
-        Query query = em()
+        Query query = em
                 .createQuery(queryString);
         if (!exibeLotacao && titular != null)
-            query.setParameter("titular", titular.getIdPessoaIni());
+            query.setParameter("titular", titular.getHisIdIni());
 
         if (exibeLotacao && lotaTitular != null)
-            query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+            query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
 
         query.setParameter("marcaAssinSenha", CpMarcadorEnum.DOCUMENTO_ASSINADO_COM_SENHA.getId());
         query.setParameter("marcaMovAssinSenha", CpMarcadorEnum.MOVIMENTACAO_ASSINADA_COM_SENHA.getId());
@@ -2096,7 +2068,7 @@ public class ExDao extends CpDao {
                 : " marcadorAux.grupo_marcador ");
         sbQueryPrimeiraMarca.append(", marcaAux.id_pessoa_ini, marcaAux.id_lotacao_ini) aux ");
 
-        sbQueryPrimeiraMarca.append(isOracle() ? "WHERE rownum = 1 " : "LIMIT 1 "); //Obtém a primeira MARCA daquele ID_REF seguindo os critérios, desprezando as demais ocorrências
+        sbQueryPrimeiraMarca.append("LIMIT 1 "); //Obtém a primeira MARCA daquele ID_REF seguindo os critérios, desprezando as demais ocorrências
         sbQueryPrimeiraMarca.append(")");
         /*** ---- ***/
 
@@ -2144,17 +2116,13 @@ public class ExDao extends CpDao {
         sbQueryString.append(contar ? " GROUP BY grupo_marcador ORDER BY grupo_marcador "
                 : " ORDER BY grupo_marcador, dtOrdem " + (ordemCrescenteData ? " ASC" : " DESC" + ", marca.id_marca"));
 
-
-        sbQueryString.append(isOracle() && offset != null && offset != 0 ? " OFFSET :offs ROWS" : "");
-        sbQueryString.append(isOracle() && qtd != null && qtd != 0 ? " FETCH NEXT :qtd ROWS ONLY" : "");
-
-        Query query = em().createNativeQuery(sbQueryString.toString());
+        Query query = em.createNativeQuery(sbQueryString.toString());
 
         if (contar || titular != null)
-            query.setParameter("titular", titular.getIdPessoaIni());
+            query.setParameter("titular", titular.getHisIdIni());
 
         if (contar || lotaTitular != null)
-            query.setParameter("lotaTitular", lotaTitular.getIdLotacaoIni());
+            query.setParameter("lotaTitular", lotaTitular.getHisIdIni());
 
         if (grupos != null && grupos.size() > 0) {
             List<Integer> gruposList = grupos.stream()
@@ -2166,19 +2134,9 @@ public class ExDao extends CpDao {
         if (filtro != null && !"".equals(filtro))
             query.setParameter("flt", "%" + Texto.removeAcentoMaiusculas(filtro).replace(" ", "%") + "%");
 
-        if (isOracle() && offset != null && offset != 0)
-            query.setParameter("offs", offset);
-
-        if (isOracle() && qtd != null && qtd != 0)
-            query.setParameter("qtd", qtd);
-
         query.setParameter("marcaAssinSenha", CpMarcadorEnum.DOCUMENTO_ASSINADO_COM_SENHA.getId());
         query.setParameter("marcaMovAssinSenha", CpMarcadorEnum.MOVIMENTACAO_ASSINADA_COM_SENHA.getId());
         query.setParameter("dbDatetime", this.consultarDataEHoraDoServidor());
-        if (!isOracle() && offset != null && offset != 0)
-            query.setFirstResult(offset);
-        if (!isOracle() && qtd != null && qtd != 0)
-            query.setMaxResults(qtd > 0 ? qtd : 100);
 
         List<List<String>> l = new ArrayList<List<String>>();
         l = query.getResultList();
@@ -2189,7 +2147,7 @@ public class ExDao extends CpDao {
     public List listarMovimentacoesMesa(List<Long> listIdMobil, boolean trazerComposto) {
 //		long tempoIni = System.nanoTime();
         List<List<String>> l = new ArrayList<List<String>>();
-        Query query = em()
+        Query query = em
                 .createQuery(
                         "select "
                                 + "mob, "
@@ -2224,7 +2182,7 @@ public class ExDao extends CpDao {
     }
 
     public List<ExMovimentacao> consultarTramitacoesPorMovimentacao(Long idMobil) {
-        return em() //
+        return em //
                 .createNamedQuery(AbstractExMovimentacao.CONSULTAR_TRAMITACOES_POR_MOVIMENTACAO_NAMED_QUERY,
                         ExMovimentacao.class)
                 .setParameter("idMobil", idMobil)
@@ -2233,7 +2191,7 @@ public class ExDao extends CpDao {
     }
 
     public List<ExMovimentacao> consultarTramitacoesPorMovimentacaoDocumentoCancelado(Long idMobil) {
-        return em() //
+        return em //
                 .createNamedQuery(
                         AbstractExMovimentacao.CONSULTAR_TRAMITACOES_POR_MOVIMENTACAO_DOC_CANCELADO_NAMED_QUERY,
                         ExMovimentacao.class)
@@ -2245,7 +2203,7 @@ public class ExDao extends CpDao {
      * Conta o total de movimentações assinadas
      */
     public Long contarMovimentacaoAssinada(Long idDoc) {
-        return em().createQuery(
+        return em.createQuery(
                         "select count(m) from ExMovimentacao m "
                                 + "left join m.exMobil mb "
                                 + "where mb.exDocumento.idDoc = :idDoc "
@@ -2312,7 +2270,7 @@ public class ExDao extends CpDao {
                 queryOrdenacao = " order by doc.idDoc asc, marca.idMarca asc";
                 break;
         }
-        Query query = em().createQuery(
+        Query query = em.createQuery(
                 "select marca, marcador, mobil, doc from ExMarca marca"
                         + " inner join marca.cpMarcador marcador"
                         + " inner join marca.exMobil mobil"
@@ -2322,8 +2280,8 @@ public class ExDao extends CpDao {
                         + queryDt
                         + (flt.getIdMarcador() != null ? " and marca.cpMarcador.idMarcador = :idMar " : "")
                         + (flt.getGrupoMarcador() != null ? " and marca.cpMarcador.idGrupo = :idGrupo " : "")
-                        + (flt.getIdCadastrante() != null ? " and (marca.dpPessoaIni.idPessoaIni = :pesIni)" : "")
-                        + (flt.getIdLotaCadastrante() != null ? " and (marca.dpLotacaoIni.idLotacaoIni = :lotaIni)" : "")
+                        + (flt.getIdCadastrante() != null ? " and (marca.dpPessoaIni.hisIdIni = :pesIni)" : "")
+                        + (flt.getIdLotaCadastrante() != null ? " and (marca.dpLotacaoIni.hisIdIni = :lotaIni)" : "")
                         + queryOrdenacao
         );
         if (flt.getIdMarcador() != null)
@@ -2355,7 +2313,7 @@ public class ExDao extends CpDao {
 
 
     public ExModelo consultarModeloPeloNome(String nmMod) {
-        final Query query = em().createNamedQuery("consultarModeloPeloNome");
+        final Query query = em.createNamedQuery("consultarModeloPeloNome");
 
         query.setParameter("nmMod", nmMod);
         try {
@@ -2372,7 +2330,7 @@ public class ExDao extends CpDao {
 
         List<Object[]> l2 = new ArrayList<Object[]>();
 
-        Query query = em().createQuery("select doc, mob, label from ExMarca label"
+        Query query = em.createQuery("select doc, mob, label from ExMarca label"
                 + " inner join label.exMobil mob inner join mob.exDocumento doc"
                 + " where label.idMarca in (:listIdMarca)");
         query.setParameter("listIdMarca", l);
@@ -2391,7 +2349,7 @@ public class ExDao extends CpDao {
                 "	AND X.ID_ORGAO_USU = Z.ID_ORGAO_USU\n" +
                 "	AND Z.SIGLA_ORGAO_USU || Y.SIGLA_FORMA_DOC || X.ANO_EMISSAO || LPAD(X.NUM_EXPEDIENTE, 5, '0')\n" +
                 "	 IN ( :siglas )";
-        final Query query = em().createNativeQuery(sql);
+        final Query query = em.createNativeQuery(sql);
         query.setParameter("siglas", siglas);
 
         return query.getResultList();

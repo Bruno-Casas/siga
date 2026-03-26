@@ -22,25 +22,6 @@ import java.util.*;
 @Path("/app/relatorioConsumoMedio")
 public class RelatorioConsumoMedioController extends TpController {
 
-/*    private static final String SEPARADOR = "'";
-    private static final String SELECTED_SELECTED = " selected='selected'";
-    private static final String END_OPTION = ">";
-    private static final String OPTION = "</option>";
-    private static final String OPTION_VALUE = "<option value='";
-*/
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public RelatorioConsumoMedioController() {
-        super();
-    }
-
-    @Inject
-    public RelatorioConsumoMedioController(HttpServletRequest request, Result result, Validator validator, SigaObjects so, EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/consultar")
     public void consultar() throws RelatorioConsumoMedioException {
         RelatorioConsumoMedio relatorioConsumoMedio = new RelatorioConsumoMedio();

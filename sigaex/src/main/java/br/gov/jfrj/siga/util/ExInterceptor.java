@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.directwebremoting.guice.RequestScoped;
 
 import br.com.caelum.vraptor.AroundCall;
-import br.com.caelum.vraptor.InterceptionException;
 import br.com.caelum.vraptor.Intercepts;
 import br.com.caelum.vraptor.controller.ControllerMethod;
 import br.com.caelum.vraptor.interceptor.SimpleInterceptorStack;
@@ -17,7 +16,6 @@ import br.com.caelum.vraptor.jpa.JPATransactionInterceptor;
 import br.com.caelum.vraptor.validator.Validator;
 import br.gov.jfrj.siga.base.CurrentRequest;
 import br.gov.jfrj.siga.base.RequestInfo;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
@@ -65,9 +63,9 @@ public class ExInterceptor {
 		CurrentRequest.set(new RequestInfo(this.context, this.request, this.response));
 
 		ModeloDao.freeInstance();
-		ExDao.getInstance();
+		dao;
 		try {
-			Ex.getInstance().getConf().limparCacheSeNecessario();
+			this.conf.limparCacheSeNecessario();
 		} catch (Exception e1) {
 			throw new RuntimeException("Não foi possível atualizar o cache de configurações", e1);
 		}

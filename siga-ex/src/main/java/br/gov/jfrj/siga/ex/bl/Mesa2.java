@@ -16,14 +16,23 @@ import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import com.crivano.swaggerservlet.ISwaggerModel;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 public class Mesa2 {
     private static final int MESA_QTD_MAX_INICIAL = 20;
     private static List<GrupoItem> gruposBase;
+
+    @Inject
+    private ExDao dao;
+
+    @Inject
+    private ExMobilBL mobBl;
 
     public static class SelGrupo implements ISwaggerModel {
         public String grupoOrdem;
@@ -106,11 +115,10 @@ public class Mesa2 {
         Date dtRef2;
     }
 
-    private static List<MesaItem> listarReferencias(
+    private List<MesaItem> listarReferencias(
             final List<ExMobil> references, final DpPessoa pessoa,
             final DpLotacao lota, final String grupoOrdem, final boolean trazerAnotacoes,
             final boolean ordemCrescenteData, final boolean usuarioPosse, final Integer offset) {
-        ExDao dao = ExDao.getInstance();
         Date currentDate = dao.consultarDataEHoraDoServidor();
         List<MesaItem> l = new ArrayList<>();
         final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -220,7 +228,7 @@ public class Mesa2 {
                 }
 
                 r.list = new ArrayList<Marca>();
-                Set<ExMarca> lstMarcas = mobil.getExMarcaSetAtivas();
+                Set<ExMarca> lstMarcas = mobBl.getExMarcaSetAtivas(mobil);
 
                 for (ExMarca marca : lstMarcas) {
                     if (!((pessoa != null && marca.getDpPessoaIni() != null
@@ -332,7 +340,7 @@ public class Mesa2 {
         return l;
     }
 
-    public static List<GrupoItem> getContadores(final boolean contar, final DpPessoa titular,
+    public List<GrupoItem> getContadores(final boolean contar, final DpPessoa titular,
                                                 final DpLotacao lotaTitular, final Map<String, SelGrupo> selGrupos, final boolean exibeLotacao,
                                                 final List<Integer> marcasAIgnorar, final String filtro) throws Exception {
         List<GrupoItem> gruposMesa = new ArrayList<GrupoItem>();
@@ -340,7 +348,7 @@ public class Mesa2 {
         if (!contar)
             return gruposMesa;
 
-        List<Object[]> l = ExDao.getInstance().listarMobilsPorGrupoEMarcas(true, null, null, titular,
+        List<Object[]> l = dao.listarMobilsPorGrupoEMarcas(true, null, null, titular,
                 titular.getLotacao(), true, marcasAIgnorar, null, filtro);
         if (l == null)
             return gruposMesa;
@@ -365,11 +373,9 @@ public class Mesa2 {
         return gruposMesa;
     }
 
-    public static List<GrupoItem> getMesa(final boolean contar, final Integer qtd, final Integer offset, final DpPessoa titular, final Map<String, SelGrupo> selGrupos,
+    public List<GrupoItem> getMesa(final boolean contar, final Integer qtd, final Integer offset, final DpPessoa titular, final Map<String, SelGrupo> selGrupos,
                                           final boolean exibeLotacao, final boolean trazerAnotacoes, final boolean trazerComposto, final boolean ordemCrescenteData,
                                           final boolean usuarioPosse, List<Integer> marcasAIgnorar, final String filtro) throws Exception {
-//		long tempoIni = System.nanoTime();
-        ExDao dao = ExDao.getInstance();
 
         List<Mesa2.GrupoItem> gruposMesa = getContadores(contar, titular, titular.getLotacao(), selGrupos, exibeLotacao, marcasAIgnorar, filtro);
 
@@ -398,7 +404,7 @@ public class Mesa2 {
 
             // Insere no grupo os documentos e seus dados a serem apresentados na mesa
             for (Map.Entry<String, List<ExMobil>> entry : hashMobGrp.entrySet()) {
-                g.grupoDocs = Mesa2.listarReferencias(entry.getValue(), titular,
+                g.grupoDocs = listarReferencias(entry.getValue(), titular,
                         titular.getLotacao(), g.grupoOrdem, trazerAnotacoes, ordemCrescenteData,
                         usuarioPosse, parmOffset);
                 if (exibeLotacao) {
@@ -416,7 +422,7 @@ public class Mesa2 {
         return gruposMesa;
     }
 
-    public static void carregaGruposBase() {
+    public void carregaGruposBase() {
         if (gruposBase == null) {
             gruposBase = new ArrayList<GrupoItem>();
             for (CpMarcadorGrupoEnum gEnum : CpMarcadorGrupoEnum.values()) {
@@ -442,7 +448,7 @@ public class Mesa2 {
         }
     }
 
-    public static List<GrupoItem> montaGruposUsuario(Map<String, SelGrupo> selGrupos) {
+    public List<GrupoItem> montaGruposUsuario(Map<String, SelGrupo> selGrupos) {
         carregaGruposBase();
         List<String> ordemGrupos = new ArrayList<String>();
         List<GrupoItem> lGrupo = new ArrayList<GrupoItem>();

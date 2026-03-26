@@ -27,7 +27,6 @@ import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
@@ -74,14 +73,14 @@ public class RelMovimentacaoDocSubordinados extends RelatorioTemplate {
     public Collection processarDados() throws Exception {
 
         Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-                "from DpLotacao lot " + "where lot.dataFimLotacao is null "
+                "from DpLotacao lot " + "where lot.hisDtFim is null "
                         + "and lot.orgaoUsuario = "
                         + parametros.get("orgaoUsuario")
                         + " and lot.siglaLotacao = '"
                         + parametros.get("lotacaoTitular") + "'");
         DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-        DpPessoa titular = ExDao.getInstance().consultar(
+        DpPessoa titular = dao.consultar(
                 new Long((String) parametros.get("idTit")), DpPessoa.class,
                 false);
 
@@ -207,8 +206,8 @@ public class RelMovimentacaoDocSubordinados extends RelatorioTemplate {
             ExMobil mob = (ExMobil) array[2];
             Long idDoc = (Long) array[3];
 
-            ExDocumento documento = ExDao.getInstance().consultarExDocumentoPorId(idDoc);
-            if (Ex.getInstance().getBL().exibirQuemTemAcessoDocumentosLimitados(
+            ExDocumento documento = dao.consultarExDocumentoPorId(idDoc);
+            if (this.bl.exibirQuemTemAcessoDocumentosLimitados(
                     documento, titular,
                     lotaTitular)) {
                 String siglaOrgaoUsu = (String) array[4];
@@ -419,7 +418,7 @@ public class RelMovimentacaoDocSubordinados extends RelatorioTemplate {
         }
 
         Query qrySetor = ContextoPersistencia.em().createQuery(
-                "from DpLotacao lot where " + "lot.dataFimLotacao is null "
+                "from DpLotacao lot where " + "lot.hisDtFim is null "
                         + "and lot.orgaoUsuario = "
                         + parametros.get("orgaoUsuario") + " "
                         + "and lot.siglaLotacao = '"
@@ -494,7 +493,7 @@ public class RelMovimentacaoDocSubordinados extends RelatorioTemplate {
                 .getResultList();
 
         Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-                "from DpLotacao lot " + "where lot.dataFimLotacao is null "
+                "from DpLotacao lot " + "where lot.hisDtFim is null "
                         + "and lot.orgaoUsuario = "
                         + parametros.get("orgaoUsuario")
                         + " and lot.siglaLotacao = '"
@@ -502,7 +501,7 @@ public class RelMovimentacaoDocSubordinados extends RelatorioTemplate {
 
         DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-        DpPessoa titular = ExDao.getInstance().consultar(
+        DpPessoa titular = dao.consultar(
                 new Long((String) parametros.get("idTit")), DpPessoa.class,
                 false);
 

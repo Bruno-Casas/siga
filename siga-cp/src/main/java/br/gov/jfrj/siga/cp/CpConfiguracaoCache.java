@@ -40,6 +40,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import br.gov.jfrj.siga.dp.DpLotacao;
+import br.gov.jfrj.siga.dp.DpPessoa;
 import org.hibernate.proxy.HibernateProxy;
 
 import br.gov.jfrj.siga.cp.converter.ITipoDeConfiguracaoConverter;
@@ -81,6 +83,10 @@ public class CpConfiguracaoCache {
 	@Column(name = "ID_LOTACAO")
 	public long lotacao;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "ID_LOTACAO", insertable = false, updatable = false)
+	public DpLotacao dpLotacao;
+
 	@Convert(converter = LongNonNullConverter.class)
 	@Column(name = "ID_COMPLEXO")
 	public long complexo;
@@ -96,6 +102,10 @@ public class CpConfiguracaoCache {
 	@Convert(converter = LongNonNullConverter.class)
 	@Column(name = "ID_PESSOA")
 	public long dpPessoa;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "ID_PESSOA", insertable = false, updatable = false)
+	public DpPessoa pessoa;
 
 	@Convert(converter = ITipoDeConfiguracaoConverter.class)
 	@Column(name = "ID_TP_CONFIGURACAO")

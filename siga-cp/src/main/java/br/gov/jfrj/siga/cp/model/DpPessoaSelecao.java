@@ -38,7 +38,7 @@ public class DpPessoaSelecao extends Selecao<DpPessoa> {
 		if (getId() == null)
 			return null;
 
-		final DpPessoa o = CpDao.getInstance().consultar(getId(),
+		final DpPessoa o = dao.consultar(getId(),
 				DpPessoa.class, false);
 
 		return o;
@@ -59,7 +59,7 @@ public class DpPessoaSelecao extends Selecao<DpPessoa> {
 		final DpPessoa oExemplo = new DpPessoa();
 		oExemplo.setSigla(getSigla());
 
-		final DpPessoa o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final DpPessoa o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();

@@ -5,51 +5,33 @@ import static br.gov.jfrj.siga.sr.util.SrSigaPermissaoPerfil.ADM_ADMINISTRAR;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
+import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
 
 import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Controller;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpComplexo;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.sr.annotation.AssertAcesso;
-import br.gov.jfrj.siga.sr.model.SrAcao;
-import br.gov.jfrj.siga.sr.model.SrAtributo;
 import br.gov.jfrj.siga.sr.model.SrAtributo;
 import br.gov.jfrj.siga.sr.model.SrConfiguracao;
 import br.gov.jfrj.siga.sr.model.SrObjetivoAtributo;
-import br.gov.jfrj.siga.sr.model.SrSolicitacao;
 import br.gov.jfrj.siga.sr.model.SrTipoAtributo;
 import br.gov.jfrj.siga.sr.model.vo.SelecionavelVO;
 import br.gov.jfrj.siga.sr.util.Util;
-import br.gov.jfrj.siga.sr.validator.SrValidator;
 import br.gov.jfrj.siga.uteis.PessoaLotaFuncCargoSelecaoHelper;
-import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
 @Controller
 @Path("app/atributo")
 public class AtributoController extends SrController {
 
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AtributoController() {
-		super();
-	}
-	
-	@Inject
-	public AtributoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em, SrValidator srValidator) throws Throwable {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-
+	@PostConstruct
+	public void init() throws Throwable {
 		result.on(AplicacaoException.class).forwardTo(this).appexception();
 		result.on(Exception.class).forwardTo(this).exception();
 	}
@@ -100,7 +82,7 @@ public class AtributoController extends SrController {
 	@AssertAcesso(ADM_ADMINISTRAR)
 	public void desativarAtributo(Long id) throws Exception {
 		SrAtributo item = SrAtributo.AR.findById(id);
-		item.finalizar();
+		dao.finalizar(item);
 		result.use(Results.http()).body(item.toJson());
 	}
 

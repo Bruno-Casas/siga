@@ -20,6 +20,7 @@ package br.gov.jfrj.siga.hibernate;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -32,13 +33,16 @@ import javax.servlet.http.HttpServletResponse;
 
 import br.gov.jfrj.siga.base.CurrentRequest;
 import br.gov.jfrj.siga.base.RequestInfo;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
 
 public class ExThreadFilter implements Filter {
 
 	private FilterConfig config;
+
+	@Inject
+	ExConfiguracaoBL conf;
 
 	@Override
 	public void init(FilterConfig config) {
@@ -54,10 +58,8 @@ public class ExThreadFilter implements Filter {
 		// Inicialização padronizada
 		CurrentRequest.set(new RequestInfo(config.getServletContext(), (HttpServletRequest) request,
 				(HttpServletResponse) response));
-		ModeloDao.freeInstance();
-		ExDao.getInstance();
 		try {
-			Ex.getInstance().getConf().limparCacheSeNecessario();
+			conf.limparCacheSeNecessario();
 		} catch (Exception e1) {
 			throw new RuntimeException("Não foi possível atualizar o cache de configurações", e1);
 		}

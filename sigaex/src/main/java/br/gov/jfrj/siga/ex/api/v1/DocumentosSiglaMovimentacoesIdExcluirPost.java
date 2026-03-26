@@ -3,7 +3,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaMovimentacoesIdExcluirPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeExcluirAnexo;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -20,7 +19,7 @@ public class DocumentosSiglaMovimentacoesIdExcluirPost implements IDocumentosSig
                         + ctx.getTitular().getSiglaCompleta() + "/" + ctx.getLotaTitular().getSiglaCompleta(),
                 ExPodeExcluirAnexo.class, ctx.getTitular(), ctx.getLotaTitular(), mob, mov);
 
-        Ex.getInstance().getBL().excluirMovimentacao(mov);
+        this.bl.excluirMovimentacao(mov);
 
         resp.sigla = mob.doc().getCodigo();
         resp.status = "OK";

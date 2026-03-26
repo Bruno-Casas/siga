@@ -32,7 +32,7 @@ public class ExMobilSelecao extends Selecao<ExMobil> {
 		flt.setSigla(getSigla());
 
 		try {
-			ExMobil o = ExDao.getInstance().consultarPorSigla(flt);
+			ExMobil o = dao.consultarPorSigla(flt);
 			if (o == null || o.isEliminado()) {
 				apagar();
 				return false;
@@ -46,7 +46,7 @@ public class ExMobilSelecao extends Selecao<ExMobil> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final ExMobil o = ExDao.getInstance().consultar(getId(), ExMobil.class,
+		final ExMobil o = dao.consultar(getId(), ExMobil.class,
 				false);
 		if (o == null || o.isEliminado())
 			return false;
@@ -65,7 +65,7 @@ public class ExMobilSelecao extends Selecao<ExMobil> {
 		if (getId() == null)
 			return null;
 
-		final ExMobil o = ExDao.getInstance().consultar(getId(), ExMobil.class,
+		final ExMobil o = dao.consultar(getId(), ExMobil.class,
 				false);
 
 		return o;

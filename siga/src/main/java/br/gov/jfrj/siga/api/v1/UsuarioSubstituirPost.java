@@ -4,14 +4,20 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.IUsuarioSubstituirPost;
 import br.gov.jfrj.siga.cp.bl.CpSubstituicaoBL;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
+import javax.inject.Inject;
+
 @Transacional
 public class UsuarioSubstituirPost implements IUsuarioSubstituirPost {
+
+    @Inject
+    CpSubstituicaoBL subBl;
+
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
         if (req.substituicaoId != null)
-            CpSubstituicaoBL.substituir(ctx.getCadastrante(), Long.parseLong(req.substituicaoId));
+            subBl.substituir(ctx.getCadastrante(), Long.parseLong(req.substituicaoId));
         else
-            CpSubstituicaoBL.finalizarSubstituicao(ctx.getCadastrante());
+            subBl.finalizarSubstituicao(ctx.getCadastrante());
     }
 
     @Override

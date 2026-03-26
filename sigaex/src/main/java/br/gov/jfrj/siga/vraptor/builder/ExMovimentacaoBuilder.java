@@ -19,6 +19,7 @@ import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.ExPapel;
 import br.gov.jfrj.siga.ex.ExTipoDespacho;
 import br.gov.jfrj.siga.hibernate.ExDao;
+import br.gov.jfrj.siga.model.dao.ModeloDao;
 import br.gov.jfrj.siga.vraptor.ExClassificacaoSelecao;
 import br.gov.jfrj.siga.vraptor.ExMobilSelecao;
 
@@ -52,18 +53,18 @@ public final class ExMovimentacaoBuilder {
 	private String contentType;
 	private String fileName;
 
-	private ExMovimentacaoBuilder() {
+	private ExMovimentacaoBuilder(ModeloDao dao) {
 		substituicao = false;
-		cpOrgaoSel = new CpOrgaoSelecao();
-		titularSel = new DpPessoaSelecao();
-		subscritorSel = new DpPessoaSelecao();
-		lotaSubscritorSel = new DpLotacaoSelecao();
-		documentoRefSel = new ExMobilSelecao();
-		responsavelSel = new DpPessoaSelecao();
-		destinoFinalSel = new DpPessoaSelecao();
-		lotaResponsavelSel = new DpLotacaoSelecao();
-		lotaDestinoFinalSel = new DpLotacaoSelecao();
-		classificacaoSel = new ExClassificacaoSelecao();
+		cpOrgaoSel = new CpOrgaoSelecao(dao);
+		titularSel = new DpPessoaSelecao(dao);
+		subscritorSel = new DpPessoaSelecao(dao);
+		lotaSubscritorSel = new DpLotacaoSelecao(dao);
+		documentoRefSel = new ExMobilSelecao(dao);
+		responsavelSel = new DpPessoaSelecao(dao);
+		destinoFinalSel = new DpPessoaSelecao(dao);
+		lotaResponsavelSel = new DpLotacaoSelecao(dao);
+		lotaDestinoFinalSel = new DpLotacaoSelecao(dao);
+		classificacaoSel = new ExClassificacaoSelecao(dao);
 	}
 
 	public static ExMovimentacaoBuilder novaInstancia() {

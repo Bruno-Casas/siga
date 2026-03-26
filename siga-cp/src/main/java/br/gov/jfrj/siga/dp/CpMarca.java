@@ -54,7 +54,7 @@ public class CpMarca extends AbstractCPMarca {
     public String toString() {
         return "CpMarca [Tipo="
                 + ((getCpTipoMarca() != null) ? getCpTipoMarca()
-                .getDescrTipoMarca() : "null")
+                .getDescricao() : "null")
                 + ", DtIni="
                 + getDtIniMarca()
                 + ", DtFim="

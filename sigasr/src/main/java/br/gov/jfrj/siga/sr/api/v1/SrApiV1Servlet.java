@@ -8,10 +8,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import javax.inject.Inject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 
+import br.gov.jfrj.siga.sr.model.SrDao;
 import com.crivano.swaggerservlet.SwaggerContext;
 import com.crivano.swaggerservlet.SwaggerServlet;
 import com.crivano.swaggerservlet.dependency.TestableDependency;
@@ -24,6 +26,9 @@ import br.gov.jfrj.siga.model.ContextoPersistencia;
 
 public class SrApiV1Servlet extends SwaggerServlet implements IPropertyProvider {
 	private static final long serialVersionUID = 1756711359239182178L;
+
+	@Inject
+	private SrDao dao;
 
 //	public static ExecutorService executor = null;
 
@@ -104,7 +109,7 @@ public class SrApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
 			@Override
 			public boolean test() throws Exception {
 				try (ApiContext ctx = new ApiContext(true)) {
-					return CpDao.getInstance().dt() != null;
+					return dao.dt() != null;
 				}
 			}
 

@@ -30,7 +30,7 @@ public class DpCargoSelecao extends Selecao<DpCargo> {
 		final DpCargo oExemplo = new DpCargo();
 		oExemplo.setSigla(getSigla());
 
-		final DpCargo o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final DpCargo o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();
@@ -43,7 +43,7 @@ public class DpCargoSelecao extends Selecao<DpCargo> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final DpCargo o = CpDao.getInstance().consultar(getId(),
+		final DpCargo o = dao.consultar(getId(),
 				DpCargo.class, false);
 		if (o == null)
 			return false;
@@ -62,7 +62,7 @@ public class DpCargoSelecao extends Selecao<DpCargo> {
 		if (getId() == null)
 			return null;
 
-		final DpCargo o = CpDao.getInstance().consultar(getId(),
+		final DpCargo o = dao.consultar(getId(),
 				DpCargo.class, false);
 
 		return o;

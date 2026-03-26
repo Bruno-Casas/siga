@@ -39,7 +39,6 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Data;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.cp.CpAcesso;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.DpVisualizacao;
 import br.gov.jfrj.siga.ex.bl.Mesa;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
@@ -49,18 +48,8 @@ import br.gov.jfrj.siga.hibernate.ExDao;
 public class ExMesaController extends ExController {
 	private static final String ACESSO_MESA2 = "MESA2:Mesa Versão 2";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ExMesaController() {
-		super();
-	}
-
 	@Inject
-	public ExMesaController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
-			Result result, SigaObjects so, EntityManager em) {
-		super(request, response, context, result, ExDao.getInstance(), so, em);
-	}
+	private Mesa mesa;
 
 	@Get("app/mesa")
 	public void lista(Boolean exibirAcessoAnterior, Long idVisualizacao) {
@@ -100,7 +89,7 @@ public class ExMesaController extends ExController {
 			result.include("acessoAnteriorMaquina", acessoAnteriorMaquina);
 		}
 		if(idVisualizacao != null) {
-			DpVisualizacao vis = dao().consultar(idVisualizacao, DpVisualizacao.class, false);
+			DpVisualizacao vis = dao.consultar(idVisualizacao, DpVisualizacao.class, false);
 			if(vis != null && vis.getDelegado().equals(getTitular())) {
 				result.include("idVisualizacao", idVisualizacao);
 				result.include("visualizacao", vis);
@@ -115,11 +104,11 @@ public class ExMesaController extends ExController {
 	@Get("app/mesa.json")
 	public void json(Long idVisualizacao) throws Exception {
 		List<br.gov.jfrj.siga.ex.bl.Mesa.MesaItem> l = new ArrayList<br.gov.jfrj.siga.ex.bl.Mesa.MesaItem>();
-		if(idVisualizacao != null && !idVisualizacao.equals(Long.valueOf(0)) && Cp.getInstance().getConf().podePorConfiguracao(getCadastrante(), getCadastrante().getLotacao(), ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO)) {
-			DpVisualizacao vis = dao().consultar(idVisualizacao, DpVisualizacao.class, false);
-			l = Mesa.getMesa(dao(), vis.getTitular(), vis.getTitular().getLotacao());
+		if(idVisualizacao != null && !idVisualizacao.equals(Long.valueOf(0)) && this.cpConf.podePorConfiguracao(getCadastrante(), getCadastrante().getLotacao(), ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO)) {
+			DpVisualizacao vis = dao.consultar(idVisualizacao, DpVisualizacao.class, false);
+			l = mesa.getMesa(vis.getTitular(), vis.getTitular().getLotacao());
 		} else {
-			l = Mesa.getMesa(dao(), getTitular(), getLotaTitular());
+			l = mesa.getMesa(getTitular(), getLotaTitular());
 		}
 
 		String s = ExAssinadorExternoController.gson.toJson(l);

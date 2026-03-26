@@ -8,7 +8,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExProtocolo;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaGerarProtocoloPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import com.crivano.swaggerservlet.SwaggerServlet;

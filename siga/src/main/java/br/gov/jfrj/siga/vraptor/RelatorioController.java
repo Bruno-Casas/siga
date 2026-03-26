@@ -25,14 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Post;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.observer.download.Download;
 import br.com.caelum.vraptor.observer.download.InputStreamDownload;
 import br.com.caelum.vraptor.view.Results;
@@ -40,7 +37,6 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpServico;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.libs.rpc.FaultMethodResponseRPC;
 import br.gov.jfrj.siga.libs.rpc.SimpleMethodResponseRPC;
 import br.gov.jfrj.siga.relatorio.AcessoServicoRelatorio;
@@ -50,22 +46,7 @@ import br.gov.jfrj.siga.relatorio.PermissaoUsuarioRelatorio;
 import net.sf.jasperreports.engine.JRException;
 
 @Controller
-public class RelatorioController extends SigaController {
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioController() {
-		super();
-	}
-
-	@Inject
-	public RelatorioController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
-		
-		setCpServicos(obterServicos());
-		setCpOrgaosUsuario(obterOrgaosUsuario());		
-	}
+public class RelatorioController extends VraptorController {
 
 	protected String streamRel = "inputStream";
 	private String contentType = "image/pdf";
@@ -80,6 +61,11 @@ public class RelatorioController extends SigaController {
 	private List<CpOrgaoUsuario> cpOrgaosUsuario;
 	private String respostaXMLStringRPC;
 
+	@PostConstruct
+	public void init() {
+		setCpServicos(obterServicos());
+		setCpOrgaosUsuario(obterOrgaosUsuario());
+	}
 
 	@Get("/app/gi/relatorio/selecionar_acesso_servico")
 	public void selecionarAcessoServico() throws Exception {
@@ -111,7 +97,7 @@ public class RelatorioController extends SigaController {
 	public Download emitirRelPermissaoUsuario(String idPessoa) throws Exception {
 		Map<String, String> listaParametros = new HashMap<String, String>();
 		listaParametros.put("idPessoa", idPessoa);
-		PermissaoUsuarioRelatorio rel = new PermissaoUsuarioRelatorio(listaParametros);
+		PermissaoUsuarioRelatorio rel = new PermissaoUsuarioRelatorio(cpDao, cpConf, listaParametros);
 		extracted(rel);		
 		return new InputStreamDownload(getInputStream(), "application/pdf", "relatorio.pdf");
 	}
@@ -161,7 +147,7 @@ public class RelatorioController extends SigaController {
 	public void obterSituacoesServico(String idServico) {
 		try {
 			Long t_lngIdServico = Long.parseLong(idServico);
-			CpServico t_cpsServico = dao().consultar(t_lngIdServico,
+			CpServico t_cpsServico = cpDao.consultar(t_lngIdServico,
 					CpServico.class, false);
 			Set<CpSituacaoDeConfiguracaoEnum> t_setSituacao = t_cpsServico
 					.getCpTipoServico().getCpSituacoesConfiguracaoSet();
@@ -202,12 +188,12 @@ public class RelatorioController extends SigaController {
 	}
 
 	private List<CpServico> obterServicos() {
-		return dao().listarServicos();
+		return cpDao.listarServicos();
 	}
 
 
 	private List<CpOrgaoUsuario> obterOrgaosUsuario() {
-		return dao().listarOrgaosUsuarios();
+		return cpDao.listarOrgaosUsuarios();
 	}
 
 	public InputStream getInputStream() {

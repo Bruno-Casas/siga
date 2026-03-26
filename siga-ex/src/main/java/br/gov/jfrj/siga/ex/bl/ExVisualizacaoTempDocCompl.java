@@ -11,29 +11,33 @@ import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import org.apache.commons.collections.CollectionUtils;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 public class ExVisualizacaoTempDocCompl {
 
-    private static long PAPEL_AUTORIZ_SUBSCR = ExPapel.PAPEL_AUTORIZADO;
-    private static long PAPEL_AUTORIZ_COSSIG = ExPapel.PAPEL_AUTORIZADO_COSSIG;
-    private static StringBuffer TEXTO_REMOCAO_TEMP = new StringBuffer("Remoção de Cossignatário ou Responsável pela Assinatura Documento Temporário concluída:");
-    private static StringBuffer TEXTO_REMOCAO_TEMP_ASSINATURA = new StringBuffer("Assinatura de Cossignatário ou Responsável pela Assinatura concluída:");
+    private final static long PAPEL_AUTORIZ_SUBSCR = ExPapel.PAPEL_AUTORIZADO;
+    private final static long PAPEL_AUTORIZ_COSSIG = ExPapel.PAPEL_AUTORIZADO_COSSIG;
+    private final static StringBuffer TEXTO_REMOCAO_TEMP = new StringBuffer("Remoção de Cossignatário ou Responsável pela Assinatura Documento Temporário concluída:");
+    private final static StringBuffer TEXTO_REMOCAO_TEMP_ASSINATURA = new StringBuffer("Assinatura de Cossignatário ou Responsável pela Assinatura concluída:");
 
     private static ExVisualizacaoTempDocCompl INSTANCE;
-    private ExBL exBL = Ex.getInstance().getBL();
-    private ExDao exDao = ExDao.getInstance();
+    
+    @Inject
+    private ExBL exBL;
 
-    public static ExVisualizacaoTempDocCompl getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new ExVisualizacaoTempDocCompl();
-        }
-        return INSTANCE;
-    }
+    @Inject
+    private ExDao exDao;
+
+    @Inject
+    private ExConfiguracaoBL conf;
 
     /**
      * Metodo responsavel por verificar se pode habilitar acesso temporario a arvore completa de documentos
@@ -43,7 +47,7 @@ public class ExVisualizacaoTempDocCompl {
      * @return
      */
     public boolean podeVisualizarTempDocComplCossigsSubscritor(DpPessoa cadastrante, DpLotacao lotaCadastrante) {
-        return Ex.getInstance().getConf().podePorConfiguracao(cadastrante, lotaCadastrante,
+        return conf.podePorConfiguracao(cadastrante, lotaCadastrante,
                 ExTipoDeConfiguracao.VISUALIZAR_TEMP_DOCS_COMPL_SUBSCRITOR_COSSIGNATARIO);
     }
 
@@ -56,7 +60,7 @@ public class ExVisualizacaoTempDocCompl {
      * @return
      */
     public boolean podeExibirCheckBoxVisTempDocsComplCossigsSubscritor(DpPessoa cadastrante, DpLotacao lotaCadastrante, ExDocumento doc) {
-        boolean podeExibir = Ex.getInstance().getConf().podePorConfiguracao(cadastrante, lotaCadastrante,
+        boolean podeExibir = conf.podePorConfiguracao(cadastrante, lotaCadastrante,
                 ExTipoDeConfiguracao.VISUALIZAR_TEMP_DOCS_COMPL_SUBSCRITOR_COSSIGNATARIO);
         if (podeExibir && doc != null) {
             List<ExDocumento> viasDocPai = doc.getTodosOsPaisDasViasCossigsSubscritor();
@@ -141,7 +145,7 @@ public class ExVisualizacaoTempDocCompl {
     private void incluirCossigsSubscritorVisTempDocsCompl(DpPessoa cadastrante, DpLotacao lotaCadastrante,
                                                           ExDocumento docOrigem, List<ExDocumento> listaViasDocPai, List<DpPessoa> listaCossigDoc, long codigoPapel) {
         if (!listasVazias(listaViasDocPai, listaCossigDoc)) {
-            Date dt = ExDao.getInstance().dt();
+            Date dt = exDao.dt();
             ExPapel exPapel = exDao.consultar(codigoPapel, ExPapel.class, false);
 
             for (ExDocumento docPai : listaViasDocPai) {
@@ -282,7 +286,7 @@ public class ExVisualizacaoTempDocCompl {
         movsCossigResp.addAll(docAtual.getMovsVinculacaoPapelGenerico(PAPEL_AUTORIZ_SUBSCR));
 
         if (!viasDocPai.isEmpty() && movsCossigResp.iterator().hasNext()) {
-            Date dt = ExDao.getInstance().dt();
+            Date dt = exDao.dt();
             for (ExMovimentacao movCossig : movsCossigResp) {
                 DpPessoa subscritorTemp = movCossig.getSubscritor();
                 ExMobil mobRefMov = movCossig.getExMobilRef();
@@ -318,7 +322,7 @@ public class ExVisualizacaoTempDocCompl {
             if (movsPaiTemp.iterator().hasNext()) {
                 // Obtem Movs Cossig/Resp Ass validos para Desentranhamento/Desfazer Juntada
                 List<ExMovimentacao> movsCossigResp = obterMovsCossigsSubscritorValidosDesentrDesfJuntada(mob, movsPaiTemp);
-                Date dt = ExDao.getInstance().dt();
+                Date dt = exDao.dt();
 
                 for (ExMovimentacao movCossig : movsCossigResp) {
                     DpPessoa subscritorTemp = movCossig.getSubscritor();
@@ -446,7 +450,7 @@ public class ExVisualizacaoTempDocCompl {
         return descrMovInsercao.toString();
     }
 
-    private static String getNomeSubscritorOuCossignatario(long idPapel) {
+    private String getNomeSubscritorOuCossignatario(long idPapel) {
         if (idPapel == PAPEL_AUTORIZ_SUBSCR)
             return "Responsável pela Assinatura";
         if (idPapel == PAPEL_AUTORIZ_COSSIG)

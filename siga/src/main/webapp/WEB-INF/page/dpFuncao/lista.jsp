@@ -93,7 +93,7 @@ function sbmt(offset) {
 									</c:url>
 									<div class="btn-group">								  
 									  <c:choose>
-										<c:when test="${empty funcao.dataFimFuncao}">
+										<c:when test="${empty funcao.hisDtFim}">
 											<a href="${urlAtivarInativar}" onclick='javascript:atualizarUrl("javascript:submitPost(\"${urlAtivarInativar}\")","Deseja inativar o cadastro selecionado?");return false;' class="btn btn-primary" role="button" 
 												aria-pressed="true" data-siga-modal-abrir="confirmacaoModal" style="min-width: 80px;">Inativar</a>
 											<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

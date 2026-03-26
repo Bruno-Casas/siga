@@ -7,6 +7,9 @@ import br.gov.jfrj.siga.model.ActiveRecord;
 import br.gov.jfrj.siga.model.JPAQuery;
 import br.gov.jfrj.siga.model.Objeto;
 
+import javax.enterprise.inject.Specializes;
+
+@Specializes
 public class TpDao extends CpDao {
 
 	public static <T extends Objeto> T findById(Class<T> entityClass, Long id) {

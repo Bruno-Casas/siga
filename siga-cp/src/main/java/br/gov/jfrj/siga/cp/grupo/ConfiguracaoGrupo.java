@@ -20,6 +20,11 @@ package br.gov.jfrj.siga.cp.grupo;
 
 import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpGrupo;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
+import br.gov.jfrj.siga.model.dao.ModeloDao;
+
+import javax.enterprise.inject.spi.CDI;
+
 /**
  *  Uma configuração de grupo é a representação de uma configuração (CpConfiguracao) 
  *  com o objetivo específico de configurar um grupo, seja ele grupo de email
@@ -34,9 +39,13 @@ public abstract class ConfiguracaoGrupo {
 	protected String siglaConteudoConfiguracao;
 	protected Long idConteudoConfiguracao;
 	protected String descricaoConteudoConfiguracao;
+
+	protected ModeloDao dao;
 	//
 	public ConfiguracaoGrupo() {
 		tipo = obterTipoPadrao();
+
+		dao = CDI.current().select(ModeloDao.class).get();
 	}
 	/**
 	 * @return the cpConfiguracao

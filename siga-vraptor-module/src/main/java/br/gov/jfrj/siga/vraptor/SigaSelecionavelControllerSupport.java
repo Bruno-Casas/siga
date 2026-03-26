@@ -24,32 +24,16 @@
  */
 package br.gov.jfrj.siga.vraptor;
 
-import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
 
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class SigaSelecionavelControllerSupport<T extends Selecionavel, DaoFiltroT extends DaoFiltroSelecionavel>
-        extends SigaController {
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public SigaSelecionavelControllerSupport() {
-        super();
-    }
-
-    public SigaSelecionavelControllerSupport(HttpServletRequest request,
-                                             Result result, CpDao dao, SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-    }
+        extends VraptorController {
 
     private static final long serialVersionUID = 1L;
 
@@ -127,9 +111,9 @@ public abstract class SigaSelecionavelControllerSupport<T extends Selecionavel, 
         // TODO: 07/05/2022 Verificar o processo de fitragem por grupos e selecionáveis 
         //if (!flt.exigeNomeSigla() || (StringUtils.isNotBlank(sigla) || StringUtils.isNotBlank(nome))) {
         if (fCalcularTamanho)
-            tamanho = dao().consultarQuantidade(flt);
+            tamanho = cpDao.consultarQuantidade(flt);
 
-        itens = dao().consultarPorFiltro(flt, offset, itemPagina);
+        itens = cpDao.consultarPorFiltro(flt, offset, itemPagina);
         //}
 
         result.include("currentPageNumber", calculaPaginaAtual(offset));
@@ -154,12 +138,12 @@ public abstract class SigaSelecionavelControllerSupport<T extends Selecionavel, 
              * */
 /*			if (this instanceof DpLotacaoAction) {
 				DpLotacao lotacao = new DpLotacao();
-				lotacao = (DpLotacao) dao().consultarPorSigla(flt);
+				lotacao = (DpLotacao) dao.consultarPorSigla(flt);
 				setSigla(lotacao.getSiglaCompleta());
 				sel = (Selecionavel) lotacao;
 			}
 			else*/
-            sel = dao().consultarPorSigla(flt);
+            sel = cpDao.consultarPorSigla(flt);
         } catch (final Exception ex) {
             sel = null;
         }

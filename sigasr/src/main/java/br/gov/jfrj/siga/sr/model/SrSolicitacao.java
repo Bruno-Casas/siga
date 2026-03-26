@@ -5,12 +5,10 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Par;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.cp.CpComplexo;
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.*;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.sr.model.enm.SrTipoDeConfiguracao;
 import br.gov.jfrj.siga.sr.model.vo.ListaInclusaoAutomatica;
@@ -1216,7 +1214,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
 
         // Tenta buscar a ultima aberta pelo solicitante
         String queryString = "from SrSolicitacao sol where sol.idSolicitacao = (" + "	select max(idSolicitacao) from SrSolicitacao " + "	where solicitante.idPessoa in ("
-                + "		select idPessoa from DpPessoa " + "		where idPessoaIni = " + getSolicitante().getIdPessoaIni() + "))";
+                + "		select idPessoa from DpPessoa " + "		where hisIdIni = " + getSolicitante().getHisIdIni() + "))";
         List<SrSolicitacao> listaProvisoria = AR.em().createQuery(queryString).getResultList();
         SrSolicitacao ultima = null;
         if (listaProvisoria != null && !listaProvisoria.isEmpty())
@@ -1225,7 +1223,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
         // Tenta buscar a ultima aberta pela lotacao dele
         if (ultima == null && getLotaSolicitante() != null) {
             queryString = "from SrSolicitacao sol where sol.idSolicitacao = (" + "	select max(idSolicitacao) from SrSolicitacao " + "	where lotaSolicitante.idLotacao in ("
-                    + "		select idLotacao from DpLotacao " + "		where idLotacaoIni = " + getLotaSolicitante().getIdLotacaoIni() + "))";
+                    + "		select idLotacao from DpLotacao " + "		where hisIdIni = " + getLotaSolicitante().getHisIdIni() + "))";
             listaProvisoria = AR.em().createQuery(queryString).getResultList();
             if (listaProvisoria != null && !listaProvisoria.isEmpty())
                 ultima = listaProvisoria.get(0);
@@ -1588,7 +1586,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
         finalizar();
         for (SrMarca e : getMarcaSet()) {
             e.getSolicitacao().getMeuMarcaSet().remove(e);
-            e.delete();
+            dao.excluir(e);
         }
     }
 
@@ -1728,7 +1726,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
         // Edson: Obtido do sigagc - Excluir marcas duplicadas (???)
         for (SrMarca m : getMarcaSet()) {
             if (setA.contains(m))
-                m.delete();
+                dao.excluir(m);
             else
                 setA.add(m);
         }
@@ -1746,7 +1744,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
         }
         for (SrMarca e : marcasAExcluir) {
             e.getSolicitacao().getMeuMarcaSet().remove(e);
-            e.delete();
+            dao.excluir(e);
         }
         for (Entry<SrMarca, SrMarca> pair : atualizar) {
             SrMarca a = pair.getKey();
@@ -1970,12 +1968,12 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
             sb.append(mar.getCpMarcador().getDescrMarcador());
             sb.append(" (");
             if (mar.getDpPessoaIni() != null) {
-                String nome = mar.getDpPessoaIni().getPessoaAtual().getDescricaoIniciaisMaiusculas();
+                String nome = mar.getDpPessoaIni().getHistoricoAtual().getDescricaoIniciaisMaiusculas();
                 sb.append(nome.substring(0, nome.indexOf(" ")));
                 sb.append(", ");
             }
             if (mar.getDpLotacaoIni() != null) {
-                DpLotacao atual = mar.getDpLotacaoIni().getLotacaoAtual();
+                DpLotacao atual = mar.getDpLotacaoIni().getHistoricoAtual();
                 if (atual == null)
                     atual = mar.getDpLotacaoIni();
                 sb.append(atual.getSigla());
@@ -2000,11 +1998,6 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
         for (SrMarca m : getMarcaSet())
             if (m.getCpMarcador().getIdMarcador().equals(marcador) && (lota == null || m.getDpLotacaoIni().equivale(lota)) && (pess == null || m.getDpPessoaIni().equivale(pess)))
                 return true;
-        return false;
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
         return false;
     }
 
@@ -2036,7 +2029,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
         List<DpPessoa> listaFinal = new ArrayList<DpPessoa>();
         if (getLotaAtendente() != null) {
             DpLotacao atendente = DpLotacao.AR.findById(getLotaAtendente().getIdLotacao());
-            atendente = atendente.getLotacaoAtual();
+            atendente = atendente.getHistoricoAtual();
             if (atendente == null)
                 atendente = getLotaAtendente();
             for (DpPessoa p : atendente.getDpPessoaLotadosSet()) {
@@ -2058,25 +2051,25 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
     @SuppressWarnings("unchecked")
     public List<DpSubstituicao> getSubstitutos() {
         List<DpSubstituicao> listaSubstitutos = new ArrayList<DpSubstituicao>();
-        if (getLotaAtendente() != null && getLotaAtendente().getLotacaoAtual() != null) {
-            DpLotacao lotaAtendente = getLotaAtendente().getLotacaoAtual();
+        if (getLotaAtendente() != null && getLotaAtendente().getHistoricoAtual() != null) {
+            DpLotacao lotaAtendente = getLotaAtendente().getHistoricoAtual();
 
             //Edson: por causa do detach no ObjetoObjectInstantiator
             lotaAtendente = DpLotacao.AR.findById(lotaAtendente.getIdLotacao());
 
             listaSubstitutos = ContextoPersistencia.em().createQuery("from DpSubstituicao dps "
                             + "where dps.titular = null and dps.lotaTitular.idLotacao in "
-                            + "(select lot.idLotacao from DpLotacao lot where lot.idLotacaoIni = :idLotacaoIni) and "
+                            + "(select lot.idLotacao from DpLotacao lot where lot.hisIdIni = :idLotacaoIni) and "
                             + "(dtFimSubst = null or dtFimSubst > 	:dbDatetime) and dps.substituto is not null "
                             + "and dtFimRegistro = null")
-                    .setParameter("dbDatetime", CpDao.getInstance().consultarDataEHoraDoServidor())
+                    .setParameter("dbDatetime", dao.consultarDataEHoraDoServidor())
                     .setParameter("idLotacaoIni", lotaAtendente.getIdInicial()).getResultList();
 
             // BJN - remover terminados
             List<DpSubstituicao> fechados = new ArrayList<DpSubstituicao>();
             for (Iterator<DpSubstituicao> subs = listaSubstitutos.iterator(); subs.hasNext(); ) {
                 DpSubstituicao substituicao = (DpSubstituicao) subs.next();
-                if (substituicao.getSubstituto().getPessoaAtual().isFechada())
+                if (substituicao.getSubstituto().getHistoricoAtual().isFechada())
                     fechados.add(substituicao);
             }
             for (Iterator<DpSubstituicao> png = fechados.iterator(); png.hasNext(); ) {
@@ -3264,7 +3257,7 @@ public class SrSolicitacao extends HistoricoSuporte implements SrSelecionavel {
     }
 
     public Destinatario getDestinatarioEmailNotificacao() {
-        return new Destinatario(getSolicitacaoAtual().getSolicitante().getPessoaAtual());
+        return new Destinatario(getSolicitacaoAtual().getSolicitante().getHistoricoAtual());
     }
 
     public void refresh() {

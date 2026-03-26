@@ -30,7 +30,6 @@ import org.jboss.logging.Logger;
 import org.joda.time.DateTime;
 
 import br.com.caelum.vraptor.observer.upload.UploadedFile;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.DpSubstituicao;
@@ -562,7 +561,7 @@ public class SrMovimentacao extends Objeto {
 	}
 	
 	private boolean podeReceberNotificacaoAtendente(DpPessoa pessoa, DpLotacao lotaAtendente) {
-		return Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(pessoa,
+		return this.conf.podeUtilizarServicoPorConfiguracao(pessoa,
 				lotaAtendente, "SIGA;SR;EMAILATEND:Receber Notificação Atendente");
 	}
 
@@ -824,16 +823,16 @@ public class SrMovimentacao extends Objeto {
 		SrSolicitacao solicitacao = getSolicitacao().getSolicitacaoAtual();
 		List<String> recipients = new ArrayList<String>();
 		for (SrGestorItem gestor : solicitacao.getItemAtual().getGestorSet()) {
-			DpPessoa pessoaGestorAtual = gestor.getDpPessoa().getPessoaAtual();
+			DpPessoa pessoaGestorAtual = gestor.getDpPessoa().getHistoricoAtual();
 			if (pessoaGestorAtual != null && pessoaGestorAtual.getDataFim() == null)
 				if (pessoaGestorAtual.getEmailPessoa() != null)
 					recipients.add(pessoaGestorAtual.getEmailPessoa());
 
 			if (gestor.getDpLotacao() != null)
 				for (DpPessoa gestorPessoa : gestor.getDpLotacao().getDpPessoaLotadosSet())
-					if (gestorPessoa.getPessoaAtual().getDataFim() == null)
-						if (gestorPessoa.getPessoaAtual().getEmailPessoa() != null)
-							recipients.add(gestorPessoa.getPessoaAtual().getEmailPessoa());
+					if (gestorPessoa.getHistoricoAtual().getDataFim() == null)
+						if (gestorPessoa.getHistoricoAtual().getEmailPessoa() != null)
+							recipients.add(gestorPessoa.getHistoricoAtual().getEmailPessoa());
 		}
 		recipients.add(solicitacao.getSolicitante().getEmailPessoa());
 		return recipients;
@@ -846,7 +845,7 @@ public class SrMovimentacao extends Objeto {
 		
 		atendente = solicitacao.getAtendente();
 		if (atendente != null){
-			email = atendente.getPessoaAtual().getEmailPessoa();
+			email = atendente.getHistoricoAtual().getEmailPessoa();
 			if (email != null)
 				recipients.add(email);
 		} else {
@@ -854,7 +853,7 @@ public class SrMovimentacao extends Objeto {
 			List<DpSubstituicao> listaSubstitutos = solicitacao.getSubstitutos();
 			if (listaPessoasAtendentes.size() > 0)
 			        for (DpPessoa pessoaDaLotacao : listaPessoasAtendentes) {
-			                atendente = pessoaDaLotacao.getPessoaAtual();
+			                atendente = pessoaDaLotacao.getHistoricoAtual();
 			                if (atendente.getDataFim() == null) {
 			                        email = atendente.getEmailPessoa();
 			                        if (email != null)
@@ -863,7 +862,7 @@ public class SrMovimentacao extends Objeto {
 			        }
 			if (listaSubstitutos.size() > 0)
 			        for (DpSubstituicao pessoaSubstitutaDaLotacao : listaSubstitutos) {
-			                atendente = pessoaSubstitutaDaLotacao.getSubstituto().getPessoaAtual();
+			                atendente = pessoaSubstitutaDaLotacao.getSubstituto().getHistoricoAtual();
 			                if (atendente.getDataFim() == null) {
 			                        email = atendente.getEmailPessoa();
 			                        if (email != null)

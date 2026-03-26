@@ -109,7 +109,7 @@
 
                             <div class="btn-group">
                                 <c:choose>
-                                    <c:when test="${empty lotacao.dataFimLotacao}">
+                                    <c:when test="${empty lotacao.hisDtFim}">
                                         <a href="${urlAtivarInativar}"
                                            onclick='javascript:atualizarUrl("javascript:submitPost(\"${urlAtivarInativar}\")","Deseja inativar o cadastro selecionado?");return false;'
                                            class="btn btn-primary" role="button"

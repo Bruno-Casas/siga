@@ -152,7 +152,7 @@
                                     href="javascript:${parteFuncao}.retorna_${propriedadeClean}('${item.id}','${item.siglaCompletaFormatada}','${fn:replace(item.descricao,'\'','&#8217;')}');">${item.siglaCompletaFormatada}</a>
                             </td>
                             <td width="60%" align="left">${item.descricao}</td>
-                            <td align="left" width="20%">${item.dataFimLotacao}</td>
+                            <td align="left" width="20%">${item.hisDtFim}</td>
                         </tr>
                     </siga:paginador>
                 </table>

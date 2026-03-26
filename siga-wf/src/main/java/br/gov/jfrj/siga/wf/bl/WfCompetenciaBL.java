@@ -31,13 +31,12 @@ import br.gov.jfrj.siga.wf.model.WfConfiguracao;
 import br.gov.jfrj.siga.wf.model.WfDefinicaoDeProcedimento;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeConfiguracao;
 
-/**
- * Classe que representa as competências da lógica de negócio do sistema de
- * workflow.
- * 
- * @author kpf
- * 
- */
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Specializes;
+import javax.inject.Inject;
+
+@ApplicationScoped
+@Specializes
 public class WfCompetenciaBL extends CpCompetenciaBL {
 
 	/**
@@ -87,7 +86,7 @@ public class WfCompetenciaBL extends CpCompetenciaBL {
 
 		cfgFiltro.setDefinicaoDeProcedimento(definicaoDeProcedimento);
 
-		CpConfiguracaoCache cfg = getConfiguracaoBL().buscaConfiguracao(cfgFiltro, new int[] { 0 }, null);
+		CpConfiguracaoCache cfg = cpConf.buscaConfiguracao(cfgFiltro, new int[] { 0 }, null);
 		return cfg;
 	}
 

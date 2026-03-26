@@ -14,7 +14,6 @@ import br.gov.jfrj.siga.bluc.service.HashResponse;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.vo.ExDocumentoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -49,7 +48,7 @@ public class ExAutenticacaoController extends ExController {
     public ExAutenticacaoController(HttpServletRequest request,
                                     HttpServletResponse response, ServletContext context,
                                     Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     private void setDefaultResults() {
@@ -94,7 +93,7 @@ public class ExAutenticacaoController extends ExController {
             return;
         }
 
-        ExArquivo arq = Ex.getInstance().getBL().buscarPorNumeroAssinatura(n);
+        ExArquivo arq = this.cpBl.buscarPorNumeroAssinatura(n);
         Set<ExMovimentacao> assinaturas = arq.getAssinaturasDigitais();
         boolean mostrarBotaoAssinarExterno = arq
                 .isCodigoParaAssinaturaExterna(n);
@@ -117,8 +116,7 @@ public class ExAutenticacaoController extends ExController {
 
             try {
                 SigaTransacionalInterceptor.upgradeParaTransacional();
-                Ex.getInstance()
-                        .getBL()
+                bl
                         .assinarMovimentacao(
                                 null,
                                 null,
@@ -156,13 +154,13 @@ public class ExAutenticacaoController extends ExController {
         }
         String n = verifyJwtToken(jwt).get("n").toString();
 
-        ExArquivo arq = Ex.getInstance().getBL().buscarPorNumeroAssinatura(n);
+        ExArquivo arq = this.cpBl.buscarPorNumeroAssinatura(n);
 
         byte[] bytes = null;
         String fileName = null;
         String contentType = null;
         if (idMov != null && idMov != 0) {
-            ExMovimentacao mov = dao().consultar(idMov, ExMovimentacao.class,
+            ExMovimentacao mov = cpDao.consultar(idMov, ExMovimentacao.class,
                     false);
 
             switch ((ExTipoDeMovimentacao) mov.getExTipoMovimentacao()) {
@@ -196,7 +194,7 @@ public class ExAutenticacaoController extends ExController {
             contentType = "application/pdf";
 
             if (assinado)
-                bytes = Ex.getInstance().getBL().obterPdfPorNumeroAssinatura(n);
+                bytes = this.cpBl.obterPdfPorNumeroAssinatura(n);
             else
                 bytes = arq.getPdf();
         }
@@ -208,7 +206,7 @@ public class ExAutenticacaoController extends ExController {
                 && getRequest().getHeader("Accept").startsWith(
                 "text/vnd.siga.b64encoded");
         if (certificadoB64 != null) {
-            final Date dt = dao().consultarDataEHoraDoServidor();
+            final Date dt = cpDao.consultarDataEHoraDoServidor();
             getResponse().setHeader("Atributo-Assinavel-Data-Hora",
                     Long.toString(dt.getTime()));
 
@@ -253,7 +251,7 @@ public class ExAutenticacaoController extends ExController {
         }
         String n = verifyJwtToken(jwt).get("n").toString();
 
-        ExArquivo arq = Ex.getInstance().getBL().buscarPorNumeroAssinatura(n);
+        ExArquivo arq = this.cpBl.buscarPorNumeroAssinatura(n);
         Set<ExMovimentacao> assinaturas = arq.getAssinaturasDigitais();
 
         ExMovimentacao mov = null;

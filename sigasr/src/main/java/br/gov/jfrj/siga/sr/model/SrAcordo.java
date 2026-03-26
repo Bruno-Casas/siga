@@ -1,6 +1,5 @@
 package br.gov.jfrj.siga.sr.model;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +18,8 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.sr.model.vo.SrAcordoVO;
 import edu.emory.mathcs.backport.java.util.Arrays;
@@ -83,11 +81,6 @@ public class SrAcordo extends HistoricoSuporte implements Selecionavel {
 	@Override
 	public void setId(Long idAcordo) {
 		this.setIdAcordo(idAcordo);
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -5,7 +5,6 @@ import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.SigaCalendar;
 import br.gov.jfrj.siga.dp.CpLocalidade;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExRequerenteDoc;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
@@ -33,7 +32,7 @@ public class ExRequerenteController extends ExController {
     @Inject
     public ExRequerenteController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
                                   Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, CpDao.getInstance(), so, em);
+        super(request, response, context, result, cpDao, so, em);
     }
 
     @Get("/app/requerente/listar")
@@ -54,7 +53,7 @@ public class ExRequerenteController extends ExController {
         if (page == null)
             page = 0;
 
-        ExRequerenteSearch busca = new ExRequerenteSearch(ExDao.getInstance().em());
+        ExRequerenteSearch busca = new ExRequerenteSearch(dao.em());
 
         result.include("itens", busca.search(page, tamanho, ref));
         result.include("totalItens", busca.getTotalResultados());
@@ -70,7 +69,7 @@ public class ExRequerenteController extends ExController {
         if (id == null) {
             requerente = new ExRequerenteDoc();
         } else {
-            requerente = dao().consultar(id, ExRequerenteDoc.class, false);
+            requerente = cpDao.consultar(id, ExRequerenteDoc.class, false);
         }
 
         if (nmRequerente == null || nmRequerente.trim().isEmpty())
@@ -138,10 +137,9 @@ public class ExRequerenteController extends ExController {
 
         try {
             ContextoPersistencia.begin();
-            dao().gravar(requerente);
+            cpDao.gravar(requerente);
             ContextoPersistencia.commit();
         } catch (final Exception e) {
-            ExDao.rollbackTransacao();
             throw new AplicacaoException("Erro ao salvar o requerente", 0, e);
         }
         result.redirectTo(ExRequerenteController.class).listar("", "", 0, 0);
@@ -153,7 +151,7 @@ public class ExRequerenteController extends ExController {
             try {
                 ContextoPersistencia.begin();
                 ExRequerenteDoc requerente = daoRequerente(id);
-                dao().excluir(requerente);
+                cpDao.excluir(requerente);
                 ContextoPersistencia.commit();
             } catch (final Exception e) {
                 ContextoPersistencia.em().getTransaction().rollback();
@@ -169,7 +167,7 @@ public class ExRequerenteController extends ExController {
     public void editar(final Long id) {
 
         if (id != null) {
-            ExRequerenteDoc requerente = dao().consultar(id, ExRequerenteDoc.class, false);
+            ExRequerenteDoc requerente = cpDao.consultar(id, ExRequerenteDoc.class, false);
 
             result.include("editar", true);
             result.include("id", requerente.getId());
@@ -216,7 +214,7 @@ public class ExRequerenteController extends ExController {
             ref = ref.replace(".", "").replace("-", "").replace("/", "");
         }
 
-        ExRequerenteSearch busca = new ExRequerenteSearch(ExDao.getInstance().em());
+        ExRequerenteSearch busca = new ExRequerenteSearch(dao.em());
 
         result.include("ref", ref);
         result.include("requerentes", busca.search(page, numItens, ref));
@@ -225,14 +223,14 @@ public class ExRequerenteController extends ExController {
     }
 
     private ExRequerenteDoc daoRequerente(long id) {
-        return dao().consultar(id, ExRequerenteDoc.class, false);
+        return cpDao.consultar(id, ExRequerenteDoc.class, false);
     }
 
     @Get
     @Post
     @Path({"/public/app/requerente/selecionar", "/app/requerente/selecionar", "/pessoa/requerente.action"})
     public void selecionar(String sigla) {
-        ExRequerenteSearch busca = new ExRequerenteSearch(ExDao.getInstance().em());
+        ExRequerenteSearch busca = new ExRequerenteSearch(dao.em());
 
         ExRequerenteDoc sel = busca.getByCpf(sigla);
 

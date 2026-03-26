@@ -29,14 +29,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.SequenceGenerator;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpCargo;
 import br.gov.jfrj.siga.dp.DpFuncaoConfianca;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 
 @MappedSuperclass
 public abstract class AbstractCpPapel extends HistoricoSuporte implements
@@ -45,7 +43,6 @@ public abstract class AbstractCpPapel extends HistoricoSuporte implements
 	@SequenceGenerator(name = "CP_PAPEL_SEQ", sequenceName = "CORPORATIVO.CP_PAPEL_SEQ")
 	@GeneratedValue(generator = "CP_PAPEL_SEQ")
 	@Column(name = "ID_PAPEL", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idCpPapel;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -66,7 +63,6 @@ public abstract class AbstractCpPapel extends HistoricoSuporte implements
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_ORGAO_USU", nullable = false)
-	@Desconsiderar
 	private CpOrgaoUsuario orgaoUsuario;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -194,16 +190,6 @@ public abstract class AbstractCpPapel extends HistoricoSuporte implements
 	 */
 	public void setCpTipoPapel(CpTipoPapel cpTipoPapel) {
 		this.cpTipoPapel = cpTipoPapel;
-	}
-
-	/**
-	 * @param dpPapelInicial
-	 *            the dpPapelInicial to set
-	 */
-
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 }

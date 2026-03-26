@@ -10,12 +10,8 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import br.gov.jfrj.siga.base.CurrentRequest;
-import br.gov.jfrj.siga.base.RequestInfo;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
@@ -23,6 +19,9 @@ import br.gov.jfrj.siga.model.dao.ModeloDao;
 public class GcThreadFilter implements Filter {
 	
 	private EntityManager em;
+
+	@Inject
+	private CpConfiguracaoBL conf;
 	
 	/**
 	 * @deprecated CDI eyes only
@@ -39,16 +38,12 @@ public class GcThreadFilter implements Filter {
 		EntityManager em = GcStarter.emf.createEntityManager();
 		ContextoPersistencia.setEntityManager(em);
 
-		ModeloDao.freeInstance();
-		CpDao.getInstance();
-
 		em.getTransaction().begin();
 
 		try {
 			ContextoPersistencia.setEntityManager(em);
-			ModeloDao.freeInstance();
-			CpDao.getInstance();
-			Cp.getInstance().getConf().limparCacheSeNecessario();
+
+			conf.limparCacheSeNecessario();
 
 			chain.doFilter(request, response);
 
@@ -60,7 +55,6 @@ public class GcThreadFilter implements Filter {
 			throw new ServletException(e);
 		} finally {
 			em.close();
-			ModeloDao.freeInstance();
 			ContextoPersistencia.setEntityManager(null);
 		}
 	}

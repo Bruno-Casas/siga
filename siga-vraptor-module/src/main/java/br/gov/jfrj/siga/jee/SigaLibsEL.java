@@ -24,7 +24,7 @@ import br.gov.jfrj.siga.base.ReaisPorExtenso;
 import br.gov.jfrj.siga.base.SigaCalendar;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
@@ -38,6 +38,7 @@ import org.mvel2.templates.CompiledTemplate;
 import org.mvel2.templates.TemplateCompiler;
 import org.mvel2.templates.TemplateRuntime;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -269,19 +270,15 @@ public class SigaLibsEL {
      * return null; }
      */
 
-    public static CpDao dao() {
-        return CpDao.getInstance();
-    }
-
     public static Boolean podeUtilizarServicoPorConfiguracao(DpPessoa titular,
                                                              DpLotacao lotaTitular, Integer idServico) throws Exception {
-        return Cp
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(
+
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        CpDao dao = CDI.current().select(CpDao.class).get();
+        return conf.podePorConfiguracao(
                         titular,
                         lotaTitular,
-                        dao().consultar(
+                        dao.consultar(
                                 idServico.longValue(),
                                 CpServico.class,
                                 false
@@ -292,21 +289,19 @@ public class SigaLibsEL {
 
     public static Boolean podePorConfiguracao(DpPessoa titular,
                                               DpLotacao lotaTitular, ITipoDeConfiguracao idTpConf) throws Exception {
-        return Cp.getInstance().getConf()
-                .podePorConfiguracao(titular, lotaTitular, idTpConf);
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(titular, lotaTitular, idTpConf);
     }
 
     public static Boolean podeExibirRegraDeNegocioEmBotoes(DpPessoa titular,
                                                            DpLotacao lotaTitular) throws Exception {
-        return Cp.getInstance().getConf()
-                .podePorConfiguracao(titular, lotaTitular, CpTipoDeConfiguracao.EXIBIR_REGRA_DE_NEGOCIO_EM_BOTOES);
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(titular, lotaTitular, CpTipoDeConfiguracao.EXIBIR_REGRA_DE_NEGOCIO_EM_BOTOES);
     }
 
     public static Boolean podeUtilizarServicoPorConfiguracao(DpPessoa titular, DpLotacao lotaTitular, String servicoPath) throws Exception {
-        return Cp
-                .getInstance()
-                .getConf()
-                .podeUtilizarServicoPorConfiguracao(
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        return conf.podeUtilizarServicoPorConfiguracao(
                         titular,
                         lotaTitular,
                         servicoPath
@@ -315,8 +310,8 @@ public class SigaLibsEL {
 
     public static Boolean podeGerirAlgumGrupo(DpPessoa titular,
                                               DpLotacao lotaTitular, Long idCpTipoGrupo) throws Exception {
-        return Cp.getInstance().getConf()
-                .podeGerirAlgumGrupo(titular, lotaTitular, idCpTipoGrupo);
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        return conf.podeGerirAlgumGrupo(titular, lotaTitular, idCpTipoGrupo);
     }
 
     public static String urlEncode(String value)
@@ -333,7 +328,8 @@ public class SigaLibsEL {
                     attrs.put("nmMod", "macro complementoHEAD");
                     attrs.put("template", "[@complementoHEAD/]");
                     try {
-                        return p.processarModelo(CpDao.getInstance().consultarOrgaoUsuarioPorId(idOrgaoUsu), attrs, null).trim();
+                        CpDao dao = CDI.current().select(CpDao.class).get();
+                        return p.processarModelo(dao.consultarOrgaoUsuarioPorId(idOrgaoUsu), attrs, null).trim();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -353,14 +349,10 @@ public class SigaLibsEL {
     public static Boolean podeCadastrarQqSubstituicaoPorConfiguracao(
             DpPessoa pessoa, DpLotacao lotacao) throws Exception {
 
-        return Cp
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(pessoa,
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(pessoa,
                         CpTipoDeConfiguracao.CADASTRAR_QUALQUER_SUBST)
-                || Cp.getInstance()
-                .getConf()
-                .podePorConfiguracao(
+                || conf.podePorConfiguracao(
                         lotacao,
                         CpTipoDeConfiguracao.CADASTRAR_QUALQUER_SUBST);
     }
@@ -383,71 +375,6 @@ public class SigaLibsEL {
             return plural;
     }
 
-//	@SuppressWarnings({ "rawtypes", "unchecked" })
-//	public static Object evaluate(String expression, Object root) throws Exception {
-//		Object expr = Ognl.parseExpression(expression);
-//
-//	    OgnlContext ctx = new OgnlContext();
-//
-//	    Map vars = new HashMap();
-//		vars.putAll((Map) root);
-//
-//	    Object output = Ognl.getValue(expr, ctx, vars);
-//		return output;
-//	}
-
-//	protected ELContext createContext(){
-//		  ELResolver resolver=new CompositeELResolver(){
-//		{
-//		      add(new ArrayELResolver(false));
-//		      add(new ListELResolver(false));
-//		      add(new MapELResolver(false));
-//		      add(new ResourceBundleELResolver());
-//		      add(new BeanELResolver());
-//		    }
-//		  }
-//
-//		  return new ELContext(resolver);
-//		}
-
-    //	@SuppressWarnings({ "rawtypes", "unchecked" })
-//	public static Object evaluate(String expression, Object root) throws Exception {
-//		Map vars = new HashMap();
-//		vars.putAll((Map) root);
-//
-//		ELResolver elResolver = new ELResolver(vars);
-//	    final VariableMapper variableMapper = new DemoVariableMapper();
-//	    final DemoFunctionMapper functionMapper = new DemoFunctionMapper();
-//	    functionMapper.addFunction("myprefix", "hello", sayHello);
-//	    final CompositeELResolver compositeELResolver = new CompositeELResolver();
-//	    compositeELResolver.add(demoELResolver);
-//	    compositeELResolver.add(new ArrayELResolver());
-//	    compositeELResolver.add(new ListELResolver());
-//	    compositeELResolver.add(new BeanELResolver());
-//	    compositeELResolver.add(new MapELResolver());
-//
-//	    ELContext context = new ELContext() {
-//	      @Override
-//	      public ELResolver getELResolver() {
-//	        return compositeELResolver;
-//	      }
-//	      @Override
-//	      public FunctionMapper getFunctionMapper() {
-//	        return functionMapper;
-//	      }
-//	      @Override
-//	      public VariableMapper getVariableMapper() {
-//	        return variableMapper;
-//	      }
-//	    };
-//
-//		Object expr = Ognl.parseExpression(expression);
-//
-//	    OgnlContext ctx = new OgnlContext();
-//
-//	    Object output = Ognl.getValue(expr, ctx, vars);
-//		return output;
-//	}
     public static String maximoCaracteres(String s, Integer max) {
         return Texto.maximoCaracteres(s, max);
     }
@@ -468,14 +395,15 @@ public class SigaLibsEL {
     }
 
     public static boolean podeUtilizarSegundoFatorPin(final DpPessoa cadastrante, final DpLotacao lotacaoCadastrante) throws Exception {
-        return Cp.getInstance().getConf().podePorConfiguracao(cadastrante, lotacaoCadastrante, CpTipoDeConfiguracao.SEGUNDO_FATOR_PIN);
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(cadastrante, lotacaoCadastrante, CpTipoDeConfiguracao.SEGUNDO_FATOR_PIN);
     }
 
     public static String getMesaVersao(DpPessoa titular, DpLotacao lotaTitular) {
         String mesaVersao = Prop.get("/siga.mesa.versao");
-        if (Cp.getInstance()
-                .getConf()
-                .podeUtilizarServicoPorConfiguracao(titular, lotaTitular,
+
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        if (conf.podeUtilizarServicoPorConfiguracao(titular, lotaTitular,
                         "SIGA:Sistema Integrado de Gestão Administrativa;DOC:Módulo de Documentos;MESA2:Mesa Versão 2;BETA:Utilizar versão beta"))
             mesaVersao = "2";
         return mesaVersao;

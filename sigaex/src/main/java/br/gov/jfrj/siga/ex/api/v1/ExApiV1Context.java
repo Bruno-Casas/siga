@@ -8,7 +8,6 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.ExPapel;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.hibernate.ExStarter;
@@ -28,11 +27,11 @@ public class ExApiV1Context extends ApiContextSupport {
     private static final String DOC_MÓDULO_DE_DOCUMENTOS = "DOC:Módulo de Documentos;";
 
     public void atualizarCacheDeConfiguracoes() throws Exception {
-        Ex.getInstance().getConf().limparCacheSeNecessario();
+        this.conf.limparCacheSeNecessario();
     }
 
     public CpDao inicializarDao() {
-        return ExDao.getInstance();
+        return dao;
     }
 
     public EntityManager criarEntityManager() {
@@ -87,7 +86,7 @@ public class ExApiV1Context extends ApiContextSupport {
 
     public static ExMovimentacao getMov(ExMobil mob, String id) {
         Long movId = Long.parseLong(id);
-        ExMovimentacao mov = ExDao.getInstance().consultar(movId, ExMovimentacao.class, false);
+        ExMovimentacao mov = dao.consultar(movId, ExMovimentacao.class, false);
         if (!mov.getExMobil().equals(mob))
             throw new AplicacaoException("Movimentação não se refere ao mobil informado");
         return mov;
@@ -114,7 +113,7 @@ public class ExApiV1Context extends ApiContextSupport {
                                 String descricaoDocumento) throws Exception {
         final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
         filter.setSigla(sigla);
-        ExMobil mob = ExDao.getInstance().consultarPorSigla(filter);
+        ExMobil mob = dao.consultarPorSigla(filter);
 
         if (isNull(mob)) {
             throw new SwaggerException("Número do " + descricaoDocumento + " não existe", 404, null, req, resp, null);
@@ -131,7 +130,7 @@ public class ExApiV1Context extends ApiContextSupport {
                                String descricaoDocumento) throws SwaggerException {
         final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
         filter.setSigla(sigla);
-        ExMobil mob = ExDao.getInstance().consultarPorSigla(filter);
+        ExMobil mob = dao.consultarPorSigla(filter);
 
 
         if (isNull(mob)) {

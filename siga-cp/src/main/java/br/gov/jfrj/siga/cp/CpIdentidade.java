@@ -34,15 +34,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Prop;
-import br.gov.jfrj.siga.cp.bl.Cp;
-import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 
-
-@SuppressWarnings("serial")
 @Entity
 @Cacheable
 @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
@@ -50,12 +43,6 @@ import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 public class CpIdentidade extends AbstractCpIdentidade {
 
 	public static final long pinLength = 8L;
-	
-
-	public DpPessoa getPessoaAtual() {
-		return CpDao.getInstance().consultarPorIdInicial(
-				getDpPessoa().getIdInicial());
-	}
 
 	public String getDtExpiracaoDDMMYYYY() {
 		if (getDtExpiracaoIdentidade() != null) {
@@ -81,10 +68,6 @@ public class CpIdentidade extends AbstractCpIdentidade {
 		return "";
 	}
 
-	public boolean isBloqueada() throws AplicacaoException {
-		return Cp.getInstance().getComp().isIdentidadeBloqueada(this);
-	}
-
 	public boolean equivale(Object other) {
 		if (other == null)
 			return false;
@@ -104,24 +87,19 @@ public class CpIdentidade extends AbstractCpIdentidade {
 		setIdIdentidade(id);
 	}
 
-	public boolean semelhante(Assemelhavel obj, int nivel) {
-		return SincronizavelSuporte.semelhante(this, obj, nivel);
-	}
-
 	public boolean ativaNaData(Date dt) {
 		return super.ativoNaData(dt);
 	}
 	
-	public boolean isSenhaUsuarioExpirada() {		
+	public boolean isSenhaUsuarioExpirada(LocalDate horaServidor) {
 		final Integer diasExpiracaoSenha = Prop.getInt("senha.usuario.expiracao.dias");					
 		
 		if (diasExpiracaoSenha == null) {
 			return false;
 		}					
-		
-		LocalDate hoje = CpDao.getInstance().consultarDataEHoraDoServidor().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();		
+
 		LocalDate ultimaTrocaDeSenha = getDtCriacaoIdentidade().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();							
-		long diasUltimaTrocaSenha = ChronoUnit.DAYS.between(ultimaTrocaDeSenha, hoje);				
+		long diasUltimaTrocaSenha = ChronoUnit.DAYS.between(ultimaTrocaDeSenha, horaServidor);
 				
 		return diasUltimaTrocaSenha >= diasExpiracaoSenha;
 	}

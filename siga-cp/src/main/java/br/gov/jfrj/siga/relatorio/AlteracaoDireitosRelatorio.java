@@ -17,8 +17,6 @@
  *     along with SIGA.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 package br.gov.jfrj.siga.relatorio;
-
-import ar.com.fdvs.dj.domain.builders.DJBuilderException;
 import br.gov.jfrj.relatorio.dinamico.AbstractRelatorioBaseBuilder;
 import br.gov.jfrj.relatorio.dinamico.RelatorioRapido;
 import br.gov.jfrj.relatorio.dinamico.RelatorioTemplate;
@@ -26,16 +24,16 @@ import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpConfiguracaoCache;
 import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.sinc.lib.Item;
-import br.gov.jfrj.siga.sinc.lib.Sincronizador;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
 
+import ar.com.fdvs.dj.domain.builders.DJBuilderException;
+
+import javax.enterprise.inject.spi.CDI;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -47,6 +45,8 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
     private Date dtInicio;
     private Date dtFim;
     private CpOrgaoUsuario cpOrgaoUsuario;
+    private CpDao dao;
+    private CpConfiguracaoBL conf;
 
     public AlteracaoDireitosRelatorio(Map<String, String> parametros)
             throws DJBuilderException {
@@ -80,7 +80,7 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
         String pathBrasao;
         try {
             Long idOrg = Long.parseLong(parametros.get("idOrgaoUsuario"));
-            setCpOrgaoUsuario(dao().consultar(idOrg, CpOrgaoUsuario.class, false));
+            setCpOrgaoUsuario(dao.consultar(idOrg, CpOrgaoUsuario.class, false));
             pathBrasao = obterUrlBrasao(idOrg);
         } catch (Exception e) {
             throw new DJBuilderException("Orgao Usuario inválido ! erro:"
@@ -93,6 +93,9 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
         parametros.put("subtitulo", "Sistema de Gestão Administrativa");
         parametros.put("secaoUsuario", "");
         parametros.put("brasao", pathBrasao);
+        
+        this.dao = CDI.current().select(CpDao.class).get();
+        this.conf = CDI.current().select(CpConfiguracaoBL.class).get();
     }
 
     @Override
@@ -108,6 +111,10 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
                 false);
         this.addColuna("Situação Final", 10, RelatorioRapido.ESQUERDA, false,
                 false);
+        this.addColuna("Data Início", 10, RelatorioRapido.ESQUERDA, false,
+                false);
+        this.addColuna("Data Fim", 10, RelatorioRapido.ESQUERDA, false,
+                false);
         return this;
     }
 
@@ -116,9 +123,9 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
     public Collection processarDados() {
         ArrayList<String> dados = new ArrayList<String>();
         try {
-            List<Item> list = compararDasPessoasDoOrgaoNoPeriodo(
+            List<AlteracaoDireitosItem> list = compararDasPessoasDoOrgaoNoPeriodo(
                     getCpOrgaoUsuario(), getDtInicio(), getDtFim());
-            for (Item itm : list) {
+            for (AlteracaoDireitosItem itm : list) {
                 processarItem(itm, dados);
             }
         } catch (Exception e) {
@@ -156,38 +163,40 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
     /**
      * Preenche os dados com as informações da configuração já formatados
      *
-     * @param cfga  - Configuração acesso
+     * @param itm   - Item de alteração de direitos
      * @param dados - coleção de linhas do relatório
      */
-    private void processarItem(Item itm, List<String> dados) {
-
-        AlteracaoDireitosItem antigo = (AlteracaoDireitosItem) itm.getAntigo();
-        AlteracaoDireitosItem novo = (AlteracaoDireitosItem) itm.getNovo();
+    private void processarItem(AlteracaoDireitosItem itm, List<String> dados) {
         try {
-            dados.add((antigo != null) ? antigo.getPessoa().getDescricao()
-                    : novo.getPessoa().getDescricao());
+            dados.add((itm.getPessoa() != null) ? itm.getPessoa().getDescricao() : "");
         } catch (Exception e) {
             dados.add("");
         }
         try {
-            dados.add((antigo != null) ? antigo.getServico().getDescricao()
-                    : novo.getServico().getDescricao());
+            dados.add((itm.getServico() != null) ? itm.getServico().getDescricao() : "");
         } catch (Exception e) {
             dados.add("");
         }
         try {
-            dados.add((antigo != null) ? antigo.getSituacao()
-                    .getDescr() : "-");
+            dados.add((itm.getSituacaoAntes() != null) ? itm.getSituacaoAntes().getDescr() : "-");
         } catch (Exception e) {
             dados.add("");
         }
         try {
-            dados.add((novo != null) ? novo.getSituacao()
-                    .getDescr() : " - ");
+            dados.add((itm.getSituacaoDepois() != null) ? itm.getSituacaoDepois().getDescr() : "-");
         } catch (Exception e) {
             dados.add("");
         }
-
+        try {
+            dados.add(itm.getInicio() != null ? printDate(itm.getInicio()) : "");
+        } catch (Exception e) {
+            dados.add("");
+        }
+        try {
+            dados.add(itm.getFim() != null ? printDate(itm.getFim()) : "");
+        } catch (Exception e) {
+            dados.add("");
+        }
     }
 
     @SuppressWarnings("unused")
@@ -202,10 +211,6 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
         Date t_dteData = null;
         t_dteData = formatter.parse(p_strData);
         return t_dteData;
-    }
-
-    private CpDao dao() {
-        return CpDao.getInstance();
     }
 
     public static void main(String args[]) throws Exception {
@@ -253,23 +258,16 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
         this.cpOrgaoUsuario = cpOrgaoUsuario;
     }
 
-    /**
-     * Obtém uma lista ordenada com as configuraçõesAcesso na data
-     *
-     * @param ou    Orgão Usuário
-     * @param dtEvn Data em questão
-     * @return lista ordenada
-     */
-    @SuppressWarnings("unchecked")
-    public static SortedSet obterDasPessoasDoOrgaoNaData(
+    public SortedSet<AlteracaoDireitosItem> obterDasPessoasDoOrgaoNaData(
             CpTipoDeConfiguracao tipo, List<DpPessoa> pessoas,
             List<CpServico> servicos, Date dtEvn) throws Exception {
-        TreeSet lista = new TreeSet<AlteracaoDireitosItem>();
+
+        TreeSet<AlteracaoDireitosItem> lista = new TreeSet<>();
         for (DpPessoa pes : pessoas) {
             if (pes.ativaNaData(dtEvn)) {
                 for (CpServico srv : servicos) {
                     AlteracaoDireitosItem item = gerar(tipo, null, pes, null,
-                            null, srv, dtEvn);
+                            null, srv, dtEvn, false);
                     lista.add(item);
                 }
             }
@@ -277,44 +275,9 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
         return lista;
     }
 
-    /**
-     * Utilizado para teste com um volume pequeno de pessoas
-     *
-     * @return AArrayList<DpPessoa> com pesosas para teste
-     */
-    static public ArrayList<DpPessoa> testeObterPessoas() {
-        ArrayList<DpPessoa> pasas = new ArrayList<DpPessoa>();
-        pasas
-                .add(CpDao.getInstance().consultar(160631L, DpPessoa.class,
-                        false));
-        pasas
-                .add(CpDao.getInstance().consultar(160632L, DpPessoa.class,
-                        false));
-        pasas
-                .add(CpDao.getInstance().consultar(130642L, DpPessoa.class,
-                        false));
-        pasas
-                .add(CpDao.getInstance().consultar(160634L, DpPessoa.class,
-                        false));
-        pasas
-                .add(CpDao.getInstance().consultar(160623L, DpPessoa.class,
-                        false));
-        pasas
-                .add(CpDao.getInstance().consultar(132181L, DpPessoa.class,
-                        false));
-        return pasas;
-    }
-
-    static public ArrayList<DpPessoa> testeObterPessoas2() {
-        ArrayList<DpPessoa> pasas = new ArrayList<DpPessoa>();
-        pasas.addAll(CpDao.getInstance()
-                .consultarPorIdInicialInclusiveFechadas(26822L));
-        return pasas;
-    }
-
-    private static AlteracaoDireitosItem gerar(CpTipoDeConfiguracao tipo,
+    private AlteracaoDireitosItem gerar(CpTipoDeConfiguracao tipo,
                                                CpPerfil perfil, DpPessoa pessoa, DpLotacao lotacao,
-                                               CpOrgaoUsuario orgao, CpServico servico, Date dtEvn)
+                                               CpOrgaoUsuario orgao, CpServico servico, Date dtEvn, boolean isAntes)
             throws Exception {
         CpConfiguracao cfgFiltro = new CpConfiguracao();
         cfgFiltro.setCpGrupo(perfil);
@@ -323,56 +286,50 @@ public class AlteracaoDireitosRelatorio extends RelatorioTemplate {
         cfgFiltro.setOrgaoUsuario(orgao);
         cfgFiltro.setCpServico(servico);
         cfgFiltro.setCpTipoConfiguracao(tipo);
-        CpConfiguracaoCache cache = Cp.getInstance().getConf().buscaConfiguracao(
+        CpConfiguracaoCache cache = conf.buscaConfiguracao(
                 cfgFiltro, new int[0], dtEvn);
 
         CpConfiguracao cfg = null;
         if (Objects.nonNull(cache))
-            cfg = CpDao.getInstance().consultar(cache.idConfiguracao, CpConfiguracao.class, false);
+            cfg = dao.consultar(cache.idConfiguracao, CpConfiguracao.class, false);
 
         AlteracaoDireitosItem itm = new AlteracaoDireitosItem();
         itm.setServico(servico);
-
-        if (Objects.nonNull(pessoa))
-            itm.setPessoa(pessoa);
-
-        if (cfg != null) {
-            itm.setCfg(cfg);
-            itm.setSituacao(cfg.getCpSituacaoConfiguracao());
+        itm.setPessoa(pessoa);
+        if (isAntes) {
+            itm.setCfgAntes(cfg);
         } else {
-            itm.setSituacao(servico.getCpTipoServico().getSituacaoDefault());
+            itm.setCfgDepois(cfg);
         }
         return itm;
     }
 
-    /**
-     * Compara a configuração
-     *
-     * @param ou       órgão do usuário
-     * @param dtAntes  Primeira data da comparação
-     * @param dtDepois Segunda data da comparação
-     * @return ArrayList<ConfiguracaoAcesso [ 2 ]> com a sincronização das
-     * configurações nas datas
-     * @throws Exception
-     */
-    @SuppressWarnings("unchecked")
-    static public List<Item> compararDasPessoasDoOrgaoNoPeriodo(
+    private List<AlteracaoDireitosItem> compararDasPessoasDoOrgaoNoPeriodo(
             CpOrgaoUsuario ou, Date dtAntes, Date dtDepois) throws Exception {
-        List<DpPessoa> pessoas = (List<DpPessoa>) CpDao.getInstance()
+        List<DpPessoa> pessoas = (List<DpPessoa>) dao
                 .consultarPorOrgaoUsuDpPessoaInclusiveFechadas(ou.getId());
-        // ArrayList<DpPessoa> pesas = testeObterPessoas2();
-        List<CpServico> servicos = CpDao.getInstance().listarServicos();
+        List<CpServico> servicos = dao.listarServicos();
         CpTipoDeConfiguracao tipo = CpTipoDeConfiguracao.UTILIZAR_SERVICO;
-        SortedSet<Sincronizavel> setAntes = obterDasPessoasDoOrgaoNaData(tipo,
-                pessoas, servicos, dtAntes);
-        SortedSet<Sincronizavel> setDepois = obterDasPessoasDoOrgaoNaData(tipo,
-                pessoas, servicos, dtDepois);
 
-        Sincronizador sinc = new Sincronizador();
-        sinc.setSetNovo(setDepois);
-        sinc.setSetAntigo(setAntes);
+        List<AlteracaoDireitosItem> lista = new ArrayList<>();
 
-        List<Item> list = sinc.getEncaixe();
-        return list;
+        for (DpPessoa pes : pessoas) {
+            for (CpServico srv : servicos) {
+                AlteracaoDireitosItem itemAntes = gerar(tipo, null, pes, null, null, srv, dtAntes, true);
+                AlteracaoDireitosItem itemDepois = gerar(tipo, null, pes, null, null, srv, dtDepois, false);
+
+                if (itemAntes.getCfgAntes() != null || itemDepois.getCfgDepois() != null) {
+                    AlteracaoDireitosItem item = new AlteracaoDireitosItem();
+                    item.setPessoa(pes);
+                    item.setServico(srv);
+                    item.setCfgAntes(itemAntes.getCfgAntes());
+                    item.setCfgDepois(itemDepois.getCfgDepois());
+                    lista.add(item);
+                }
+            }
+        }
+
+        Collections.sort(lista);
+        return lista;
     }
 }

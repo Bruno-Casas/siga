@@ -9,7 +9,6 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExModelo;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IModelosGet;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.ModeloItem;
-import br.gov.jfrj.siga.ex.bl.Ex;
 
 public class ModelosGet implements IModelosGet {
 
@@ -28,7 +27,7 @@ public class ModelosGet implements IModelosGet {
 
 		DpPessoa titular = ctx.getTitular();
 		DpLotacao lotaTitular = ctx.getLotaTitular();
-		List<ExModelo> modelos = Ex.getInstance().getBL().obterListaModelos(null, null, isEditandoAnexo,
+		List<ExModelo> modelos = this.bl.obterListaModelos(null, null, isEditandoAnexo,
 				isCriandoSubprocesso, mobPai, headerValue, true, titular, lotaTitular, isAutuando);
 
 		resp.list = new ArrayList<>();

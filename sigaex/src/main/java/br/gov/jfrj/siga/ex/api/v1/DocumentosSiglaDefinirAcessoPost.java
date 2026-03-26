@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.ExNivelAcesso;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaDefinirAcessoPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeRedefinirNivelDeAcesso;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -24,8 +23,8 @@ public class DocumentosSiglaDefinirAcessoPost implements IDocumentosSiglaDefinir
 
         Ex.getInstance().getComp().afirmar("Não é possível redefinir o nível de acesso", ExPodeRedefinirNivelDeAcesso.class, ctx.getTitular(), ctx.getLotaTitular(), mob);
 
-        ExNivelAcesso m = dao().consultar(Long.parseLong(req.idAcesso), ExNivelAcesso.class, false);
-        Date dt = dao().consultarDataEHoraDoServidor();
+        ExNivelAcesso m = dao.consultar(Long.parseLong(req.idAcesso), ExNivelAcesso.class, false);
+        Date dt = dao.consultarDataEHoraDoServidor();
 
         if (m == null)
             throw new AplicacaoException("Nível de acesso deve ser informado.");
@@ -34,15 +33,11 @@ public class DocumentosSiglaDefinirAcessoPost implements IDocumentosSiglaDefinir
 
         final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
         mov.setExNivelAcesso(m);
-        Ex.getInstance().getBL().redefinirNivelAcesso(ctx.getCadastrante(), ctx.getLotaTitular(), mob.doc(),
+        this.bl.redefinirNivelAcesso(ctx.getCadastrante(), ctx.getLotaTitular(), mob.doc(),
                 mov.getDtMov(), mov.getLotaResp(), mov.getResp(), mov.getSubscritor(), mov.getTitular(),
                 mov.getNmFuncaoSubscritor(), m);
 
         resp.status = "OK";
-    }
-
-    public ExDao dao() {
-        return ExDao.getInstance();
     }
 
     @Override

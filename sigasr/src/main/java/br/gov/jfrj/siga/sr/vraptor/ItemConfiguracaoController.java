@@ -51,20 +51,6 @@ public class ItemConfiguracaoController extends SrController {
 	private static final String PESQUISA_SATISFACAO = "pesquisaSatisfacao";
 	private final static Logger log = Logger.getLogger(ItemConfiguracaoController.class);
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ItemConfiguracaoController() {
-		super();
-	}
-	
-	@Inject
-	public ItemConfiguracaoController(HttpServletRequest request,
-			Result result, CpDao dao, SigaObjects so, EntityManager em,
-			SrValidator srValidator) {
-		super(request, result, dao, so, em, srValidator);
-	}
-
 	@AssertAcesso(ADM_ADMINISTRAR)
 	@SuppressWarnings("unchecked")
 	@Path("/listar")
@@ -74,7 +60,7 @@ public class ItemConfiguracaoController extends SrController {
 		List<CpOrgaoUsuario> orgaos = CpOrgaoUsuario.AR.em()
 				.createQuery("from CpOrgaoUsuario").getResultList();
 		List<CpComplexo> locais = CpComplexo.AR.all().fetch();
-		List<CpUnidadeMedida> unidadesMedida = CpDao.getInstance()
+		List<CpUnidadeMedida> unidadesMedida = cpDao
 				.listarUnidadesMedida();
 		List<SrPesquisa> pesquisaSatisfacao = SrPesquisa.AR.find(
 				"hisDtFim is null").fetch();
@@ -109,7 +95,7 @@ public class ItemConfiguracaoController extends SrController {
 	@Path("/desativar")
 	public void desativar(Long id, boolean mostrarDesativados) throws Exception {
 		SrItemConfiguracao item = SrItemConfiguracao.AR.findById(id);
-		item.finalizar();
+		dao.finalizar(item);
 
 		result.use(Results.http()).body(item.getSrItemConfiguracaoJson());
 	}

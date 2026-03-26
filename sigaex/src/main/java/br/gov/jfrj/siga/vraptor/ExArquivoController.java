@@ -40,7 +40,6 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.ExNivelAcesso;
 import br.gov.jfrj.siga.ex.api.v1.DocumentosSiglaArquivoGet;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -82,7 +81,7 @@ public class ExArquivoController extends ExController {
     @Inject
     public ExArquivoController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
                                Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     @Get("/app/arquivo/exibir")
@@ -119,12 +118,12 @@ public class ExArquivoController extends ExController {
                 completo = false;
                 estampar = false;
             }
-            final ExMobil mob = Documento.getMobil(arquivo);
+            final ExMobil mob = Documento.getMobil(dao,arquivo);
             if (mob != null) {
                 mob.getMobilPrincipal().indicarSeDeveExibirDocumentoCompletoReordenado(exibirReordenacao);
 
                 if (sigla != null && !sigla.isEmpty()) {
-                    ExMobil mobilDoDocumentoPrincipal = Documento.getMobil(sigla);
+                    ExMobil mobilDoDocumentoPrincipal = Documento.getMobil(dao, sigla);
                     if (mobilDoDocumentoPrincipal != null) {
                         mob.getMobilPrincipal().getDoc()
                                 .setIdDocPrincipal(mobilDoDocumentoPrincipal.getDoc().getIdDoc());
@@ -134,12 +133,12 @@ public class ExArquivoController extends ExController {
             } else {
                 throw new AplicacaoException("A sigla informada não corresponde a um documento da base de dados.");
             }
-            if (!Ex.getInstance().getComp().pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mob)
+            if (!comp.pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mob)
                     && !podeVisualizarDocumento(mob, getTitular(), idVisualizacao)) {
                 throw new AplicacaoException("Documento " + mob.getSigla() + " inacessível ao usuário "
                         + getTitular().getSigla() + "/" + getLotaTitular().getSiglaCompleta() + ".");
             }
-            final ExMovimentacao mov = Documento.getMov(mob, arquivo);
+            final ExMovimentacao mov = Documento.getMov(dao, mob, arquivo);
             final boolean isArquivoAuxiliar = mov != null && mov.getExTipoMovimentacao()
                     .equals(ExTipoDeMovimentacao.ANEXACAO_DE_ARQUIVO_AUXILIAR);
             final boolean imutavel = (mov != null) && !completo && !estampar && !somenteHash && !pacoteAssinavel;
@@ -187,7 +186,7 @@ public class ExArquivoController extends ExController {
                     throw new Exception("PDF inválido!");
                 }
                 if (pacoteAssinavel) {
-                    final Date dt = dao().consultarDataEHoraDoServidor();
+                    final Date dt = cpDao.consultarDataEHoraDoServidor();
                     getResponse().setHeader("Atributo-Assinavel-Data-Hora", Long.toString(dt.getTime()));
 
                     // Chamar o BluC para criar o pacote assinavel
@@ -279,9 +278,9 @@ public class ExArquivoController extends ExController {
             String token = verifyJwtToken(t).get("token").toString();
 
             CpToken cpToken = new CpToken();
-            cpToken = dao().obterCpTokenPorTipoToken(CpToken.TOKEN_URLPERMANENTE, token);
+            cpToken = cpDao.obterCpTokenPorTipoToken(CpToken.TOKEN_URLPERMANENTE, token);
 
-            ExDocumento doc = Ex.getInstance().getBL().buscarDocumentoPorLinkPermanente(cpToken);
+            ExDocumento doc = this.cpBl.buscarDocumentoPorLinkPermanente(cpToken);
 
             final ExMobil mob = doc.getPrimeiroMobil();
             if (mob == null) {
@@ -344,8 +343,8 @@ public class ExArquivoController extends ExController {
         boolean isZip = arquivo.endsWith(".zip");
         boolean somenteHash = hash != null || getPar().containsKey("HASH_ALGORITHM");
         String algoritmoHash = getAlgoritmoHash(hash);
-        ExMobil mob = Documento.getMobil(arquivo);
-        ExMovimentacao mov = Documento.getMov(mob, arquivo);
+        ExMobil mob = Documento.getMobil(dao, arquivo);
+        ExMovimentacao mov = Documento.getMov(dao, mob, arquivo);
 
         validarDownload(somenteHash, algoritmoHash, mob);
 
@@ -425,7 +424,7 @@ public class ExArquivoController extends ExController {
             throw new AplicacaoException("A sigla informada não corresponde a um documento da base de dados.");
         }
 
-        if (!Ex.getInstance().getComp().pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mob)) {
+        if (!comp.pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mob)) {
             throw new AplicacaoException("Documento " + mob.getSigla() + " inacessível ao usuário "
                     + getTitular().getSigla() + "/" + getLotaTitular().getSiglaCompleta() + ".");
         }

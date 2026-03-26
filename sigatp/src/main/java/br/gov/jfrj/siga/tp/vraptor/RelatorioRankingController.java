@@ -51,18 +51,6 @@ public class RelatorioRankingController extends TpController {
     private static final String END_23_59_59 = "23:59:59";
     private static final String START_00_00_00 = "00:00:00";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioRankingController() {
-		super();
-	}
-	
-	@Inject
-    public RelatorioRankingController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     private static String[] gerarVetorNumeros() {
         String[] vetor = new String[20];
         for (int i = 1; i <= 20; i++) {

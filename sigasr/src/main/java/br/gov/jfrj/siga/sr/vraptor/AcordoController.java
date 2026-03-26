@@ -5,21 +5,16 @@ import static br.gov.jfrj.siga.sr.util.SrSigaPermissaoPerfil.ADM_ADMINISTRAR;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
 
 import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Controller;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
-import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpComplexo;
 import br.gov.jfrj.siga.cp.CpGrupo;
 import br.gov.jfrj.siga.cp.CpUnidadeMedida;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.sr.annotation.AssertAcesso;
 import br.gov.jfrj.siga.sr.model.SrAcao;
@@ -30,9 +25,7 @@ import br.gov.jfrj.siga.sr.model.SrOperador;
 import br.gov.jfrj.siga.sr.model.SrParametro;
 import br.gov.jfrj.siga.sr.model.SrParametroAcordo;
 import br.gov.jfrj.siga.sr.model.SrPrioridade;
-import br.gov.jfrj.siga.sr.validator.SrValidator;
 import br.gov.jfrj.siga.uteis.PessoaLotaFuncCargoSelecaoHelper;
-import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -42,27 +35,13 @@ public class AcordoController extends SrController {
 
     private static final String ACORDOS = "acordos";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AcordoController() {
-		super();
-	}
-	
-	@Inject
-    public AcordoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em, SrValidator srValidator) throws Throwable {
-        super(request, result, dao, so, em, srValidator);
-        result.on(AplicacaoException.class).forwardTo(this).appexception();
-        result.on(Exception.class).forwardTo(this).exception();
-    }
-
     @AssertAcesso(ADM_ADMINISTRAR)
     @SuppressWarnings("unchecked")
     @Path("/listar")
     public void listar(boolean mostrarDesativados) throws Exception {
 
         List<SrParametro> parametros = Arrays.asList(SrParametro.values());
-        List<CpUnidadeMedida> unidadesMedida = CpDao.getInstance().listarUnidadesMedida();
+        List<CpUnidadeMedida> unidadesMedida = cpDao.listarUnidadesMedida();
         List<CpOrgaoUsuario> orgaos = CpOrgaoUsuario.AR.findAll();
         List<CpComplexo> locais = CpComplexo.AR.all().fetch();
         List<SrAcordo> acordos = SrAcordo.listar(mostrarDesativados);
@@ -226,7 +205,7 @@ public class AcordoController extends SrController {
     @Path("/desativarAbrangenciaEdicao")
     public void desativarAbrangenciaEdicao(Long idAcordo, Long idAssociacao) throws Exception {
         SrConfiguracao abrangencia = SrConfiguracao.AR.findById(idAssociacao);
-        abrangencia.finalizar();
+        dao.finalizar(abrangencia);
         result.use(Results.http()).body(abrangencia.toJson());
     }
 
@@ -235,7 +214,7 @@ public class AcordoController extends SrController {
     @Path("/buscar")
     public void buscar(boolean mostrarDesativados, String nome, boolean popup, String propriedade) throws Exception {
     	List<SrParametro> parametros = Arrays.asList(SrParametro.values());
-        List<CpUnidadeMedida> unidadesMedida = CpDao.getInstance().listarUnidadesMedida();
+        List<CpUnidadeMedida> unidadesMedida = cpDao.listarUnidadesMedida();
         List<CpOrgaoUsuario> orgaos = ContextoPersistencia.em().createQuery("from CpOrgaoUsuario").getResultList();
         List<CpComplexo> locais = CpComplexo.AR.all().fetch();
         List<SrAcordo> acordos = SrAcordo.listar(mostrarDesativados);

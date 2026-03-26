@@ -15,25 +15,10 @@ import br.com.caelum.vraptor.view.HttpResult;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaHTTP;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
 @Controller
-public class XjusController extends SigaController {
-
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public XjusController() {
-		super();
-	}
-
-	@Inject
-	public XjusController(HttpServletRequest request, Result result, CpDao dao,
-			SigaObjects so, EntityManager em) {
-		super(request, result, dao, so, em);
-	}
+public class XjusController extends VraptorController {
 
 	@Get("app/xjus")
 	public void pesquisa(String q) throws Exception {

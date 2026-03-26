@@ -13,7 +13,6 @@ import javax.persistence.Table;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.Objeto;
-import br.gov.jfrj.siga.sinc.lib.NaoRecursivo;
 import br.gov.jfrj.siga.sr.model.vo.SrGestorItemVO;
 
 @Entity
@@ -33,12 +32,10 @@ public class SrGestorItem extends Objeto{
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_PESSOA")
-	@NaoRecursivo
 	private DpPessoa dpPessoa;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_LOTACAO")
-	@NaoRecursivo
 	private DpLotacao dpLotacao;
 
 	@ManyToOne()

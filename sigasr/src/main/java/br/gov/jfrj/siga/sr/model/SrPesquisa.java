@@ -16,9 +16,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.sr.util.Util;
 
 import com.google.gson.Gson;
@@ -62,11 +61,6 @@ public class SrPesquisa extends HistoricoSuporte {
 
 
 	public SrPesquisa() {
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
 	}
 
 	@SuppressWarnings("unchecked")

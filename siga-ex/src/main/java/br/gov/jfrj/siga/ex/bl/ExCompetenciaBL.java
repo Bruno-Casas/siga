@@ -30,11 +30,11 @@ import br.gov.jfrj.siga.ex.*;
 import br.gov.jfrj.siga.ex.logic.ExPodePorConfiguracao;
 import com.crivano.jlogic.Expression;
 
-public class ExCompetenciaBL extends CpCompetenciaBL {
+import javax.enterprise.inject.Specializes;
+import javax.enterprise.inject.spi.CDI;
 
-    public ExConfiguracaoBL getConf() {
-        return (ExConfiguracaoBL) super.getConfiguracaoBL();
-    }
+@Specializes
+public class ExCompetenciaBL extends CpCompetenciaBL {
 
     public Expression exp(Class<? extends Expression> clazz, final DpPessoa titular, final DpLotacao lotaTitular) {
         try {
@@ -239,7 +239,7 @@ public class ExCompetenciaBL extends CpCompetenciaBL {
         cfgFiltro.setCargoObjeto(cargoObjeto);
         cfgFiltro.setOrgaoObjeto(orgaoObjeto);
 
-        ExConfiguracaoCache cfg = (ExConfiguracaoCache) getConfiguracaoBL().buscaConfiguracao(cfgFiltro,
+        ExConfiguracaoCache cfg = (ExConfiguracaoCache) cpConf.buscaConfiguracao(cfgFiltro,
                 new int[]{0}, null);
 
         // Essa linha é necessária porque quando recuperamos um objeto da classe
@@ -252,7 +252,7 @@ public class ExCompetenciaBL extends CpCompetenciaBL {
         // Dasabilitado porque estava dando erro de "Illegal attempt to associate a
         // collection with two open sessions"
         // if (cfg != null)
-        // ExDao.getInstance().getSessao().lock(cfg, LockMode.NONE);
+        // dao.getSessao().lock(cfg, LockMode.NONE);
 
         return cfg;
     }
@@ -286,7 +286,8 @@ public class ExCompetenciaBL extends CpCompetenciaBL {
                 "ExPode" + funcao.substring(0, 1).toUpperCase() + funcao.substring(1),
                 new String[]{"br.gov.jfrj.siga.ex.logic"});
         try {
-            resposta = Ex.getInstance().getComp().pode(classe, titular, lotaTitular, mob);
+            ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+            resposta = comp.pode(classe, titular, lotaTitular, mob);
         } catch (final Exception e) {
             e.printStackTrace();
         }

@@ -13,7 +13,6 @@ import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.sr.annotation.AssertAcesso;
 import br.gov.jfrj.siga.sr.model.SrTipoAcao;
 import br.gov.jfrj.siga.sr.validator.SrValidator;
@@ -23,18 +22,6 @@ import br.gov.jfrj.siga.vraptor.Transacional;
 @Controller
 @Path("app/tipoAcao")
 public class TipoAcaoController extends SrController {
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public TipoAcaoController() {
-		super();
-	}
-	
-	@Inject
-	public TipoAcaoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-	}
 
 	@AssertAcesso(ADM_ADMINISTRAR)
 	@Path("/listar")
@@ -71,7 +58,7 @@ public class TipoAcaoController extends SrController {
 	@Path("/desativar")
 	public void desativar(Long id, boolean mostrarDesativados) throws Exception {
 		SrTipoAcao tipoAcao = SrTipoAcao.AR.findById(id);
-		tipoAcao.finalizar();
+		dao.finalizar(tipoAcao);
 
 		result.use(Results.http()).body(tipoAcao.toJson());
 	}

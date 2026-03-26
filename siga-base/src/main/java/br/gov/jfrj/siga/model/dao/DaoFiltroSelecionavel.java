@@ -18,8 +18,14 @@
  ******************************************************************************/
 package br.gov.jfrj.siga.model.dao;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class DaoFiltroSelecionavel extends DaoFiltro {
     private String sigla;
+
+    public DaoFiltroSelecionavel() {
+        super();
+    }
 
     public String getSigla() {
         return sigla;

@@ -1,7 +1,5 @@
 package br.gov.jfrj.siga.sr.model;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -17,10 +15,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import br.gov.jfrj.siga.cp.CpUnidadeMedida;
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
-import br.gov.jfrj.siga.model.Assemelhavel;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.sr.model.vo.SrParametroAcordoVO;
-import br.gov.jfrj.siga.sr.vraptor.AtributoController;
 
 @Entity
 @Table(name = "sr_atributo_acordo", schema = "sigasr")
@@ -71,11 +67,6 @@ public class SrParametroAcordo extends HistoricoSuporte {
 	public String getDescricao() {
 		return acordo.getNomeAcordo() + " - " + parametro.getDescricao() + " "
 				+ operador.getNome() + " " + valor + " " + unidadeMedida.getPlural();
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
 	}
 
 	public List<SrParametroAcordo> getHistoricoParametroAcordo() {

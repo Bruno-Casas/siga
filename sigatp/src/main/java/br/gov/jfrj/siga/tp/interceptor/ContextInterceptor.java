@@ -5,7 +5,6 @@ import java.util.ResourceBundle;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.servlet.jsp.jstl.core.Config;
 
 import br.com.caelum.vraptor.Accepts;
 import br.com.caelum.vraptor.AroundCall;
@@ -14,12 +13,11 @@ import br.com.caelum.vraptor.Intercepts;
 import br.com.caelum.vraptor.interceptor.InterceptorMethodParametersResolver;
 import br.com.caelum.vraptor.interceptor.SimpleInterceptorStack;
 import br.com.caelum.vraptor.jpa.JPATransactionInterceptor;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ActiveRecord;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
-import br.gov.jfrj.siga.tp.model.TpDao;
 import br.gov.jfrj.siga.tp.vraptor.i18n.MessagesBundle;
 
 
@@ -48,6 +46,9 @@ public class ContextInterceptor   {
 		super();
 		em = null;
 	}
+
+	@Inject
+	private CpConfiguracaoBL conf;
 	
 	@Inject
 	public ContextInterceptor(EntityManager em) {
@@ -60,11 +61,9 @@ public class ContextInterceptor   {
 		try {
 			ContextoPersistencia.setEntityManager(this.em);
 			MessagesBundle.set(bundle);
-			ModeloDao.freeInstance();
-			CpDao.getInstance();
 			
 			try {
-				Cp.getInstance().getConf().limparCacheSeNecessario();
+				conf.limparCacheSeNecessario();
 			} catch (Exception e1) {
 				throw new RuntimeException("Não foi possível atualizar o cache de configurações", e1);
 			}

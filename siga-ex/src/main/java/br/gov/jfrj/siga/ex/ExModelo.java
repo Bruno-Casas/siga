@@ -24,7 +24,6 @@ package br.gov.jfrj.siga.ex;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.Selecionavel;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
 import org.hibernate.annotations.BatchSize;
 
 import javax.persistence.Entity;
@@ -39,7 +38,7 @@ import java.util.Date;
 @Entity
 @BatchSize(size = 500)
 @Table(name = "siga.ex_modelo")
-public class ExModelo extends AbstractExModelo implements Sincronizavel, Selecionavel {
+public class ExModelo extends AbstractExModelo implements Selecionavel {
 
     /**
      * Simple constructor of ExModelo instances.
@@ -72,18 +71,6 @@ public class ExModelo extends AbstractExModelo implements Sincronizavel, Selecio
         setIdMod(id);
     }
 
-    public boolean isFechado() {
-        return getModeloAtual() == null;
-    }
-
-    public ExModelo getModeloAtual() {
-        return ExDao.getInstance().consultarModeloAtual(this);
-    }
-
-    public ExModelo getModeloPeloId() {
-        return ExDao.getInstance().consultar(this.getIdMod(), ExModelo.class, false);
-    }
-
     public boolean isDescricaoAutomatica() {
         if ("template/freemarker".equals(getConteudoTpBlob())) {
             byte[] blob = getConteudoBlobMod2();
@@ -96,61 +83,6 @@ public class ExModelo extends AbstractExModelo implements Sincronizavel, Selecio
 
     public boolean isClassificacaoAutomatica() {
         return getExClassificacao() != null;
-    }
-
-    @Override
-    public String getIdExterna() {
-        return getUuid();
-    }
-
-    @Override
-    public void setIdExterna(String idExterna) {
-        setUuid(idExterna);
-    }
-
-    @Override
-    public void setIdInicial(Long idInicial) {
-        setHisIdIni(idInicial);
-    }
-
-    @Override
-    public Date getDataInicio() {
-        return getHisDtIni();
-    }
-
-    @Override
-    public void setDataInicio(Date dataInicio) {
-        setHisDtIni(dataInicio);
-    }
-
-    @Override
-    public Date getDataFim() {
-        return getHisDtFim();
-    }
-
-    @Override
-    public void setDataFim(Date dataFim) {
-        setHisDtFim(dataFim);
-    }
-
-    @Override
-    public String getLoteDeImportacao() {
-        return null;
-    }
-
-    @Override
-    public void setLoteDeImportacao(String loteDeImportacao) {
-
-    }
-
-    @Override
-    public int getNivelDeDependencia() {
-        return 0;
-    }
-
-    @Override
-    public String getDescricaoExterna() {
-        return getNmMod();
     }
 
     private static final String SUBDIRETORIO = "-subdiretorio-";
@@ -187,5 +119,12 @@ public class ExModelo extends AbstractExModelo implements Sincronizavel, Selecio
     @Override
     public String getDescricao() {
         return null;
+    }
+
+    public boolean isFechado() {
+        if (getHistoricoAtual() == null)
+            return true;
+
+        return false;
     }
 }

@@ -155,10 +155,4 @@ public class Andamento extends TpModel implements Comparable<Andamento> {
 				 							   "'" + EstadoRequisicao.AUTORIZADA + "'," +
 				 							   "'" + EstadoRequisicao.PROGRAMADA + "')").fetch();
 	}
-
-	public static void gravarDataNotificacaoWorkFlow(Long id) throws Exception {
-		Andamento andamento = Andamento.AR.findById(id);
-		andamento.dataNotificacaoWorkFlow = Calendar.getInstance();
-		andamento.save();
-	}
 }

@@ -4,18 +4,22 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.IPainelListaGet;
 import br.gov.jfrj.siga.api.v1.ISigaApiV1.PainelListaItem;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.CpMarca;
-import br.gov.jfrj.siga.dp.CpTipoMarca;
+import br.gov.jfrj.siga.dp.TipoMarca;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PainelListaGet implements IPainelListaGet {
 
+    @Inject
+    private CpDao dao;
+
     @SuppressWarnings("unchecked")
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
-        CpTipoMarca cpTipoMarca = CpTipoMarca.findByName(req.tipoMarca);
+        TipoMarca cpTipoMarca = TipoMarca.findByName(req.tipoMarca);
 
         int tipoResp = 0;
         if (req.filtroPessoaLotacao != null) {
@@ -35,7 +39,7 @@ public class PainelListaGet implements IPainelListaGet {
             for (String s : aMarcadores)
                 idsMarcadorIni.add(Long.parseLong(s));
         }
-        List<CpMarca> l = CpDao.getInstance().consultarPainelLista(idsMarcadorIni,
+        List<CpMarca> l = dao.consultarPainelLista(idsMarcadorIni,
                 tipoResp != 2 ? ctx.getTitular() : null, tipoResp != 1 ? ctx.getLotaTitular() : null, cpTipoMarca,
                 Integer.parseInt(req.itensPorPagina), Integer.parseInt(req.pagina));
 
@@ -49,8 +53,8 @@ public class PainelListaGet implements IPainelListaGet {
                     : marca.getCpMarcador().getIdIcone().getCodigoFontAwesome();
             r.dataIni = marca.getDtIniMarca();
             r.dataFim = marca.getDtFimMarca();
-            r.moduloId = marca.getCpTipoMarca().getIdTpMarca().toString();
-            r.tipo = marca.getCpTipoMarca().getDescrTipoMarca();
+            r.moduloId = marca.getCpTipoMarca().getId().toString();
+            r.tipo = marca.getCpTipoMarca().getDescricao();
             resp.list.add(r);
         }
     }

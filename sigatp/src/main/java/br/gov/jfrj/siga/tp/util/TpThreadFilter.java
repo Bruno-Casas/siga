@@ -11,7 +11,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
@@ -26,7 +26,10 @@ public class TpThreadFilter implements Filter {
 	public TpThreadFilter() {
 		super();
 	}
-	
+
+	@Inject
+	private CpConfiguracaoBL conf;
+
 	@Inject
 	public TpThreadFilter(EntityManager em)  {
 		this.em = em;
@@ -37,15 +40,12 @@ public class TpThreadFilter implements Filter {
 			throws IOException, ServletException {
 		try {
 			ContextoPersistencia.setEntityManager(em);
-			ModeloDao.freeInstance();
-			CpDao.getInstance();
-			Cp.getInstance().getConf().limparCacheSeNecessario();
+			conf.limparCacheSeNecessario();
 			chain.doFilter(request, response);
 		} catch (Exception e) {
 
 			throw new ServletException(e);
 		} finally {
-			ModeloDao.freeInstance();
 			ContextoPersistencia.setEntityManager(null);
 		}
 	}

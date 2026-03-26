@@ -3,6 +3,7 @@ package br.gov.jfrj.siga.wf.model;
 import br.gov.jfrj.siga.Service;
 import br.gov.jfrj.siga.base.AcaoVO;
 import br.gov.jfrj.siga.base.AplicacaoException;
+import br.gov.jfrj.siga.base.ServerClock;
 import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.util.CpProcessadorReferencias;
@@ -14,7 +15,6 @@ import br.gov.jfrj.siga.model.ActiveRecord;
 import br.gov.jfrj.siga.model.Objeto;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.parser.PessoaLotacaoParser;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.logic.*;
 import br.gov.jfrj.siga.wf.model.enm.WfPrioridade;
@@ -30,6 +30,7 @@ import com.crivano.jflow.model.ProcessInstance;
 import com.crivano.jflow.model.enm.ProcessInstanceStatus;
 import org.hibernate.annotations.BatchSize;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.persistence.*;
 import java.util.*;
 
@@ -114,15 +115,12 @@ public class WfProcedimento extends Objeto
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "HIS_DT_INI")
-    @Desconsiderar
     private Date hisDtIni;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "HIS_DT_FIM")
-    @Desconsiderar
     private Date hisDtFim;
 
-    @Desconsiderar
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "HIS_IDC_INI")
     private CpIdentidade hisIdcIni;
@@ -140,7 +138,9 @@ public class WfProcedimento extends Objeto
     public void start() {
         indiceCorrente = -1;
         status = ProcessInstanceStatus.STARTED;
-        this.setHisDtIni(WfDao.getInstance().consultarDataEHoraDoServidor());
+
+        ServerClock clock = CDI.current().select(ServerClock.class).get();
+        this.setHisDtIni(clock.getDataAtual());
     }
 
     @Override
@@ -169,7 +169,9 @@ public class WfProcedimento extends Objeto
         this.eventoData = null;
         indiceCorrente = null;
         status = ProcessInstanceStatus.FINISHED;
-        this.setHisDtFim(WfDao.getInstance().consultarDataEHoraDoServidor());
+
+        ServerClock clock = CDI.current().select(ServerClock.class).get();
+        this.setHisDtFim(clock.getDataAtual());
     }
 
     @Override
@@ -205,19 +207,6 @@ public class WfProcedimento extends Objeto
             else
                 variavelMap.put(v.getIdentifier(), v.string);
         }
-    }
-
-    @PrePersist
-    private void onPersist() {
-        if (getAno() != null)
-            return;
-        setAno(WfDao.getInstance().dt().getYear() + 1900);
-        Query qry = em().createQuery(
-                "select max(numero) from WfProcedimento pi where ano = :ano and orgaoUsuario.idOrgaoUsu = :ouid");
-        qry.setParameter("ano", getAno());
-        qry.setParameter("ouid", getOrgaoUsuario().getId());
-        Integer i = (Integer) qry.getSingleResult();
-        setNumero((i == null ? 0 : i) + 1);
     }
 
     @PreUpdate
@@ -315,7 +304,7 @@ public class WfProcedimento extends Objeto
                 case PRINCIPAL_LOTA_INTERESSADO:
                     return assertPrincipalLotacao(service.interessado(getPrincipal()));
                 case RESPONSAVEL:
-                    WfResponsavel r = WfDao.getInstance().consultarResponsavelPorOrgaoEDefinicaoDeResponsavel(
+                    WfResponsavel r = dao.consultarResponsavelPorOrgaoEDefinicaoDeResponsavel(
                             getOrgaoUsuario(), tarefa.getDefinicaoDeResponsavel());
                     return new WfResp(r.getPessoa(), r.getLotacao());
                 case PESSOA:
@@ -628,15 +617,8 @@ public class WfProcedimento extends Objeto
         return getVariavelMap().get(vd.getIdentificador());
     }
 
-    public String getMsgAviso(DpPessoa titular, DpLotacao lotaTitular) throws Exception {
-        String s = getMsgAvisoSemReferencias(titular, lotaTitular);
-        if (s == null)
-            return null;
-        return CpProcessadorReferencias.marcarReferenciasParaDocumentos(s, null);
-    }
-
     public String getMsgAvisoSemReferencias(DpPessoa titular, DpLotacao lotaTitular) throws Exception {
-//		WfConhecimento c = WfDao.getInstance().consultarConhecimento(ti.getDefinicaoDeTarefa().getId());
+//		WfConhecimento c = dao.consultarConhecimento(ti.getDefinicaoDeTarefa().getId());
 //		if (c != null) {
 //			this.setDescricao(WfWikiParser.renderXHTML(c.getDescricao()));
 //			this.setConhecimento(c.getDescricao());

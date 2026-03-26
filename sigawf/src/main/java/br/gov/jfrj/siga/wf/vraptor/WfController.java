@@ -1,6 +1,5 @@
 package br.gov.jfrj.siga.wf.vraptor;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -8,16 +7,15 @@ import javax.servlet.http.HttpServletRequest;
 
 import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.vraptor.SigaController;
+import br.gov.jfrj.siga.vraptor.VraptorController;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.util.WfUtil;
 
-public class WfController extends SigaController {
+public class WfController extends VraptorController {
 
 	static final String ACESSO_WF = "WF:Módulo de Workflow";
 	protected static final String ACESSO_EXCLUIR_INSTANCIA_DE_PROCESSO = "EXCLUIR:Excluir instancia de processo";
@@ -27,27 +25,18 @@ public class WfController extends SigaController {
 	protected static final String ACESSO_DESIGNAR_TAREFAS = "DESIGNAR:Designar tarefas";
 	protected static final String ACESSO_RELATORIOS = "REL:Relatórios";
 
+	@Inject
 	protected WfUtil util;
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public WfController() {
-		super();
-	}
-
 	@Inject
-	public WfController(HttpServletRequest request, Result result, WfDao dao, SigaObjects so, WfUtil util) {
-		super(request, result, (CpDao) dao, so, null);
-		this.util = util;
-	}
+	protected WfDao dao;
 
 	public void assertAcesso(String pathServico) throws AplicacaoException {
 		so.assertAcesso(ACESSO_WF + ";" + pathServico);
 	}
 
 	protected WfDao dao() {
-		return WfDao.getInstance();
+		return dao;
 	}
 
 	/**

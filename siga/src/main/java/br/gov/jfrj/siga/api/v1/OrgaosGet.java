@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
 import javax.persistence.NoResultException;
 
 import com.crivano.swaggerservlet.SwaggerException;
@@ -17,6 +18,10 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.CpOrgaoUsuarioDaoFiltro;
 
 public class OrgaosGet implements IOrgaosGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (req.texto != null && req.idOrgao != null) {
@@ -40,7 +45,7 @@ public class OrgaosGet implements IOrgaosGet {
 		final CpOrgaoUsuarioDaoFiltro flt = new CpOrgaoUsuarioDaoFiltro();
 		flt.setNome(Texto.removeAcentoMaiusculas(req.texto));
 		List<CpOrgaoUsuario> l;
-		l = CpDao.getInstance().consultarPorFiltro(flt);
+		l = dao.consultarPorFiltro(flt);
 		if (l.isEmpty())
 			throw new SwaggerException("Nenhum órgão foi encontrado para os parâmetros informados.", 404, null, req,
 					resp, null);
@@ -49,7 +54,7 @@ public class OrgaosGet implements IOrgaosGet {
 
 	private List<Orgao> pesquisarOrgaoPorId(Request req, Response resp) throws SwaggerException {
 		try {
-			CpOrgaoUsuario orgao = CpDao.getInstance().consultarOrgaoUsuarioPorId(Long.valueOf(req.idOrgao));
+			CpOrgaoUsuario orgao = dao.consultarOrgaoUsuarioPorId(Long.valueOf(req.idOrgao));
 			List<Orgao> l = new ArrayList<>();
 			l.add(orgaoToResultadoPesquisa(orgao));
 			if (l.isEmpty())

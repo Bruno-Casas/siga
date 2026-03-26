@@ -40,47 +40,32 @@ import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Post;
 import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
-import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Data;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaMessages;
 import br.gov.jfrj.siga.cp.CpAcesso;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpVisualizacao;
 import br.gov.jfrj.siga.ex.bl.AcessoConsulta;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.Mesa2Ant;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
 @Controller
 public class ExMesa2AntController extends ExController {
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExMesa2AntController() {
-        super();
-    }
-
-    @Inject
-    public ExMesa2AntController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
-                                Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
-    }
 
     @Get("app/mesa2ant")
     public void lista(Boolean exibirAcessoAnterior, Long idVisualizacao, String msg) throws Exception {
         result.include("ehPublicoExterno", AcessoConsulta.ehPublicoExterno(getTitular()));
         try {
-            result.include("podeNovoDocumento", Cp.getInstance().getConf().podePorConfiguracao(getTitular(), getTitular().getLotacao(),
+            result.include("podeNovoDocumento", this.cpConf.podePorConfiguracao(getTitular(), getTitular().getLotacao(),
                     ExTipoDeConfiguracao.CRIAR_NOVO_EXTERNO));
         } catch (Exception e) {
             throw e;
         }
         if (exibirAcessoAnterior != null && exibirAcessoAnterior) {
-            CpAcesso a = dao.consultarAcessoAnterior(so.getCadastrante());
+            CpAcesso a = cpDao.consultarAcessoAnterior(so.getCadastrante());
             if (a == null)
                 return;
             String acessoAnteriorData = Data.formatDDMMYY_AS_HHMMSS(a.getDtInicio());
@@ -89,7 +74,7 @@ public class ExMesa2AntController extends ExController {
             result.include("acessoAnteriorMaquina", acessoAnteriorMaquina);
         }
         if(idVisualizacao != null) {
-            DpVisualizacao vis = dao().consultar(idVisualizacao, DpVisualizacao.class, false);
+            DpVisualizacao vis = cpDao.consultar(idVisualizacao, DpVisualizacao.class, false);
             if(vis != null && vis.getDelegado().equals(getTitular())) {
                 result.include("idVisualizacao", idVisualizacao);
                 result.include("visualizacao", vis);
@@ -131,7 +116,7 @@ public class ExMesa2AntController extends ExController {
                 selGrupos = mapper.readValue(parms, new TypeReference<Map<String, Mesa2Ant.SelGrupo>>() {});
             }
             if (exibeLotacao
-                    && (Ex.getInstance().getComp().ehPublicoExterno(
+                    && (comp.ehPublicoExterno(
                     getTitular())
                     || !Prop.getBool("/siga.mesa.carrega.lotacao"))) {
                 result.use(Results.http()).addHeader("Content-Type", "text/plain")
@@ -142,21 +127,21 @@ public class ExMesa2AntController extends ExController {
             }
             DpLotacao lotaTitular = null;
             if(idVisualizacao != null && !idVisualizacao.equals(0L)
-                    && Cp.getInstance().getConf().podePorConfiguracao
+                    && this.cpConf.podePorConfiguracao
                     (getCadastrante(),
                             getCadastrante().getLotacao(),
                             ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO)) {
-                DpVisualizacao vis = dao().consultar(idVisualizacao, DpVisualizacao.class, false);
+                DpVisualizacao vis = cpDao.consultar(idVisualizacao, DpVisualizacao.class, false);
                 lotaTitular = vis.getTitular().getLotacao();
-                gruposMesa = Mesa2Ant.getContadores(dao(), vis.getTitular(), lotaTitular, selGrupos,
+                gruposMesa = Mesa2Ant.getContadores(dao, vis.getTitular(), lotaTitular, selGrupos,
                         exibeLotacao, marcasAIgnorar);
-                g = Mesa2Ant.getMesa(dao(), vis.getTitular(), lotaTitular, selGrupos,
+                g = Mesa2Ant.getMesa(dao, vis.getTitular(), lotaTitular, selGrupos,
                         gruposMesa, exibeLotacao, trazerAnotacoes, trazerComposto, ordemCrescenteData, usuarioPosse, marcasAIgnorar);
             } else {
                 lotaTitular = getTitular().getLotacao();
-                gruposMesa = Mesa2Ant.getContadores(dao(), getTitular(), lotaTitular, selGrupos,
+                gruposMesa = Mesa2Ant.getContadores(dao, getTitular(), lotaTitular, selGrupos,
                         exibeLotacao, marcasAIgnorar);
-                g = Mesa2Ant.getMesa(dao(), getTitular(), lotaTitular, selGrupos,
+                g = Mesa2Ant.getMesa(dao, getTitular(), lotaTitular, selGrupos,
                         gruposMesa, exibeLotacao, trazerAnotacoes, trazerComposto, ordemCrescenteData, usuarioPosse, marcasAIgnorar);
             }
 

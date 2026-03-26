@@ -30,11 +30,9 @@ import br.gov.jfrj.siga.base.Data;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaMessages;
 import br.gov.jfrj.siga.cp.CpAcesso;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.DpVisualizacao;
 import br.gov.jfrj.siga.ex.bl.AcessoConsulta;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.Mesa2;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -64,12 +62,12 @@ public class ExMesa2Controller extends ExController {
     @Inject
     public ExMesa2Controller(HttpServletRequest request, HttpServletResponse response, ServletContext context,
                              Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     @Get("app/mesa2")
     public void lista(Boolean exibirAcessoAnterior, Long idVisualizacao, String msg) throws Exception {
-        if (!Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(),
+        if (!this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(),
                 ACESSO_MESA2BETA)) {
             result.redirectTo("/app/mesa2ant" + (exibirAcessoAnterior != null ?
                     "?exibirAcessoAnterior=" + exibirAcessoAnterior.toString() : ""));
@@ -89,7 +87,7 @@ public class ExMesa2Controller extends ExController {
         );
 
         if (exibirAcessoAnterior != null && exibirAcessoAnterior) {
-            CpAcesso a = dao.consultarAcessoAnterior(so.getCadastrante());
+            CpAcesso a = cpDao.consultarAcessoAnterior(so.getCadastrante());
             if (a == null)
                 return;
             String acessoAnteriorData = Data.formatDDMMYY_AS_HHMMSS(a.getDtInicio());
@@ -98,7 +96,7 @@ public class ExMesa2Controller extends ExController {
             result.include("acessoAnteriorMaquina", acessoAnteriorMaquina);
         }
         if (idVisualizacao != null) {
-            DpVisualizacao vis = dao().consultar(idVisualizacao, DpVisualizacao.class, false);
+            DpVisualizacao vis = cpDao.consultar(idVisualizacao, DpVisualizacao.class, false);
             if (vis != null && vis.getDelegado().equals(getTitular())) {
                 result.include("idVisualizacao", idVisualizacao);
                 result.include("visualizacao", vis);
@@ -141,7 +139,7 @@ public class ExMesa2Controller extends ExController {
                 });
             }
             if (exibeLotacao
-                    && (Ex.getInstance().getComp().ehPublicoExterno(
+                    && (comp.ehPublicoExterno(
                     getTitular())
                     || !Prop.getBool("/siga.mesa.carrega.lotacao"))) {
                 result.use(Results.http()).addHeader("Content-Type", "text/plain")
@@ -151,11 +149,11 @@ public class ExMesa2Controller extends ExController {
                 return;
             }
             if (idVisualizacao != null && !idVisualizacao.equals(Long.valueOf(0))
-                    && Cp.getInstance().getConf().podePorConfiguracao
+                    && this.cpConf.podePorConfiguracao
                     (getCadastrante(),
                             getCadastrante().getLotacao(),
                             ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO)) {
-                DpVisualizacao vis = dao().consultar(idVisualizacao, DpVisualizacao.class, false);
+                DpVisualizacao vis = cpDao.consultar(idVisualizacao, DpVisualizacao.class, false);
                 g = Mesa2.getMesa(contar, qtd, offset, vis.getTitular(), selGrupos, exibeLotacao, trazerAnotacoes,
                         trazerComposto, ordemCrescenteData, usuarioPosse, marcasAIgnorar, filtro);
             } else {

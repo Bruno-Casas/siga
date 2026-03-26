@@ -44,7 +44,6 @@ import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.model.Assemelhavel;
 
 /**
  * A class that represents a row in the EX_MOVIMENTACAO table. You can customize
@@ -129,11 +128,6 @@ public abstract class WfMov extends HistoricoAuditavelSuporte implements Seriali
 	@Override
 	public void setId(Long id) {
 		this.id = id;
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return obj == this;
 	}
 
 	public DpPessoa getTitular() {

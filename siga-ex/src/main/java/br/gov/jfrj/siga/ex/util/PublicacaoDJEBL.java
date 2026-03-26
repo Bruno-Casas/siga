@@ -30,8 +30,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.xml.namespace.QName;
 
+import br.gov.jfrj.siga.ex.bl.ExBL;
 import org.apache.axis.client.Call;
 import org.apache.axis.client.Service;
 import org.apache.axis.constants.Style;
@@ -55,11 +58,10 @@ import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.ExTpDocPublicacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.persistencia.ExMobilDaoFiltro;
 
-
+@ApplicationScoped
 public class PublicacaoDJEBL {
 
     private static final Logger log = Logger.getLogger(PublicacaoDJEBL.class);
@@ -69,8 +71,14 @@ public class PublicacaoDJEBL {
 	public static int MODELO_FORMULARIO_PUBLICACAO_DJF2R_LICITACAO_CONTRATOS = 527;
 
 	public static int MODELO_FORMULARIO_PUBLICACAO_DJF2R = 230;
+	
+	@Inject
+	private ExDao exDao;
+	
+	@Inject
+	private ExBL bl;
 
-	public static String segundoRetorno(Date data, String tipoCaderno,
+	public String segundoRetorno(Date data, String tipoCaderno,
 			String secao, String soLerXml) throws Exception {
 		String xml = buscarSegundoRetorno(data, tipoCaderno, secao);
 		if (!soLerXml.equals("sim"))
@@ -78,7 +86,7 @@ public class PublicacaoDJEBL {
 		return xml;
 	}
 
-	private static void lerXMLSegundoRetorno(Date data, String xml)
+	private void lerXMLSegundoRetorno(Date data, String xml)
 			throws Exception {
 		// TODO Auto-generated method stub
 		StringReader st = new StringReader(xml);
@@ -97,17 +105,15 @@ public class PublicacaoDJEBL {
             final ExMobilDaoFiltro daoViaFiltro = new ExMobilDaoFiltro();
             daoViaFiltro.setSigla(numeroDoDocumento);
 
-            final ExDao exDao = ExDao.getInstance();
-
             final ExMobil docVia;
             docVia = exDao.consultarPorSigla(daoViaFiltro);
 
             if (docVia != null && !docVia.doc().isDJEPublicado())
-                Ex.getInstance().getBL().registrarDisponibilizacaoPublicacao(docVia, data, paginaDaPublicacao);
+                bl.registrarDisponibilizacaoPublicacao(docVia, data, paginaDaPublicacao);
         }
 	}
 
-	public static String buscarSegundoRetorno(Date data, String tipoCaderno,
+	public String buscarSegundoRetorno(Date data, String tipoCaderno,
 			String secao) throws Exception {
 		Service service = new Service();
 		OperationDesc oper;
@@ -153,7 +159,7 @@ public class PublicacaoDJEBL {
 		return xmlRetorno;
 	}
 
-	public static String enviarTRF(ExMovimentacao mov) throws Exception {
+	public String enviarTRF(ExMovimentacao mov) throws Exception {
 
 		/*
 		 * AxisClient axis = new AxisClient(
@@ -177,7 +183,7 @@ public class PublicacaoDJEBL {
 		}
 	}
 
-	public static void primeiroEnvio(ExMovimentacao mov) throws Exception {
+	public void primeiroEnvio(ExMovimentacao mov) throws Exception {
 		if(Prop.get("dje.servidor.url") != null) {
 			String conteudoXML = enviarTRF(mov);
 	
@@ -194,7 +200,7 @@ public class PublicacaoDJEBL {
 	 * exceção única, mas a ídéia é que aqui, quando necessário, seja tomada a
 	 * decisão adequada a cada tipo de erro, de acordo com o seu código
 	 */
-	public static void verificaRetornoErrosTRF(String xml) throws Exception {
+	public void verificaRetornoErrosTRF(String xml) throws Exception {
 		StringReader st = new StringReader(xml);
 		SAXBuilder sb = new SAXBuilder();
 		Document dc;
@@ -222,7 +228,7 @@ public class PublicacaoDJEBL {
 
 	}
 	
-	public static Map<String, String> lerXMLPublicacao(String xml) throws Exception {
+	public Map<String, String> lerXMLPublicacao(String xml) throws Exception {
 		
 		Map<String, String> atributosXML = new HashMap<>();
 		StringReader st = new StringReader(xml);
@@ -257,7 +263,7 @@ public class PublicacaoDJEBL {
 	}
 	
 
-	public static byte[] gerarXMLPublicacao(ExMovimentacao mov,
+	public byte[] gerarXMLPublicacao(ExMovimentacao mov,
 			String tipoMateria, String lotPublicacao, String descrPublicacao) throws Exception {
 
 		ExDocumento movDoc = mov.getExDocumento();
@@ -303,7 +309,7 @@ public class PublicacaoDJEBL {
 					|| idMod == MODELO_FORMULARIO_PUBLICACAO_DJF2R)
 				attIdentificacao.addAttribute("", "", "TIPODOC", "Integer", docForm.get("idTipoMateria"));
 			else {
-				ExTpDocPublicacao tpDocPubl = ExDao.getInstance().consultarPorModelo(movDoc.getExModelo());
+				ExTpDocPublicacao tpDocPubl = exDao.consultarPorModelo(movDoc.getExModelo());
 				
 				if(tpDocPubl != null)
 					attIdentificacao.addAttribute("", "", "TIPODOC", "Integer", String.valueOf(tpDocPubl.getIdDocPublicacao().longValue()));
@@ -348,12 +354,12 @@ public class PublicacaoDJEBL {
 
 	}
 
-	private static String obterSiglaAlternativa(DpPessoa pess) {
+	private String obterSiglaAlternativa(DpPessoa pess) {
 		return (pess.getOrgaoUsuario().getIdOrgaoUsu() == 3 ? "TR" : 
 			pess.getOrgaoUsuario().getSigla()) + pess.getMatricula().toString();
 	}
 
-	public static String obterUnidadeDocumento(ExDocumento doc) {
+	public String obterUnidadeDocumento(ExDocumento doc) {
 		String nomeLota, nomeLotaFinal;
 //		ExDocumento movDoc = mov.getExDocumento();
 		Map<String, String> docForm = doc.getForm();
@@ -394,7 +400,7 @@ public class PublicacaoDJEBL {
 		return nomeLotaFinal;
 	}
 
-	public static String obterSugestaoTipoMateria(ExDocumento doc) {
+	public String obterSugestaoTipoMateria(ExDocumento doc) {
 		if (doc.getExModelo().getHisIdIni() == PublicacaoDJEBL.MODELO_FORMULARIO_PUBLICACAO_DJF2R_LICITACAO_CONTRATOS)
 			return "A";
 		else if (doc.getExModelo().getHisIdIni() == PublicacaoDJEBL.MODELO_FORMULARIO_PUBLICACAO_DJF2R_VARAS_JEFS_TR)
@@ -418,8 +424,8 @@ public class PublicacaoDJEBL {
 		return "'A'";
 	}
 
-	public static List<ExTpDocPublicacao> obterListaTiposMaterias(Long idMod) {
-		List<ExTpDocPublicacao> lista = ExDao.getInstance().listarExTiposDocPublicacao();
+	public List<ExTpDocPublicacao> obterListaTiposMaterias(Long idMod) {
+		List<ExTpDocPublicacao> lista = exDao.listarExTiposDocPublicacao();
 		List<ExTpDocPublicacao> listaFinal = new ArrayList<>();
 
 		for (ExTpDocPublicacao docPubl : lista) {
@@ -439,12 +445,12 @@ public class PublicacaoDJEBL {
 		return listaFinal;
 	}
 
-	public static boolean obterObrigatoriedadeTipoCaderno(ExDocumento doc) {
+	public boolean obterObrigatoriedadeTipoCaderno(ExDocumento doc) {
 		return doc.getExModelo().getHisIdIni() == MODELO_FORMULARIO_PUBLICACAO_DJF2R_LICITACAO_CONTRATOS
 				|| doc.getExModelo().getHisIdIni() == MODELO_FORMULARIO_PUBLICACAO_DJF2R_VARAS_JEFS_TR;
 	}
 
-	public static void cancelarRemessaPublicacao(ExMovimentacao movCancelamento)
+	public void cancelarRemessaPublicacao(ExMovimentacao movCancelamento)
 			throws Exception {
 
 		ExMovimentacao mov = movCancelamento.getExMovimentacaoRef();
@@ -499,7 +505,7 @@ public class PublicacaoDJEBL {
 		call.setProperty(Call.SOAPACTION_USE_PROPERTY, Boolean.TRUE);
 		call.setProperty(Call.SOAPACTION_URI_PROPERTY, "http://tempuri.org/ExcluirDocumento");
 
-		String siglaUnidade = mov.getLotaPublicacao();
+		String siglaUnidade = getLotaPublicacao(mov);
 
 		log.info("\n\n DJE exclusao "
                 + mov.getExDocumento().getCodigo()
@@ -535,5 +541,37 @@ public class PublicacaoDJEBL {
                 + xmlRetorno);
 
 		verificaRetornoErrosTRF(xmlRetorno);
+	}
+
+	public String getLotaPublicacao(ExMovimentacao mov) {
+		Map<String, String> atributosXML;
+		try {
+			String xmlString = mov.getConteudoXmlString("boletimadm");
+			if (xmlString != null) {
+				atributosXML = lerXMLPublicacao(xmlString);
+				return atributosXML.get("UNIDADE");
+			}
+			return obterUnidadeDocumento(mov.getExDocumento());
+		} catch (Exception e) {
+			return "Erro na leitura do arquivo XML (lotação de publicação)";
+
+		}
+
+	}
+
+	public String getDescrPublicacao(ExMovimentacao mov) {
+		Map<String, String> atributosXML;
+		try {
+			String xmlString = mov.getConteudoXmlString("boletimadm");
+			if (xmlString != null) {
+				atributosXML = lerXMLPublicacao(mov
+						.getConteudoXmlString("boletimadm"));
+				return atributosXML.get("DESCREXPEDIENTE");
+			}
+			return mov.getExDocumento().getDescrDocumento();
+		} catch (Exception e) {
+			return "Erro na leitura do arquivo XML (descrição de publicação)";
+		}
+
 	}
 }

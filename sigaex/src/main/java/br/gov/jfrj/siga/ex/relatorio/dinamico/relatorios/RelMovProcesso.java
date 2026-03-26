@@ -71,7 +71,7 @@ public class RelMovProcesso extends RelatorioTemplate {
 		String processo = (String) parametros.get("processo");
 				
 		Map<String, CpOrgaoUsuario> mapAcronimo = new TreeMap<String, CpOrgaoUsuario>();
-		for (CpOrgaoUsuario ou : ExDao.getInstance().listarOrgaosUsuarios()) {
+		for (CpOrgaoUsuario ou : dao.listarOrgaosUsuarios()) {
 			mapAcronimo.put(ou.getAcronimoOrgaoUsu(), ou);
 		}
 		String acronimos = "";

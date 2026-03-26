@@ -132,7 +132,7 @@ public class RelIndicadoresGestao extends RelatorioTemplate {
         String queryLotacao = "";
         if (parametros.get("lotacao") != null
                 && !"".equals(parametros.get("lotacao"))) {
-            queryLotacao = "and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :lotacao) ";
+            queryLotacao = "and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :lotacao) ";
         }
 
         String queryUsuario = "";
@@ -176,7 +176,7 @@ public class RelIndicadoresGestao extends RelatorioTemplate {
             DpPessoa pessoa = (DpPessoa) qryPes.getResultList().get(0);
             pessoaSet.add(pessoa);
 
-            query.setParameter("usuario", pessoa.getIdPessoaIni());
+            query.setParameter("usuario", pessoa.getHisIdIni());
         }
 
         Date dtini = formatter.parse((String) parametros.get("dataInicial"));

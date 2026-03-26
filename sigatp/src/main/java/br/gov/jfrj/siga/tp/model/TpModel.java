@@ -14,11 +14,6 @@ public abstract class TpModel extends Objeto {
 	private static final long serialVersionUID = -3265658962532346951L;
 	public static final Long ID_VAZIO = 0L;
 
-	@Override
-	public void save() {
-		TpDao.getInstance().gravar(this);
-	}
-
 	public void refresh() {
 		ContextoPersistencia
 			.em()

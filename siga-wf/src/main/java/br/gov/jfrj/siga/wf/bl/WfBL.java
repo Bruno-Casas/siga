@@ -36,19 +36,23 @@ import com.crivano.jflow.model.util.MissingParameterException;
 import com.crivano.jlogic.Expression;
 import org.apache.commons.beanutils.PropertyUtils;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Specializes;
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 import java.util.*;
 
-/**
- * Classe que representa a lógica do negócio do sistema de workflow.
- *
- * @author kpf
- */
+@ApplicationScoped
+@Specializes
 public class WfBL extends CpBL {
     public static final String WF_CADASTRANTE = "wf_cadastrante";
     public static final String WF_LOTA_CADASTRANTE = "wf_lota_cadastrante";
     public static final String WF_TITULAR = "wf_titular";
     public static final String WF_LOTA_TITULAR = "wf_lota_titular";
     private static WfTarefaComparator tic = new WfTarefaComparator();
+
+    @Inject
+    private WfDao dao;
 
     /**
      * Cria uma instância de processo. Ao final da criação, define as seguintes
@@ -68,7 +72,7 @@ public class WfBL extends CpBL {
                                             List<String> keys, List<Object> values, boolean fCreateStartTask) throws Exception {
 
         // Create the process definition,
-        WfDefinicaoDeProcedimento pd = WfDao.getInstance().consultar(pdId, WfDefinicaoDeProcedimento.class, false);
+        WfDefinicaoDeProcedimento pd = dao.consultar(pdId, WfDefinicaoDeProcedimento.class, false);
 
         // Create the process instance without responsible support
         HashMap<String, Object> variable = new HashMap<>();
@@ -102,7 +106,7 @@ public class WfBL extends CpBL {
         // diferentes ativos, quando o vínculo é exclusivo
         if (principal != null && (pd.getTipoDeVinculoComPrincipal() == WfTipoDeVinculoComPrincipal.OPCIONAL_E_EXCLUSIVO
                 || pd.getTipoDeVinculoComPrincipal() == WfTipoDeVinculoComPrincipal.OBRIGATORIO_E_EXCLUSIVO)) {
-            List<WfProcedimento> l = dao().consultarProcedimentosAtivosPorPrincipal(principal);
+            List<WfProcedimento> l = dao.consultarProcedimentosAtivosPorPrincipal(principal);
             if (l.size() > 0)
                 throwErroDeInicializacao(pi, null,
                         "não é permitido instanciar este procedimento com o principal " + principal
@@ -115,7 +119,7 @@ public class WfBL extends CpBL {
         pi.setLotaTitular(lotaTitular);
         pi.setHisIdcIni(identidade);
         pi.setOrgaoUsuario(titular.getOrgaoUsuario());
-        pi.setHisDtIni(dao().consultarDataEHoraDoServidor());
+        pi.setHisDtIni(cpDao.consultarDataEHoraDoServidor());
 
         for (WfDefinicaoDeTarefa td : pi.getDefinicaoDeProcedimento().getDefinicaoDeTarefa()) {
             if (td.getTipoDeTarefa() == null)
@@ -144,11 +148,11 @@ public class WfBL extends CpBL {
         }
 
         if (pi.getPrincipal() != null && pi.getTipoDePrincipal() == WfTipoDePrincipal.DOCUMENTO) {
-            dao().gravar(pi); // Precisa gravar para gerar uma sigla válida para o procedimento
+            cpDao.gravar(pi); // Precisa gravar para gerar uma sigla válida para o procedimento
             Service.getExService().atualizarPrincipal(pi.getPrincipal(), "PROCEDIMENTO", pi.getSigla());
         }
 
-        WfEngine engine = new WfEngine(dao(), new WfHandler(titular, lotaTitular, identidade));
+        WfEngine engine = new WfEngine(dao, new WfHandler(titular, lotaTitular, identidade));
 
         // Start the process instance
         if (idxPrimeiraTarefa == null)
@@ -169,7 +173,7 @@ public class WfBL extends CpBL {
 
     public void prosseguir(String event, Integer detourIndex, Map<String, Object> param, DpPessoa titular,
                            DpLotacao lotaTitular, CpIdentidade identidade) throws Exception {
-        WfEngine engine = new WfEngine(dao(), new WfHandler(titular, lotaTitular, identidade));
+        WfEngine engine = new WfEngine(dao, new WfHandler(titular, lotaTitular, identidade));
         engine.resume(event, detourIndex, param);
     }
 
@@ -185,7 +189,7 @@ public class WfBL extends CpBL {
                 pi.getVariable().put(v.getIdentifier(), value);
             }
         }
-        WfDao.getInstance().gravarInstanciaDeProcedimento(pi);
+        dao.gravarInstanciaDeProcedimento(pi);
     }
 
     public static WfProcedimento converterVariaveisEProsseguir(WfProcedimento pi, Map<String, String> paramsAsStrings,
@@ -235,7 +239,8 @@ public class WfBL extends CpBL {
             desvio = indiceDoDesvio;
         }
 
-        Wf.getInstance().getBL().prosseguir(pi.getIdEvent(), desvio, paramsAsObjects, titular, lotaTitular, idc);
+        WfBL bl = CDI.current().select(WfBL.class).get();
+        bl.prosseguir(pi.getIdEvent(), desvio, paramsAsObjects, titular, lotaTitular, idc);
         return pi;
     }
 
@@ -268,13 +273,13 @@ public class WfBL extends CpBL {
      */
     public SortedSet<WfTarefa> getTaskList(DpPessoa cadastrante, DpPessoa titular, DpLotacao lotaTitular)
             throws AplicacaoException {
-        SortedSet<WfTarefa> tasks = WfDao.getInstance().consultarTarefasDeLotacao(lotaTitular);
+        SortedSet<WfTarefa> tasks = dao.consultarTarefasDeLotacao(lotaTitular);
         return tasks;
     }
 
     public List<WfProcedimento> getTaskList(String siglaDoc) {
-        List<WfProcedimento> pis = WfDao.getInstance().consultarProcedimentosAtivosPorEvento(siglaDoc);
-        List<WfProcedimento> pis2 = WfDao.getInstance().consultarProcedimentosAtivosPorPrincipal(siglaDoc);
+        List<WfProcedimento> pis = dao.consultarProcedimentosAtivosPorEvento(siglaDoc);
+        List<WfProcedimento> pis2 = dao.consultarProcedimentosAtivosPorPrincipal(siglaDoc);
         for (WfProcedimento pi : pis2)
             if (!pis.contains(pi))
                 pis.add(pi);
@@ -347,10 +352,6 @@ public class WfBL extends CpBL {
         return false;
     }
 
-    private WfDao dao() {
-        return (WfDao) getComp().getConfiguracaoBL().dao();
-    }
-
     public void encerrarProcessInstance(Long id, Date consultarDataEHoraDoServidor) {
         // TODO Auto-generated method stub
     }
@@ -378,11 +379,11 @@ public class WfBL extends CpBL {
                        CpIdentidade identidadeCadastrante) throws AplicacaoException {
         if (novo.getNome() == null || novo.getNome().trim().length() == 0)
             throw new AplicacaoException("não é possível salvar sem informar o nome.");
-        dao().gravarComHistorico(novo, antigo, dt, identidadeCadastrante);
+        cpDao.gravarComHistorico(novo, antigo, dt, identidadeCadastrante);
     }
 
     private void gravarMovimentacao(final WfMov mov) throws AplicacaoException {
-        dao().gravar(mov);
+        cpDao.gravar(mov);
         WfProcedimento pi = mov.getProcedimento();
         if (pi.getMovimentacoes() == null)
             pi.setMovimentacoes(new TreeSet<WfMov>());
@@ -396,7 +397,7 @@ public class WfBL extends CpBL {
         if (!atual.equals(pi.getResponsible())) {
             pi.setEventoPessoa(atual.getPessoa());
             pi.setEventoLotacao(atual.getLotacao());
-            dao().gravarInstanciaDeProcedimento(pi);
+            dao.gravarInstanciaDeProcedimento(pi);
         }
     }
 
@@ -404,7 +405,7 @@ public class WfBL extends CpBL {
                        CpIdentidade identidade) {
         try {
 
-            WfMovAnotacao mov = new WfMovAnotacao(pi, descrMov, dao().consultarDataEHoraDoServidor(), titular,
+            WfMovAnotacao mov = new WfMovAnotacao(pi, descrMov, cpDao.consultarDataEHoraDoServidor(), titular,
                     lotaTitular, identidade);
             gravarMovimentacao(mov);
         } catch (final Exception e) {
@@ -414,12 +415,12 @@ public class WfBL extends CpBL {
 
     public void excluirAnotacao(WfProcedimento pi, WfMovAnotacao mov) {
         pi.getMovimentacoes().remove(mov);
-        mov.delete();
+        dao.excluir(mov);
     }
 
     public void registrarTransicao(WfProcedimento pi, Integer de, Integer para, DpPessoa titular, DpLotacao lotaTitular,
                                    CpIdentidade identidade) {
-        WfMovTransicao mov = new WfMovTransicao(pi, dao().consultarDataEHoraDoServidor(), titular, lotaTitular,
+        WfMovTransicao mov = new WfMovTransicao(pi, cpDao.consultarDataEHoraDoServidor(), titular, lotaTitular,
                 identidade, de, para);
 
         // Não registraremos a transição quando a movimentação anterior for um
@@ -438,7 +439,7 @@ public class WfBL extends CpBL {
 
     public void pegar(WfProcedimento pi, DpPessoa titular, DpLotacao lotaTitular, CpIdentidade identidade) {
         assertLogic(new WfPodePegar(pi, titular, lotaTitular), "pegar");
-        WfMovDesignacao mov = new WfMovDesignacao(pi, dao().consultarDataEHoraDoServidor(), titular, lotaTitular,
+        WfMovDesignacao mov = new WfMovDesignacao(pi, cpDao.consultarDataEHoraDoServidor(), titular, lotaTitular,
                 identidade, pi.getEventoPessoa(), pi.getEventoLotacao(), titular, lotaTitular);
         gravarMovimentacao(mov);
 
@@ -448,29 +449,29 @@ public class WfBL extends CpBL {
     public void redirecionar(WfProcedimento pi, int para, DpPessoa titular, DpLotacao lotaTitular,
                              CpIdentidade identidade) throws Exception {
         assertLogic(new WfPodeRedirecionar(pi, titular, lotaTitular), "redirecionar");
-        WfMovRedirecionamento mov = new WfMovRedirecionamento(pi, dao().consultarDataEHoraDoServidor(), titular,
+        WfMovRedirecionamento mov = new WfMovRedirecionamento(pi, cpDao.consultarDataEHoraDoServidor(), titular,
                 lotaTitular, identidade, pi.getCurrentIndex(), para);
         gravarMovimentacao(mov);
 
-        WfEngine engine = new WfEngine(dao(), new WfHandler(titular, lotaTitular, identidade));
+        WfEngine engine = new WfEngine(dao, new WfHandler(titular, lotaTitular, identidade));
         engine.execute(pi, pi.getCurrentIndex(), para);
     }
 
     public void terminar(WfProcedimento pi, DpPessoa titular, DpLotacao lotaTitular, CpIdentidade identidade)
             throws Exception {
         assertLogic(new WfPodeTerminar(pi, titular, lotaTitular), "terminar");
-        WfMovTermino mov = new WfMovTermino(pi, dao().consultarDataEHoraDoServidor(), titular, lotaTitular, identidade,
+        WfMovTermino mov = new WfMovTermino(pi, cpDao.consultarDataEHoraDoServidor(), titular, lotaTitular, identidade,
                 pi.getCurrentIndex());
         gravarMovimentacao(mov);
         pi.end();
-        dao().gravar(pi);
+        cpDao.gravar(pi);
         new WfHandler(titular, lotaTitular, identidade).signalToOtherProcessInstances(pi);
     }
 
     public void retomar(WfProcedimento pi, DpPessoa titular, DpLotacao lotaTitular, CpIdentidade identidade)
             throws Exception {
         assertLogic(new WfPodeRetomar(pi, titular, lotaTitular), "retomar");
-        WfEngine engine = new WfEngine(dao(), new WfHandler(titular, lotaTitular, identidade));
+        WfEngine engine = new WfEngine(dao, new WfHandler(titular, lotaTitular, identidade));
         engine.resume(pi);
     }
 
@@ -479,11 +480,11 @@ public class WfBL extends CpBL {
         assertLogic(new WfPodePriorizar(pi, titular, lotaTitular), "priorizar");
         if (pi.getPrioridade() == prioridade)
             return;
-        WfMovPriorizacao mov = new WfMovPriorizacao(pi, dao().consultarDataEHoraDoServidor(), titular, lotaTitular,
+        WfMovPriorizacao mov = new WfMovPriorizacao(pi, cpDao.consultarDataEHoraDoServidor(), titular, lotaTitular,
                 identidade, pi.getPrioridade(), prioridade);
         gravarMovimentacao(mov);
         pi.setPrioridade(prioridade);
-        dao().gravar(pi);
+        cpDao.gravar(pi);
     }
 
     private static void assertLogic(Expression expr, String descr) {

@@ -5,21 +5,25 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.PainelQuadroItem;
 import br.gov.jfrj.siga.api.v1.ISigaApiV1.PainelQuadroQtdItem;
 import br.gov.jfrj.siga.cp.CpTipoMarcadorEnum;
 import br.gov.jfrj.siga.cp.model.enm.*;
-import br.gov.jfrj.siga.dp.CpTipoMarca;
+import br.gov.jfrj.siga.dp.TipoMarca;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class PainelQuadroGet implements IPainelQuadroGet {
 
+    @Inject
+    private CpDao dao;
+
     private static class QuadroItemQtdVO {
-        public CpTipoMarca tipo;
+        public TipoMarca tipo;
         public String filtro;
         public long qtd;
 
-        public QuadroItemQtdVO(CpTipoMarca tipo, String filtro, long qtd) {
+        public QuadroItemQtdVO(TipoMarca tipo, String filtro, long qtd) {
             this.tipo = tipo;
             this.filtro = filtro;
             this.qtd = qtd;
@@ -52,7 +56,7 @@ public class PainelQuadroGet implements IPainelQuadroGet {
             this.marcadorCor = marcadorCor;
         }
 
-        public void addQtd(CpTipoMarca tipo, String filtro, long qtd) {
+        public void addQtd(TipoMarca tipo, String filtro, long qtd) {
             this.qtds.add(new QuadroItemQtdVO(tipo, filtro, qtd));
         }
 
@@ -68,7 +72,7 @@ public class PainelQuadroGet implements IPainelQuadroGet {
                         marcadorEnum != null && !marcadorEnum.getNome().startsWith("???") ? marcadorEnum.getNome()
                                 : (String) i[1],
                         (CpMarcadorIconeEnum) i[5], (CpMarcadorCorEnum) i[4]);
-            CpTipoMarca tipoMarca = (CpTipoMarca) i[6];
+            TipoMarca tipoMarca = (TipoMarca) i[6];
 
             Long qtdTotal = (Long) i[7];
             Long qtdAtendente = (Long) i[8];
@@ -90,10 +94,10 @@ public class PainelQuadroGet implements IPainelQuadroGet {
     @SuppressWarnings("unchecked")
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
-        CpTipoMarca cpTipoMarca = CpTipoMarca.findByName(req.tipoMarca);
+        TipoMarca tipoMarca = TipoMarca.findByName(req.tipoMarca);
 
-        List<Object[]> listEstados = CpDao.getInstance().consultarPainelQuadro(ctx.getTitular(), ctx.getLotaTitular(),
-                cpTipoMarca);
+        List<Object[]> listEstados = dao.consultarPainelQuadro(ctx.getTitular(), ctx.getLotaTitular(),
+                tipoMarca);
 
         List<QuadroItemVO> items = new ArrayList<>();
         QuadroItemVO previous = null;
@@ -149,7 +153,7 @@ public class PainelQuadroGet implements IPainelQuadroGet {
             for (QuadroItemQtdVO q : i.qtds) {
                 if (q.qtd != 0L) {
                     PainelQuadroQtdItem qtd = new PainelQuadroQtdItem();
-                    qtd.tipo = q.tipo.getDescrTipoMarca().replace("-", "_");
+                    qtd.tipo = q.tipo.getDescricao().replace("-", "_");
                     qtd.filtro = q.filtro;
                     qtd.qtd = Long.toString(q.qtd);
                     r.qtds.add(qtd);

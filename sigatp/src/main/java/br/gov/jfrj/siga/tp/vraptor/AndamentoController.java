@@ -37,18 +37,6 @@ public class AndamentoController extends TpController {
 
     private static final String ANDAMENTO = "andamento";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AndamentoController() {
-		super();
-	}
-	
-	@Inject
-    public AndamentoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("listarPorRequisicao/{idRequisicao}/{popUp}")
     public void listarPorRequisicao(Long idRequisicao, boolean popUp) throws AndamentoControllerException {
         RequisicaoTransporte requisicaoTransporte = RequisicaoTransporte.AR.findById(idRequisicao);
@@ -90,7 +78,7 @@ public class AndamentoController extends TpController {
                 andamento.setDataAndamento(Calendar.getInstance());
                 validator.validate(andamento);
                 redirecionarSeErroAoSalvar(andamento);
-                andamento.save();
+                dao.gravar(andamento);
                 result.redirectTo(RequisicaoController.class).listarPAprovar();
             }
         } catch (ApplicationControllerException e) {

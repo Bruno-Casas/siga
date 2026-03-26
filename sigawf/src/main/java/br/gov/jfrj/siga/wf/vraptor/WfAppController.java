@@ -12,7 +12,6 @@ import br.gov.jfrj.siga.vraptor.SigaIdDescr;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.StringQualquer;
 import br.gov.jfrj.siga.vraptor.Transacional;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.bl.WfBL;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.logic.WfPodeEditarVariaveis;
@@ -53,7 +52,7 @@ public class WfAppController extends WfController {
     }
 
     public WfDao dao() {
-        return (WfDao) dao;
+        return (WfDao) cpDao;
     }
 
     /**
@@ -69,7 +68,7 @@ public class WfAppController extends WfController {
     @Path("/app/inbox")
     public void inbox() throws Exception {
         SortedSet<WfTarefa> tis = new TreeSet<>();
-        List<WfProcedimento> pis = dao().consultarProcedimentosPorPessoaOuLotacao(getTitular(), getLotaTitular());
+        List<WfProcedimento> pis = cpDao.consultarProcedimentosPorPessoaOuLotacao(getTitular(), getLotaTitular());
         for (WfProcedimento pi : pis) {
             tis.add(new WfTarefa(pi));
         }
@@ -87,7 +86,7 @@ public class WfAppController extends WfController {
     @Path("/app/listar-para-iniciar")
     public void listarParaIniciar() throws Exception {
         assertAcesso(VERIFICADOR_ACESSO);
-        List<WfDefinicaoDeProcedimento> modelos = dao().listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
+        List<WfDefinicaoDeProcedimento> modelos = cpDao.listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
         result.include("itens", modelos);
     }
 
@@ -103,7 +102,7 @@ public class WfAppController extends WfController {
     public void iniciar(Long pdId) throws Exception {
         if (pdId == null)
             throw new RuntimeException();
-        WfDefinicaoDeProcedimento pd = dao().consultar(pdId, WfDefinicaoDeProcedimento.class, false);
+        WfDefinicaoDeProcedimento pd = cpDao.consultar(pdId, WfDefinicaoDeProcedimento.class, false);
         result.include("pd", pd);
     }
 
@@ -124,7 +123,7 @@ public class WfAppController extends WfController {
         }
         if (pdId == null)
             throw new RuntimeException("Identificador da definição de procedimento não encontrado");
-        WfDefinicaoDeProcedimento pd = dao().consultar(pdId, WfDefinicaoDeProcedimento.class, false);
+        WfDefinicaoDeProcedimento pd = cpDao.consultar(pdId, WfDefinicaoDeProcedimento.class, false);
 
         Integer idx = null;
         if (tdId != null) {
@@ -248,9 +247,9 @@ public class WfAppController extends WfController {
 //		String redirectTo = (String) taskInstance.getVariable(WF_REDIRECT_TO);
 //		if (redirectTo != null) {
 //			// taskInstance.deleteVariable(WF_REDIRECT_TO);
-//			WfDao.getInstance().getSessao().flush();
+//			dao.getSessao().flush();
 //			taskInstance.getProcessInstance().getContextInstance().deleteVariable(WF_REDIRECT_TO);
-//			WfDao.getInstance().getSessao().flush();
+//			dao.getSessao().flush();
 //			result.redirectTo(redirectTo);
 //			return;
 //		}
@@ -411,7 +410,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/procedimento/{sigla}/pegar")
     public void pegar(String sigla, String siglaPrincipal) throws Exception {
-        WfProcedimento pi = dao().consultarPorSigla(sigla, WfProcedimento.class, null);
+        WfProcedimento pi = cpDao.consultarPorSigla(sigla, WfProcedimento.class, null);
 
         Wf.getInstance().getBL().pegar(pi, getTitular(), getLotaTitular(), getIdentidadeCadastrante());
 
@@ -426,7 +425,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/procedimento/{sigla}/redirecionar")
     public void redirecionar(String sigla, String siglaPrincipal, Long tdId) throws Exception {
-        WfProcedimento pi = dao().consultarPorSigla(sigla, WfProcedimento.class, null);
+        WfProcedimento pi = cpDao.consultarPorSigla(sigla, WfProcedimento.class, null);
 
         if (tdId == null)
             throw new RuntimeException("Identificador da definição de tarefa não pode ser nulo");
@@ -448,7 +447,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/procedimento/{sigla}/terminar")
     public void terminar(String sigla, String siglaPrincipal) throws Exception {
-        WfProcedimento pi = dao().consultarPorSigla(sigla, WfProcedimento.class, null);
+        WfProcedimento pi = cpDao.consultarPorSigla(sigla, WfProcedimento.class, null);
 
         Wf.getInstance().getBL().terminar(pi, getTitular(), getLotaTitular(), getIdentidadeCadastrante());
 
@@ -464,7 +463,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/procedimento/{sigla}/retomar")
     public void retomar(String sigla, String siglaPrincipal) throws Exception {
-        WfProcedimento pi = dao().consultarPorSigla(sigla, WfProcedimento.class, null);
+        WfProcedimento pi = cpDao.consultarPorSigla(sigla, WfProcedimento.class, null);
 
         Wf.getInstance().getBL().retomar(pi, getTitular(), getLotaTitular(), getIdentidadeCadastrante());
 
@@ -479,7 +478,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/procedimento/{sigla}/priorizar")
     public void priorizar(String sigla, WfPrioridade prioridade) throws Exception {
-        WfProcedimento pi = dao().consultarPorSigla(sigla, WfProcedimento.class, null);
+        WfProcedimento pi = cpDao.consultarPorSigla(sigla, WfProcedimento.class, null);
 
         Wf.getInstance().getBL().priorizar(pi, prioridade, getTitular(), getLotaTitular(), getIdentidadeCadastrante());
 
@@ -523,7 +522,7 @@ public class WfAppController extends WfController {
     @Transacional
     public void assignTask(Long piId, DpPessoaSelecao ator_pessoaSel, DpLotacaoSelecao lotaAtor_lotacaoSel,
                            WfPrioridade prioridade, String justificativa) throws Exception {
-        WfProcedimento pi = dao().consultar(piId, WfProcedimento.class, false);
+        WfProcedimento pi = cpDao.consultar(piId, WfProcedimento.class, false);
 
         DpPessoa actor = ator_pessoaSel.getObjeto();
         DpLotacao lotaActor = lotaAtor_lotacaoSel.getObjeto();
@@ -568,7 +567,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/anotar")
     public void anotar(Long id, String descrMov) throws Exception {
-        WfProcedimento pi = dao().consultar(id, WfProcedimento.class, false);
+        WfProcedimento pi = cpDao.consultar(id, WfProcedimento.class, false);
         Wf.getInstance().getBL().anotar(pi, descrMov, getTitular(), getLotaTitular(), getIdentidadeCadastrante());
         result.redirectTo(this).procedimento(id.toString());
     }
@@ -582,7 +581,7 @@ public class WfAppController extends WfController {
     @Post
     @Path("/app/procedimento/{id}/anotacao/{idMov}/excluir")
     public void anotacaoExcluir(Long id, Long idMov) throws Exception {
-        WfProcedimento pi = dao().consultar(id, WfProcedimento.class, false);
+        WfProcedimento pi = cpDao.consultar(id, WfProcedimento.class, false);
         for (WfMov mov : pi.getMovimentacoes()) {
             if (mov.getId().equals(idMov) && mov instanceof WfMovAnotacao) {
                 Wf.getInstance().getBL().excluirAnotacao(pi, (WfMovAnotacao) mov);
@@ -599,7 +598,7 @@ public class WfAppController extends WfController {
      * @throws Exception
      */
     private WfProcedimento loadTaskInstance(Long piId) throws Exception {
-        WfProcedimento pi = dao().consultar(piId, WfProcedimento.class, false);
+        WfProcedimento pi = cpDao.consultar(piId, WfProcedimento.class, false);
         return pi;
     }
 }

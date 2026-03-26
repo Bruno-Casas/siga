@@ -45,10 +45,10 @@ public class WfUtil {
 	 */
 	public String getAtendente(WfTarefa ti) {
 		if (ti.getInstanciaDeProcedimento().getEventoPessoa() != null) {
-			if (ti.getInstanciaDeProcedimento().getEventoPessoa().getPessoaAtual().equals(so.getTitular()))
+			if (ti.getInstanciaDeProcedimento().getEventoPessoa().getHistoricoAtual().equals(so.getTitular()))
 				return "(minha)";
 			else
-				return ti.getInstanciaDeProcedimento().getEventoPessoa().getPessoaAtual().getSiglaCompleta();
+				return ti.getInstanciaDeProcedimento().getEventoPessoa().getHistoricoAtual().getSiglaCompleta();
 		}
 		if (ti.getInstanciaDeProcedimento().getEventoLotacao() != null)
 			return ti.getInstanciaDeProcedimento().getEventoLotacao().getSiglaCompleta();
@@ -125,7 +125,7 @@ public class WfUtil {
 //		if (ti.getPooledActors() != null && ti.getPooledActors().size() == 1) {
 //			DpLotacaoDaoFiltro lotflt = new DpLotacaoDaoFiltro();
 //			lotflt.setSiglaCompleta(((PooledActor) ti.getPooledActors().toArray()[0]).getActorId());
-//			DpLotacao lotacao = (DpLotacao) WfDao.getInstance().consultarPorSigla(lotflt);
+//			DpLotacao lotacao = (DpLotacao) dao.consultarPorSigla(lotflt);
 //			return !ator.isFechada() && ator.getLotacao().equivale(lotacao);
 //		} else {
 //			return false;

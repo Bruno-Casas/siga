@@ -31,7 +31,7 @@ import java.io.Serializable;
  * behavior of this class by editing the class, {@link ExVia()}.
  */
 @MappedSuperclass
-public abstract class AbstractExVia extends HistoricoAuditavelSuporte implements
+public abstract class AbstractExVia extends HistoricoAuditavelSuporte<ExVia> implements
         Serializable {
     /**
      * The composite primary key value.

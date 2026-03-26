@@ -45,18 +45,6 @@ public class PlantoesMensaisController extends TpController {
     
     private static final String HORARIO_INICIO_PLANTAO_24H = "07:00";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public PlantoesMensaisController() {
-		super();
-	}
-	
-	@Inject
-    public PlantoesMensaisController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @RoleAdmin
     @RoleAdminMissao
     @RoleAdminMissaoComplexo
@@ -119,7 +107,7 @@ public class PlantoesMensaisController extends TpController {
 
         for (Iterator<Plantao> iterator = plantoesAExcluir.iterator(); iterator.hasNext();) {
             Plantao plantao = iterator.next();
-            plantao.delete();
+            dao.excluir(plantao);
         }
 
         result.redirectTo(this).listar();
@@ -332,7 +320,7 @@ public class PlantoesMensaisController extends TpController {
                 plantoesComErro.add(plantao);
             } else {
                 try {
-                    plantao.save();
+                    dao.gravar(plantao);
                 } catch (Exception e) {
                     LOGGER.error(e.getMessage(), e);
                     validator.add(new I18nMessage("plantao:" + e.getMessage(), "plantoesMensais.erro.nao.identificado.salvar", formatoSomenteData.format(plantao.getDataHoraInicio().getTime())));

@@ -18,7 +18,7 @@ import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Contexto;
 import br.gov.jfrj.siga.base.Data;
-import br.gov.jfrj.siga.base.Prop;
+import br.gov.jfrj.siga.cp.bl.CpCompetenciaBL;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.DpVisualizacao;
@@ -26,28 +26,20 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.jee.SigaLibsEL;
 
 @Controller
-public class VisualizacaoController extends SigaController {
+public class VisualizacaoController extends VraptorController {
 	private String dtIniDeleg;
 	private String dtFimDeleg;	
 	private DpPessoaSelecao titularSel;
 	private DpPessoaSelecao delegadoSel;
-	
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public VisualizacaoController() {
-		super();
-	}
 
 	@Inject
-	public VisualizacaoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
+	CpCompetenciaBL cpCompetenciaBL;
 
-		titularSel = new DpPessoaSelecao();	
-		
-		delegadoSel = new DpPessoaSelecao();		
-		
+	@Inject
+	private void init() {
+		titularSel = new DpPessoaSelecao();
+
+		delegadoSel = new DpPessoaSelecao();
 	}
 	
 	private List<DpVisualizacao> buscarVisualizacoes(DpPessoa pessoa) 
@@ -56,12 +48,10 @@ public class VisualizacaoController extends SigaController {
 		List<DpVisualizacao> visVigentes = new ArrayList<DpVisualizacao>();
 		DpVisualizacao dpVisualizacao = new DpVisualizacao();
 		dpVisualizacao.setTitular(pessoa);
-	    todasVis = dao.consultarOrdemData(dpVisualizacao);
+	    todasVis = cpDao.consultarOrdemData(dpVisualizacao);
 	    
-	    for (DpVisualizacao vis : todasVis) {	
-
-	    	if (vis.getDelegado() != null && (vis.getDelegado().isFechada() 
-	    			|| vis.getDelegado().isBloqueada()))
+	    for (DpVisualizacao vis : todasVis) {
+	    	if (vis.getDelegado() != null && (vis.getDelegado().isFechada() || cpCompetenciaBL.isPessoaBloqueada(vis.getDelegado())))
 	    		continue;
 	    	if (vis.isEmVoga() || vis.isFutura()) {
 	    		visVigentes.add(vis);	    		
@@ -81,7 +71,7 @@ public class VisualizacaoController extends SigaController {
 		result.include("strBuscarFechadas", buscarFechadas);
 		
 		if (id != null) {
-			DpVisualizacao visualizacao = dao().consultar(id, DpVisualizacao.class, false);
+			DpVisualizacao visualizacao = cpDao.consultar(id, DpVisualizacao.class, false);
 
 			titularSel.buscarPorObjeto(visualizacao.getTitular());
 			delegadoSel.buscarPorObjeto(visualizacao.getDelegado());
@@ -123,7 +113,6 @@ public class VisualizacaoController extends SigaController {
 		this.delegadoSel = delegadoSel;//tipoSubstituto=1
 		
 		try {
-			dao().iniciarTransacao();
 			
 			vis.setTitular(getCadastrante());
 				
@@ -167,23 +156,21 @@ public class VisualizacaoController extends SigaController {
 			vis.setDtIniRegistro(new Date());
 
 			if (visualizacao != null && visualizacao.getIdVisualizacao() != null) {
-				DpVisualizacao visAntiga = dao().consultar(visualizacao.getIdVisualizacao(), DpVisualizacao.class, false);
+				DpVisualizacao visAntiga = cpDao.consultar(visualizacao.getIdVisualizacao(), DpVisualizacao.class, false);
 				visAntiga.setDtFimRegistro(new Date());
-				visAntiga = dao().gravar(visAntiga);
+				visAntiga = cpDao.gravar(visAntiga);
 				vis.setIdRegistroInicial(visAntiga.getIdRegistroInicial());
 			}
 
-			vis = dao().gravar(vis);
+			vis = cpDao.gravar(vis);
 
 			if (vis.getIdRegistroInicial() == null)
 				vis.setIdRegistroInicial(vis.getIdVisualizacao());
 
-			vis = dao().gravar(vis);
+			vis = cpDao.gravar(vis);
 			result.redirectTo(this).lista();
 
-			dao().commitTransacao();
 		} catch (final Exception e) {
-			dao().rollbackTransacao();
 			result.include("exceptionStack", e);
 			throw new AplicacaoException("Não foi possível Gravar", 0, e);			
 		}
@@ -207,14 +194,12 @@ public class VisualizacaoController extends SigaController {
 		try{
 		
 		if (id != null) {
-			DpVisualizacao dpVis = dao().consultar(id, DpVisualizacao.class, false);
+			DpVisualizacao dpVis = cpDao.consultar(id, DpVisualizacao.class, false);
 			
 			if ((dpVis.getDelegado() != null && dpVis.getDelegado().equivale(getCadastrante()))					
 					||(dpVis.getTitular() != null && dpVis.getTitular().equivale(getCadastrante()))) {
-				dao().iniciarTransacao();		
 				dpVis.setDtFimRegistro(new Date());
-				dpVis = dao().gravar(dpVis);
-				dao().commitTransacao();
+				dpVis = cpDao.gravar(dpVis);
 				String referer = getRequest().getHeader("Referer");
 				if (referer != null)
 					result.redirectTo(referer);

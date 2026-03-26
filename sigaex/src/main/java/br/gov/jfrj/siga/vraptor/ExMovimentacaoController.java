@@ -9,7 +9,6 @@ import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.cp.CpGrupoDeEmail;
 import br.gov.jfrj.siga.cp.CpToken;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.CpGrupoDeEmailSelecao;
 import br.gov.jfrj.siga.cp.model.CpOrgaoSelecao;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
@@ -22,18 +21,18 @@ import br.gov.jfrj.siga.dp.CpMarcador;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.DpSubstituicao;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
 import br.gov.jfrj.siga.ex.*;
 import br.gov.jfrj.siga.ex.bl.AcessoConsulta;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExAssinavelDoc;
+import br.gov.jfrj.siga.ex.bl.ExDocumentoBL;
 import br.gov.jfrj.siga.ex.bl.ExVisualizacaoTempDocCompl;
 import br.gov.jfrj.siga.ex.logic.*;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeVinculo;
 import br.gov.jfrj.siga.ex.util.DatasPublicacaoDJE;
+import br.gov.jfrj.siga.ex.util.Notificador;
 import br.gov.jfrj.siga.ex.util.PublicacaoDJEBL;
 import br.gov.jfrj.siga.ex.vo.ExMobilVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -83,20 +82,16 @@ public class ExMovimentacaoController extends ExController {
 
     private static final int MAX_ITENS_PAGINA_TRAMITACAO_LOTE = 50;
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExMovimentacaoController() {
-        super();
-    }
+    @Inject
+    private ExDocumentoBL docBl;
 
     @Inject
-    public ExMovimentacaoController(HttpServletRequest request,
-                                    HttpServletResponse response, ServletContext context,
-                                    Result result, SigaObjects so, EntityManager em) {
+    private ExVisualizacaoTempDocCompl visualizacaoTempDocCompl;
 
-        super(request, response, context, result, ExDao.getInstance(), so, em);
-    }
+    @Inject
+    private PublicacaoDJEBL publicacaoDJEBL;
+    @Inject
+    private Notificador notificador;
 
     private ExDocumento buscarDocumento(final BuscaDocumentoBuilder builder) {
         return buscarDocumento(builder, true);
@@ -104,17 +99,13 @@ public class ExMovimentacaoController extends ExController {
 
     private ExDocumento buscarDocumento(final BuscaDocumentoBuilder builder,
                                         final boolean verificarAcesso) {
-        ExDocumento doc = builder.buscarDocumento(dao());
+        ExDocumento doc = builder.buscarDocumento(dao);
         if (verificarAcesso && builder.getMob() != null) {
 
             verificaNivelAcesso(builder.getMob());
         }
 
         return doc;
-    }
-
-    private ExVisualizacaoTempDocCompl getExConsTempDocCompleto() {
-        return ExVisualizacaoTempDocCompl.getInstance();
     }
 
     @Get("app/expediente/mov/anexar")
@@ -128,7 +119,7 @@ public class ExMovimentacaoController extends ExController {
         final ExMovimentacaoBuilder movimentacaoBuilder = ExMovimentacaoBuilder
                 .novaInstancia().setMob(mob);
 
-        Ex.getInstance().getComp().afirmar("Arquivo não pode ser anexado", ExPodeAnexarArquivo.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Arquivo não pode ser anexado", ExPodeAnexarArquivo.class, getTitular(), getLotaTitular(), mob);
 
         final ExMobilVO mobilVO = new ExMobilVO(mob, getCadastrante(), getTitular(),
                 getLotaTitular(), true,
@@ -194,7 +185,7 @@ public class ExMovimentacaoController extends ExController {
 
             if (mob.isVolumeEncerrado()) {
                 //DpPessoa cadastrante, DpLotacao lotaCadastrante,		ExDocumento doc
-                Ex.getInstance().getBL().criarVolume(getCadastrante(), getLotaTitular(), mob.doc());
+                bl.criarVolume(getCadastrante(), getLotaTitular(), mob.doc());
 
                 mob = mob.doc().getUltimoVolume();
             }
@@ -301,7 +292,7 @@ public class ExMovimentacaoController extends ExController {
         final ExMobil mob = documentoBuilder.getMob();
 
         if (!(mob.isGeral() && mob.doc().isFinalizado())) {
-            Ex.getInstance().getComp().afirmar("Arquivo não pode ser anexado", ExPodeAnexarArquivo.class, getTitular(), getLotaTitular(), mob);
+            comp.afirmar("Arquivo não pode ser anexado", ExPodeAnexarArquivo.class, getTitular(), getLotaTitular(), mob);
         }
 
         gravarArquivoAnexado(subscritorSel, titularSel, substituicao, arquivo, dtMovString, descrMov, mob);
@@ -323,7 +314,7 @@ public class ExMovimentacaoController extends ExController {
                 .setDescrMov(descrMov).setContentType(arquivo.getContentType())
                 .setFileName(arquivo.getFileName());
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
         mov.setSubscritor(subscritorSel.getObjeto());
         mov.setTitular(titularSel.getObjeto());
 
@@ -336,7 +327,7 @@ public class ExMovimentacaoController extends ExController {
         if (aidMov != null) {
             pendencias = new TreeSet<>();
             for (String s : aidMov) {
-                pendencias.add(dao().consultar(Long.parseLong(s),
+                pendencias.add(dao.consultar(Long.parseLong(s),
                         ExMovimentacao.class, false));
             }
         }
@@ -344,9 +335,7 @@ public class ExMovimentacaoController extends ExController {
         // Nato: Precisei usar o código abaixo para adaptar o charset do nome do arquivo
         final String sNmArqMov = adaptarCharsetNomeArquivo(mov.getNmArqMov());
 
-        Ex.getInstance()
-                .getBL()
-                .anexarArquivo(getCadastrante(), getLotaTitular(), mob,
+        bl.anexarArquivo(getCadastrante(), getLotaTitular(), mob,
                         mov.getDtMov(), mov.getSubscritor(), sNmArqMov,
                         mov.getTitular(), mov.getLotaTitular(),
                         mov.getConteudoBlobMov2(), mov.getConteudoTpMov(),
@@ -395,7 +384,7 @@ public class ExMovimentacaoController extends ExController {
             throw new AplicacaoException("Inclusão de arquivo auxiliar não é permitida em documentos arquivados");
         }
 
-        Ex.getInstance().getComp().afirmar("Arquivo Auxiliar não pode ser anexado", ExPodeAnexarArquivoAuxiliar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Arquivo Auxiliar não pode ser anexado", ExPodeAnexarArquivoAuxiliar.class, getTitular(), getLotaTitular(), mob);
 
         result.include("sigla", sigla);
         result.include("mob", mob);
@@ -416,13 +405,13 @@ public class ExMovimentacaoController extends ExController {
         if (mob != null && !mob.isGeral())
             mob = mob.doc().getMobilGeral();
 
-        Ex.getInstance().getComp().afirmar("Arquivo Auxiliar não pode ser anexado", ExPodeAnexarArquivoAuxiliar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Arquivo Auxiliar não pode ser anexado", ExPodeAnexarArquivoAuxiliar.class, getTitular(), getLotaTitular(), mob);
 
         final ExMovimentacaoBuilder movimentacaoBuilder = ExMovimentacaoBuilder
                 .novaInstancia().setMob(documentoBuilder.getMob()).setContentType(arquivo.getContentType())
                 .setFileName(arquivo.getFileName());
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
         mov.setSubscritor(getCadastrante());
         mov.setTitular(getCadastrante());
 
@@ -443,8 +432,7 @@ public class ExMovimentacaoController extends ExController {
         final String sNmArqMov = adaptarCharsetNomeArquivo(mov.getNmArqMov());
 
 
-        Ex.getInstance().getBL()
-                .anexarArquivoAuxiliar(getCadastrante(), getLotaTitular(), mob,
+        bl.anexarArquivoAuxiliar(getCadastrante(), getLotaTitular(), mob,
                         mov.getDtMov(), mov.getSubscritor(), sNmArqMov,
                         mov.getTitular(), mov.getLotaTitular(),
                         mov.getConteudoBlobMov2(), mov.getConteudoTpMov());
@@ -472,7 +460,7 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(documentoBuilder);
         final ExMobil mob = documentoBuilder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é permitido incluir cópia", ExPodeCopiar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é permitido incluir cópia", ExPodeCopiar.class, getTitular(), getLotaTitular(), mob);
 
         result.include("sigla", sigla);
         result.include("doc", mob.doc());
@@ -503,16 +491,14 @@ public class ExMovimentacaoController extends ExController {
                 .setSubscritorSel(subscritorSel).setMob(mob)
                 .setDocumentoRefSel(documentoRefSel);
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        if (!Ex.getInstance()
-                .getComp()
-                .pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(),
+        if (!comp.pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(),
                         mov.getExMobilRef())) {
             throw new AplicacaoException("Não é permitido incluir cópia de documento que o usuário não tenha acesso");
         }
 
-        Ex.getInstance().getComp().afirmar("Não é permitido incluir cópia", ExPodeCopiar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é permitido incluir cópia", ExPodeCopiar.class, getTitular(), getLotaTitular(), mob);
 
         if (mov.getExMobilRef() == null) {
             throw new AplicacaoException(
@@ -523,9 +509,7 @@ public class ExMovimentacaoController extends ExController {
             mov.setSubscritor(getTitular());
         }
 
-        Ex.getInstance()
-                .getBL()
-                .copiar(getCadastrante(), getLotaTitular(),
+        bl.copiar(getCadastrante(), getLotaTitular(),
                         mob, mov.getExMobilRef(), mov.getDtMov(),
                         mov.getSubscritor(), mov.getTitular());
 
@@ -546,13 +530,11 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setMob(mob);
 
         final ExMovimentacao movimentacao = movimentacaoBuilder
-                .construir(dao());
+                .construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Via não pode ser desobrestada", ExPodeDessobrestar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Via não pode ser desobrestada", ExPodeDessobrestar.class, getTitular(), getLotaTitular(), mob);
 
-        Ex.getInstance()
-                .getBL()
-                .desobrestar(getCadastrante(), getLotaTitular(), mob,
+        bl.desobrestar(getCadastrante(), getLotaTitular(), mob,
                         movimentacao.getDtMov(), movimentacao.getSubscritor());
         ExDocumentoController.redirecionarParaExibir(result, sigla);
     }
@@ -566,17 +548,15 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(builder);
 
         final ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
-                .construir(dao());
+                .construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Acesso permitido somente a usuários autorizados.",
+        comp.afirmar("Acesso permitido somente a usuários autorizados.",
                 ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance().getComp().afirmar("Via não pode ser sobrestada",
+        comp.afirmar("Via não pode ser sobrestada",
                 ExPodeSobrestar.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .sobrestar(getCadastrante(), getLotaTitular(),
+        bl.sobrestar(getCadastrante(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), null,
                         mov.getSubscritor());
         ExDocumentoController.redirecionarParaExibir(result, sigla);
@@ -614,7 +594,7 @@ public class ExMovimentacaoController extends ExController {
             doc.setDtPrimeiraAssinatura(dao.dt());
 
         if (devePreAssinar(doc, previamenteAssinado)) {
-            Ex.getInstance().getBL()
+            bl
                     .processarComandosEmTag(doc, "pre_assinatura");
         }
 
@@ -646,7 +626,7 @@ public class ExMovimentacaoController extends ExController {
     }
 
     private boolean permiteAutenticar(ExDocumento doc) {
-        return Ex.getInstance().getComp().pode(ExPodeAutenticarDocumento.class, getTitular(), getLotaTitular(), doc);
+        return comp.pode(ExPodeAutenticarDocumento.class, getTitular(), getLotaTitular(), doc);
     }
 
     public static class AtivoEFixo {
@@ -656,8 +636,7 @@ public class ExMovimentacaoController extends ExController {
     }
 
     private AtivoEFixo obterAtivoEFixo(ExModelo modelo, ExTipoDocumento tipoDocumento, ITipoDeConfiguracao tipoConf) {
-        final CpSituacaoDeConfiguracaoEnum idSit = Ex.getInstance()
-                .getConf()
+        final CpSituacaoDeConfiguracaoEnum idSit = conf
                 .buscaSituacao(
                         modelo,
                         tipoDocumento,
@@ -702,7 +681,7 @@ public class ExMovimentacaoController extends ExController {
         result.include("sigla", sigla);
         result.include("mob", builder.getMob());
         result.include("listaNivelAcesso", getListaNivelAcesso(doc));
-        result.include("nivelAcesso", doc.getExNivelAcessoAtual().getIdNivelAcesso());
+        result.include("nivelAcesso", docBl.getNivelAcessoAtualDoc(doc).getIdNivelAcesso());
         result.include("subscritorSel", subscritorSel);
         result.include("titularSel", titularSel);
     }
@@ -719,7 +698,7 @@ public class ExMovimentacaoController extends ExController {
         result.include("sigla", sigla);
         result.include("mob", builder.getMob());
         result.include("listaNivelAcesso", getListaNivelAcesso(doc));
-        result.include("nivelAcesso", doc.getExNivelAcessoAtual().getIdNivelAcesso());
+        result.include("nivelAcesso", docBl.getNivelAcessoAtualDoc(doc).getIdNivelAcesso());
         result.include("subscritorSel", subscritorSel);
         result.include("titularSel", titularSel);
     }
@@ -732,13 +711,11 @@ public class ExMovimentacaoController extends ExController {
 
         final ExDocumento doc = buscarDocumento(builder);
 
-        ExNivelAcesso exTipoSig = dao().consultar(ExNivelAcesso.ID_LIMITADO_ENTRE_LOTACOES, ExNivelAcesso.class, false);
+        ExNivelAcesso exTipoSig = dao.consultar(ExNivelAcesso.ID_LIMITADO_ENTRE_LOTACOES, ExNivelAcesso.class, false);
 
-        Ex.getInstance().getComp().afirmar("Não é possível desfazer restrição de acesso", ExPodeDesfazerRestricaoDeAcesso.class, getCadastrante(), getLotaCadastrante(), builder.getMob());
+        comp.afirmar("Não é possível desfazer restrição de acesso", ExPodeDesfazerRestricaoDeAcesso.class, getCadastrante(), getLotaCadastrante(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .desfazerRestringirAcesso(getCadastrante(), getLotaCadastrante(), doc, null, exTipoSig);
+        bl.desfazerRestringirAcesso(getCadastrante(), getLotaCadastrante(), doc, null, exTipoSig);
 
         ExDocumentoController.redirecionarParaExibir(result, sigla);
     }
@@ -750,7 +727,7 @@ public class ExMovimentacaoController extends ExController {
 
         List<DpPessoa> listaSubscritor = new ArrayList<>();
         for (int i = 1; i < usuarios.length; i++) {
-            listaSubscritor.add(dao().consultar(Long.valueOf(usuarios[i]), DpPessoa.class, false));
+            listaSubscritor.add(dao.consultar(Long.valueOf(usuarios[i]), DpPessoa.class, false));
         }
 
         final BuscaDocumentoBuilder builder = BuscaDocumentoBuilder
@@ -761,22 +738,20 @@ public class ExMovimentacaoController extends ExController {
         final ExMovimentacaoBuilder movimentacaoBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
         ExNivelAcesso exTipoSig = null;
 
         if (nivelAcesso != null) {
-            exTipoSig = dao()
+            exTipoSig = dao
                     .consultar(nivelAcesso, ExNivelAcesso.class, false);
         }
 
-        Ex.getInstance().getComp().afirmar("Não é possível restringir acesso", ExPodeRestringirAcesso.class, getCadastrante(), getLotaCadastrante(), builder.getMob());
+        comp.afirmar("Não é possível restringir acesso", ExPodeRestringirAcesso.class, getCadastrante(), getLotaCadastrante(), builder.getMob());
 
         adicionarIndicativoDeMovimentacaoComOrigemPeloBotaoDeRestricaoDeAcesso();
 
-        Ex.getInstance()
-                .getBL()
-                .restringirAcesso(getCadastrante(), getLotaTitular(), doc,
+        bl.restringirAcesso(getCadastrante(), getLotaTitular(), doc,
                         null, mov.getLotaResp(), mov.getResp(),
                         listaSubscritor, mov.getTitular(),
                         mov.getNmFuncaoSubscritor(), exTipoSig);
@@ -805,20 +780,18 @@ public class ExMovimentacaoController extends ExController {
                 .setTitularSel(titularSel).setDtMovString(dtMovString)
                 .setSubstituicao(substituicao);
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
         ExNivelAcesso exTipoSig = null;
 
         if (nivelAcesso != null) {
-            exTipoSig = dao()
+            exTipoSig = dao
                     .consultar(nivelAcesso, ExNivelAcesso.class, false);
         }
 
-        Ex.getInstance().getComp().afirmar("Não é possível redefinir o nível de acesso", ExPodeRedefinirNivelDeAcesso.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível redefinir o nível de acesso", ExPodeRedefinirNivelDeAcesso.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .redefinirNivelAcesso(getCadastrante(), getLotaTitular(), doc,
+        bl.redefinirNivelAcesso(getCadastrante(), getLotaTitular(), doc,
                         mov.getDtMov(), mov.getLotaResp(), mov.getResp(),
                         mov.getSubscritor(), mov.getTitular(),
                         mov.getNmFuncaoSubscritor(), exTipoSig);
@@ -834,10 +807,10 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(documentoBuilder);
         final ExMobil mob = documentoBuilder.getMob();
 
-        Ex.getInstance().getBL()
+        bl
                 .validarCancelamentoDeUltimaMovimentacao(getTitular(), getLotaTitular(), mob);
 
-        Ex.getInstance().getBL()
+        bl
                 .cancelarMovimentacao(getCadastrante(), getLotaTitular(), mob);
         ExDocumentoController.redirecionarParaExibir(result, sigla);
     }
@@ -850,9 +823,7 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(builder);
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance()
-                .getBL()
-                .excluirMovimentacao(getCadastrante(), getLotaTitular(), mob,
+        bl.excluirMovimentacao(getCadastrante(), getLotaTitular(), mob,
                         id);
 
         if (continuarTela) {
@@ -880,7 +851,7 @@ public class ExMovimentacaoController extends ExController {
             throw new AplicacaoException("id não foi informada.");
         }
 
-        final ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class,
+        final ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class,
                 false);
 
         result.include("id", id);
@@ -901,7 +872,7 @@ public class ExMovimentacaoController extends ExController {
         ExMovimentacao mov;
 
         if (id != null)
-            mov = dao().consultar(id, ExMovimentacao.class, false);
+            mov = dao.consultar(id, ExMovimentacao.class, false);
         else
             mov = new ExMovimentacao();
 
@@ -924,7 +895,7 @@ public class ExMovimentacaoController extends ExController {
         ExMovimentacao mov;
 
         if (id != null)
-            mov = dao().consultar(id, ExMovimentacao.class, false);
+            mov = dao.consultar(id, ExMovimentacao.class, false);
         else
             mov = new ExMovimentacao();
 
@@ -955,7 +926,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
         oExemplo.setSigla(sigla);
-        pes = CpDao.getInstance().consultarPorSigla(oExemplo);
+        pes = dao.consultarPorSigla(oExemplo);
 
         if (pes == null) {
             LOGGER.warn("[aGerarProtocoloArq] - Não foi possível localizar DpPessoa com a sigla "
@@ -965,7 +936,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
         Date dt = paramDate("dt");
-        final List<ExMovimentacao> movs = dao().consultarMovimentacoes(pes, dt);
+        final List<ExMovimentacao> movs = dao.consultarMovimentacoes(pes, dt);
         for (ExMovimentacao m : movs) {
             if (mov == null)
                 mov = m;
@@ -1026,7 +997,7 @@ public class ExMovimentacaoController extends ExController {
 
         final ExDocumento doc = buscarDocumento(builder);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer juntada", ExPodeJuntar.class, getTitular(), getLotaTitular(),
+        comp.afirmar("Não é possível fazer juntada", ExPodeJuntar.class, getTitular(), getLotaTitular(),
                 builder.getMob());
 
         // Preencher automaticamente o mobil pai quando se tratar de documento filho
@@ -1078,9 +1049,9 @@ public class ExMovimentacaoController extends ExController {
             movimentacaoBuilder.setSubscritorSel(new DpPessoaSelecao());
         }
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer juntada", ExPodeJuntar.class, getTitular(), getLotaTitular(),
+        comp.afirmar("Não é possível fazer juntada", ExPodeJuntar.class, getTitular(), getLotaTitular(),
                 movimentacaoBuilder.getMob());
 
         // Nato: precisamos rever o codigo abaixo, pois a movimentacao nao pode
@@ -1100,8 +1071,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .juntarDocumento(getCadastrante(), getTitular(),
                             getLotaTitular(), idDocumentoPaiExterno,
                             movimentacaoBuilder.getMob(), mov.getExMobilRef(),
@@ -1121,7 +1091,7 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setSigla(sigla);
         final ExDocumento doc = buscarDocumento(builder);
 
-        Ex.getInstance().getComp().afirmar("Não é possível apensar", ExPodeApensar.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível apensar", ExPodeApensar.class, getTitular(), getLotaTitular(), builder.getMob());
 
         result.include("mob", builder.getMob());
         result.include("doc", doc);
@@ -1149,9 +1119,9 @@ public class ExMovimentacaoController extends ExController {
                 .setDtMovString(dtMovString).setSubstituicao(substituicao)
                 .setMob(builder.getMob());
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível apensar", ExPodeApensar.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível apensar", ExPodeApensar.class, getTitular(), getLotaTitular(), builder.getMob());
 
         // Quando o documento e eletronico, o responsavel pela juntada fica
         // sendo o proprio cadastrante e a data fica sendo a data atual
@@ -1161,9 +1131,7 @@ public class ExMovimentacaoController extends ExController {
             mov.setTitular(getTitular());
         }
 
-        Ex.getInstance()
-                .getBL()
-                .apensarDocumento(getCadastrante(), getTitular(),
+        bl.apensarDocumento(getCadastrante(), getTitular(),
                         getLotaTitular(), builder.getMob(),
                         mov.getExMobilRef(), mov.getDtMov(),
                         mov.getSubscritor(), mov.getTitular());
@@ -1185,7 +1153,7 @@ public class ExMovimentacaoController extends ExController {
             sub.buscar();
         }
 
-        Ex.getInstance().getComp().afirmar("Não é possível registrar a assinatura", ExPodeRegistrarAssinatura.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível registrar a assinatura", ExPodeRegistrarAssinatura.class, getTitular(), getLotaTitular(), builder.getMob());
 
         result.include("mob", builder.getMob());
         result.include("sigla", sigla);
@@ -1212,17 +1180,15 @@ public class ExMovimentacaoController extends ExController {
                 .setSubscritorSel(subscritorSel).setSubstituicao(substituicao)
                 .setTitularSel(tilularSel);
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
         if (mov.getSubscritor() == null) {
             throw new AplicacaoException("Responsável não informado");
         }
 
-        Ex.getInstance().getComp().afirmar("Não é possível registrar a assinatura", ExPodeRegistrarAssinatura.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível registrar a assinatura", ExPodeRegistrarAssinatura.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .RegistrarAssinatura(getCadastrante(), getLotaTitular(), doc,
+        bl.RegistrarAssinatura(getCadastrante(), getLotaTitular(), doc,
                         mov.getDtMov(), mov.getSubscritor(), mov.getTitular());
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
@@ -1239,8 +1205,8 @@ public class ExMovimentacaoController extends ExController {
         final ExMovimentacaoBuilder movimentacaoBuilder = ExMovimentacaoBuilder
                 .novaInstancia().setMob(mob);
 
-        final boolean podeExibirArvoreDocsCossig = getExConsTempDocCompleto().podeExibirCheckBoxVisTempDocsComplCossigsSubscritor(getCadastrante(), getLotaCadastrante(), doc);
-        Ex.getInstance().getComp().afirmar("Não é possível incluir cossignatário", ExPodeIncluirCossignatario.class, getTitular(), getLotaTitular(), builder.getMob());
+        final boolean podeExibirArvoreDocsCossig = visualizacaoTempDocCompl.podeExibirCheckBoxVisTempDocsComplCossigsSubscritor(getCadastrante(), getLotaCadastrante(), doc);
+        comp.afirmar("Não é possível incluir cossignatário", ExPodeIncluirCossignatario.class, getTitular(), getLotaTitular(), builder.getMob());
 
         result.include("sigla", sigla);
         result.include("documento", doc);
@@ -1258,7 +1224,7 @@ public class ExMovimentacaoController extends ExController {
     @Transacional
     @Get("/app/expediente/mov/incluir_excluir_acesso_temp_arvore_docs")
     public void incluirExcluirDnmAcessoTempArvoreDocsCossigs(final String sigla, boolean incluirCossig) {
-        final boolean podeExibirArvoreDocsCossig = getExConsTempDocCompleto().podeVisualizarTempDocComplCossigsSubscritor(getCadastrante(), getLotaCadastrante());
+        final boolean podeExibirArvoreDocsCossig = visualizacaoTempDocCompl.podeVisualizarTempDocComplCossigsSubscritor(getCadastrante(), getLotaCadastrante());
         if (podeExibirArvoreDocsCossig) {
             final BuscaDocumentoBuilder builder = BuscaDocumentoBuilder.novaInstancia().setSigla(sigla);
             final ExDocumento doc = buscarDocumento(builder);
@@ -1266,9 +1232,9 @@ public class ExMovimentacaoController extends ExController {
             List<ExMovimentacao> listaCossignatarios = mob.getMovimentacoesPorTipo(ExTipoDeMovimentacao.INCLUSAO_DE_COSIGNATARIO, Boolean.TRUE);
             if (!listaCossignatarios.isEmpty()) {
                 if (incluirCossig)
-                    getExConsTempDocCompleto().incluirCossigsVisTempDocsCompl(getCadastrante(), getLotaTitular(), doc, true);
+                    visualizacaoTempDocCompl.incluirCossigsVisTempDocsCompl(getCadastrante(), getLotaTitular(), doc, true);
                 else
-                    getExConsTempDocCompleto().removerCossigsVisTempDocsComplFluxoTelaCossignatarios(getCadastrante(), getLotaTitular(), listaCossignatarios, doc);
+                    visualizacaoTempDocCompl.removerCossigsVisTempDocsComplFluxoTelaCossignatarios(getCadastrante(), getLotaTitular(), listaCossignatarios, doc);
             }
         }
         result.forwardTo(this).incluirCosignatario(sigla);
@@ -1297,13 +1263,12 @@ public class ExMovimentacaoController extends ExController {
                 .setDescrMov(funcaoUnidadeCosignatario)
                 .setSubscritorSel(cosignatarioSel);
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível incluir cossignatário", ExPodeIncluirCossignatario.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
+        comp.afirmar("Não é possível incluir cossignatário", ExPodeIncluirCossignatario.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .incluirCosignatario(
                             getCadastrante(),
                             getLotaTitular(),
@@ -1325,15 +1290,14 @@ public class ExMovimentacaoController extends ExController {
     // "em trânsito"
     @Get("/app/expediente/mov/receber_lote")
     public void aReceberLote() {
-        final List<ExMobil> provItens = dao().consultarParaReceberEmLote(
+        final List<ExMobil> provItens = dao.consultarParaReceberEmLote(
                 getLotaTitular());
 
         final List<ExMobil> itens = new ArrayList<>();
 
         for (ExMobil m : provItens) {
             if (!m.isApensado()
-                    && Ex.getInstance()
-                    .getComp()
+                    && comp
                     .pode(ExPodeAcessarDocumento.class, getTitular(),
                             getLotaTitular(), m)) {
                 itens.add(m);
@@ -1350,7 +1314,7 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder builder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final Pattern p = Pattern.compile("chk_([0-9]+)");
 
@@ -1361,13 +1325,12 @@ public class ExMovimentacaoController extends ExController {
                     throw new AplicacaoException(
                             "Não foi possível ler a Id do documento e o número da via.");
                 }
-                final ExMobil mob = dao().consultar(Long.valueOf(m.group(1)),
+                final ExMobil mob = dao.consultar(Long.valueOf(m.group(1)),
                         ExMobil.class, false);
 
-                if (Ex.getInstance().getComp()
+                if (comp
                         .pode(ExPodeReceber.class, getTitular(), getLotaTitular(), mob)) {
-                    Ex.getInstance()
-                            .getBL()
+                    bl
                             .receber(getCadastrante(), getTitular(), getLotaTitular(), mob,
                                     mov.getDtMov());
                 }
@@ -1387,24 +1350,21 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        if (!Ex.getInstance()
-                .getComp()
+        if (!comp
                 .pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(),
                         builder.getMob())) {
             throw new AplicacaoException(
                     "Acesso permitido a usuários autorizados.");
         }
 
-        Ex.getInstance().getComp().afirmar(
+        comp.afirmar(
                 "Via ou processo não pode ser concluído(a)",
                 ExPodeConcluir.class, getTitular(), getLotaTitular(),
                 builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .concluir(getCadastrante(), getLotaTitular(), getTitular(), getLotaTitular(),
+        bl.concluir(getCadastrante(), getLotaTitular(), getTitular(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), null,
                         mov.getSubscritor());
 
@@ -1414,15 +1374,14 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("/app/expediente/mov/arquivar_corrente_lote")
     public void aArquivarCorrenteLote() {
-        final List<ExMobil> provItens = dao()
+        final List<ExMobil> provItens = dao
                 .consultarParaArquivarCorrenteEmLote(getLotaTitular());
 
         List<ExMobil> itens = new ArrayList<>();
 
         for (ExMobil m : provItens) {
             if (!m.isApensado()
-                    && Ex.getInstance()
-                    .getComp()
+                    && comp
                     .pode(ExPodeAcessarDocumento.class, getTitular(),
                             getLotaTitular(), m)) {
                 itens.add(m.isVolume() ? m.doc().getMobilGeral() : m);
@@ -1439,10 +1398,10 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder builder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final Pattern p = Pattern.compile("chk_([0-9]+)");
-        final Date dt = dao().dt();
+        final Date dt = dao.dt();
 
         for (final String s : getPar().keySet()) {
             if (s.startsWith("chk_") && param(s).equals("true")) {
@@ -1451,11 +1410,10 @@ public class ExMovimentacaoController extends ExController {
                     throw new AplicacaoException(
                             "Não foi possível ler a Id do documento e o número da via.");
                 }
-                final ExMobil mob = dao().consultar(Long.valueOf(m.group(1)),
+                final ExMobil mob = dao.consultar(Long.valueOf(m.group(1)),
                         ExMobil.class, false);
 
-                Ex.getInstance()
-                        .getBL()
+                bl
                         .arquivarCorrente(getCadastrante(), getLotaTitular(),
                                 mob, mov.getDtMov(), dt, mov.getSubscritor(),
                                 false);
@@ -1475,22 +1433,19 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        if (!Ex.getInstance()
-                .getComp()
+        if (!comp
                 .pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(),
                         builder.getMob())) {
             throw new AplicacaoException(
                     "Acesso permitido a usuários autorizados.");
         }
 
-        Ex.getInstance().getComp().afirmar("Via ou processo não pode ser arquivado(a)", ExPodeArquivarCorrente.class, getTitular(), getLotaTitular(),
+        comp.afirmar("Via ou processo não pode ser arquivado(a)", ExPodeArquivarCorrente.class, getTitular(), getLotaTitular(),
                 builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .arquivarCorrente(getCadastrante(), getLotaTitular(),
+        bl.arquivarCorrente(getCadastrante(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), null,
                         mov.getSubscritor(), false);
 
@@ -1506,14 +1461,12 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Documento não pode ser arquivado. Verifique se ele não se encontra em lotação diferente de "
+        comp.afirmar("Documento não pode ser arquivado. Verifique se ele não se encontra em lotação diferente de "
                 + getLotaTitular().getSigla(), ExPodeArquivarPermanente.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .arquivarPermanente(getCadastrante(), getLotaTitular(),
+        bl.arquivarPermanente(getCadastrante(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), mov.getSubscritor());
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
@@ -1528,14 +1481,12 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Via não pode ser reaberta", ExPodeDesarquivarCorrente.class, getTitular(), getLotaTitular(),
+        comp.afirmar("Via não pode ser reaberta", ExPodeDesarquivarCorrente.class, getTitular(), getLotaTitular(),
                 builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .desarquivarCorrente(getCadastrante(), getLotaTitular(),
+        bl.desarquivarCorrente(getCadastrante(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), mov.getSubscritor());
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
@@ -1550,15 +1501,13 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Documento não pode ser retirado do arquivo intermediário. Verifique se ele não se encontra em lotação diferente de "
+        comp.afirmar("Documento não pode ser retirado do arquivo intermediário. Verifique se ele não se encontra em lotação diferente de "
                         + getLotaTitular().getSigla(), ExPodeDesarquivarCorrente.class, getTitular(), getLotaTitular(),
                 builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .desarquivarIntermediario(getCadastrante(), getLotaTitular(),
+        bl.desarquivarIntermediario(getCadastrante(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), mov.getSubscritor());
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
@@ -1566,7 +1515,7 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("/app/expediente/mov/assinar_despacho_lote")
     public void aAssinarDespachoLote() {
-        final List<ExMovimentacao> itensComoSubscritor = dao()
+        final List<ExMovimentacao> itensComoSubscritor = dao
                 .listarDespachoPendenteAssinatura(getTitular());
 
         final List<ExMovimentacao> itens = new ArrayList<>();
@@ -1576,8 +1525,7 @@ public class ExMovimentacaoController extends ExController {
             if (!mov.isAssinada() && !mov.isCancelada()) {
                 itens.add(mov);
 
-                if (Ex.getInstance()
-                        .getComp()
+                if (comp
                         .pode(ExPodeAssinarMovimentacaoComSenha.class, getTitular(),
                                 getLotaTitular(), mov)) {
                     movimentacoesQuePodemSerAssinadasComSenha.add(mov);
@@ -1600,13 +1548,11 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Documento não pode ser recebido", ExPodeReceber.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Documento não pode ser recebido", ExPodeReceber.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .receber(getCadastrante(), getTitular(), getLotaTitular(), builder.getMob(),
+        bl.receber(getCadastrante(), getTitular(), getLotaTitular(), builder.getMob(),
                         mov.getDtMov());
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
@@ -1619,12 +1565,9 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setSigla(sigla);
         final ExDocumento doc = buscarDocumento(builder);
 
-        Ex.getInstance()
-                .getComp().afirmar("Não é possível revisar", ExPodeSolicitarAssinatura.class, getTitular(), getLotaTitular(), doc);
+        comp.afirmar("Não é possível revisar", ExPodeSolicitarAssinatura.class, getTitular(), getLotaTitular(), doc);
 
-        Ex.getInstance()
-                .getBL()
-                .solicitarAssinatura(getCadastrante(), getLotaTitular(), doc);
+        bl.solicitarAssinatura(getCadastrante(), getLotaTitular(), doc);
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
     }
@@ -1636,8 +1579,7 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setSigla(sigla);
         final ExDocumento doc = buscarDocumento(builder);
 
-        Ex.getInstance()
-                .getComp()
+        comp
                 .afirmar("Não é possível fazer vinculação", ExPodeReferenciar.class, getTitular(), getLotaTitular(), builder.getMob());
 
         result.include("listaTipoDeVinculo", ExTipoDeVinculo.values());
@@ -1685,7 +1627,7 @@ public class ExMovimentacaoController extends ExController {
                     .setDtDevolucaoMovString(dtDevolucaoMovString)
                     .setCpOrgaoSel(cpOrgaoSel).setObsOrgao(obsOrgao)
                     .setCadastrante(getCadastrante());
-            mov = movimentacaoBuilder.construir(dao());
+            mov = movimentacaoBuilder.construir(dao);
         }
 
         if (param("processar_modelo") != null) {
@@ -1726,9 +1668,9 @@ public class ExMovimentacaoController extends ExController {
                 .setSubscritorSel(subscritorSel).setMob(builder.getMob())
                 .setDocumentoRefSel(documentoRefSel);
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer vinculação", ExPodeReferenciar.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível fazer vinculação", ExPodeReferenciar.class, getTitular(), getLotaTitular(), builder.getMob());
 
         if (mov.getExMobilRef() == null) {
             throw new AplicacaoException(
@@ -1739,9 +1681,7 @@ public class ExMovimentacaoController extends ExController {
             mov.setSubscritor(getTitular());
         }
 
-        Ex.getInstance()
-                .getBL()
-                .referenciarDocumento(
+        bl.referenciarDocumento(
                         getCadastrante(),
                         getLotaTitular(),
                         builder.getMob(),
@@ -1812,10 +1752,10 @@ public class ExMovimentacaoController extends ExController {
             }
         }
 
-        boolean podeTramitar = Ex.getInstance().getComp().pode(ExPodeTransferir.class, getTitular(), getLotaTitular(), builder.getMob());
-        boolean podeTramitarEmParalelo = Ex.getInstance().getComp().pode(ExPodeTramitarEmParalelo.class, getTitular(), getLotaTitular(), builder.getMob());
-        boolean podeNotificar = Ex.getInstance().getComp().pode(ExPodeNotificar.class, getTitular(), getLotaTitular(), builder.getMob());
-        boolean podeDespachar = Ex.getInstance().getComp().pode(ExPodeDespachar.class, getTitular(), getLotaTitular(), builder.getMob());
+        boolean podeTramitar = comp.pode(ExPodeTransferir.class, getTitular(), getLotaTitular(), builder.getMob());
+        boolean podeTramitarEmParalelo = comp.pode(ExPodeTramitarEmParalelo.class, getTitular(), getLotaTitular(), builder.getMob());
+        boolean podeNotificar = comp.pode(ExPodeNotificar.class, getTitular(), getLotaTitular(), builder.getMob());
+        boolean podeDespachar = comp.pode(ExPodeDespachar.class, getTitular(), getLotaTitular(), builder.getMob());
 
         if (!(podeTramitar || podeDespachar)) {
             throw new AplicacaoException(
@@ -1934,9 +1874,9 @@ public class ExMovimentacaoController extends ExController {
                 .setObsOrgao(obsOrgao);
 
         ITipoDeMovimentacao tpTramite = ExTipoDeMovimentacao.getById(tipoTramite);
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Destinatário não pode receber documentos", ExPodeReceberPorConfiguracao.class, mov.getResp(), mov.getLotaResp(), mov.mob());
+        comp.afirmar("Destinatário não pode receber documentos", ExPodeReceberPorConfiguracao.class, mov.getResp(), mov.getLotaResp(), mov.mob());
 
         if ((mov.getLotaResp() != null && mov.getLotaResp().getIsSuspensa() != null && mov.getLotaResp().getIsSuspensa().equals(1))
                 || (mov.getResp() != null && mov.getResp().getLotacao().getIsSuspensa() != null && mov.getResp().getLotacao().getIsSuspensa().equals(1))) {
@@ -1961,7 +1901,7 @@ public class ExMovimentacaoController extends ExController {
             throw new AplicacaoException("Data de devolução inválida, deve estar entre o ano 2000 e ano 2100");
 
 
-        if (!Ex.getInstance().getConf().podePorConfiguracao(builder.getMob().getExDocumento().getExModelo(), ExTipoDeConfiguracao.TRAMITAR_SEM_CAPTURADO)) {
+        if (!conf.podePorConfiguracao(builder.getMob().getExDocumento().getExModelo(), ExTipoDeConfiguracao.TRAMITAR_SEM_CAPTURADO)) {
             podeTramitar = Boolean.FALSE;
             Set<ExMobil> mobilsJuntados = builder.getMob().getDoc().getMobilDefaultParaReceberJuntada().getJuntados();
 
@@ -1982,27 +1922,26 @@ public class ExMovimentacaoController extends ExController {
             }
         }
         if (tpTramite == ExTipoDeMovimentacao.NOTIFICACAO) {
-            Ex.getInstance().getComp().afirmar("Não é possível notificar", ExPodeNotificar.class, getTitular(), getLotaTitular(), builder.getMob());
+            comp.afirmar("Não é possível notificar", ExPodeNotificar.class, getTitular(), getLotaTitular(), builder.getMob());
         } else
-            Ex.getInstance()
-                    .getComp().afirmar("Não é possível tramitar",
+            comp.afirmar("Não é possível tramitar",
                             ExPodeDespachar.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        if (lotaResponsavelSel.getObjeto() != null && !Cp.getInstance().getConf().podePorConfiguracao(
+        if (lotaResponsavelSel.getObjeto() != null && !conf.podePorConfiguracao(
                 null, lotaResponsavelSel.getObjeto(),
                 ExTipoDeConfiguracao.TRAMITAR_PARA_LOTACAO_SEM_USUARIOS_ATIVOS)) {
             DpPessoaDaoFiltro filtro = new DpPessoaDaoFiltro();
             filtro.setBuscarFechadas(Boolean.FALSE);
             filtro.setNome("");
             filtro.setLotacao(lotaResponsavelSel.getObjeto());
-            Integer qtde = CpDao.getInstance().consultarQuantidade(filtro);
+            Integer qtde = dao.consultarQuantidade(filtro);
 
             if (qtde == 0) {
                 DpSubstituicao subst = new DpSubstituicao();
                 subst.setTitular(new DpPessoa());
                 subst.setLotaTitular(lotaResponsavelSel.getObjeto());
 
-                qtde += CpDao.getInstance().qtdeSubstituicoesAtivasPorTitular(subst);
+                qtde += dao.qtdeSubstituicoesAtivasPorTitular(subst);
             }
 
             if (qtde == 0) {
@@ -2022,9 +1961,7 @@ public class ExMovimentacaoController extends ExController {
             grupo = dao.consultar(grupoSel.getId(), CpGrupoDeEmail.class, false);
         }
 
-        Ex.getInstance()
-                .getBL()
-                .transferir(mov.getOrgaoExterno(), mov.getObsOrgao(),
+        bl.transferir(mov.getOrgaoExterno(), mov.getObsOrgao(),
                         getCadastrante(), getLotaTitular(), builder.getMob(),
                         mov.getDtMov(), mov.getDtIniMov(), mov.getDtFimMov(),
                         mov.getLotaResp(), mov.getResp(), grupo,
@@ -2103,7 +2040,7 @@ public class ExMovimentacaoController extends ExController {
 
 //		final ExMovimentacao ultMov = builder.getMob().getUltimaMovimentacao();
 
-        boolean podeNotificar = Ex.getInstance().getComp().pode(ExPodeNotificar.class, getTitular(), getLotaTitular(), builder.getMob());
+        boolean podeNotificar = comp.pode(ExPodeNotificar.class, getTitular(), getLotaTitular(), builder.getMob());
 
         if (!podeNotificar) {
             throw new AplicacaoException("Não é possível fazer despacho nem transferência");
@@ -2145,7 +2082,7 @@ public class ExMovimentacaoController extends ExController {
 
 //		final ExMovimentacao ultMov = builder.getMob().getUltimaMovimentacao();
 
-        boolean podeTramitarEmParalelo = Ex.getInstance().getComp().pode(ExPodeTramitarEmParalelo.class, getTitular(), getLotaTitular(), builder.getMob());
+        boolean podeTramitarEmParalelo = comp.pode(ExPodeTramitarEmParalelo.class, getTitular(), getLotaTitular(), builder.getMob());
 
         if (!podeTramitarEmParalelo) {
             throw new AplicacaoException("Não é possível fazer despacho nem transferência");
@@ -2185,16 +2122,14 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(builder);
 
         final ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
-                .construir(dao());
+                .construir(dao);
 
         if (builder.getMob().isVolumeEncerrado()) {
             throw new AplicacaoException(
                     "Não é permitido encerrar um volume já encerrado.");
         }
 
-        Ex.getInstance()
-                .getBL()
-                .encerrarVolume(getCadastrante(), getLotaTitular(), builder.getMob(), mov.getDtMov(), mov.getSubscritor(), mov.getTitular(),
+        bl.encerrarVolume(getCadastrante(), getLotaTitular(), builder.getMob(), mov.getDtMov(), mov.getSubscritor(), mov.getTitular(),
                         mov.getNmFuncaoSubscritor(), false);
         ExDocumentoController.redirecionarParaExibir(result, builder.getMob().getExDocumento().getSigla());
     }
@@ -2210,9 +2145,9 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setMob(documentoBuilder.getMob());
 
         final ExMovimentacao movimentacao = movimentacaoBuilder
-                .construir(dao());
+                .construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer anotação", ExPodeFazerAnotacao.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
+        comp.afirmar("Não é possível fazer anotação", ExPodeFazerAnotacao.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
 
         String descricaoMov = movimentacaoBuilder.getDescrMov();
         if (descricaoMov == null) {
@@ -2257,18 +2192,17 @@ public class ExMovimentacaoController extends ExController {
                 .setNmFuncaoSubscritor(nmFuncaoSubscritor)
                 .setDescrMov(descricaoMov).setObsOrgao(obsOrgao);
 
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final BuscaDocumentoBuilder documentoBuilder = BuscaDocumentoBuilder
                 .novaInstancia().setSigla(sigla);
 
         buscarDocumento(documentoBuilder);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer anotação", ExPodeFazerAnotacao.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
+        comp.afirmar("Não é possível fazer anotação", ExPodeFazerAnotacao.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .anotar(getCadastrante(), getLotaTitular(),
                             documentoBuilder.getMob(), mov.getDtMov(),
                             mov.getLotaResp(), mov.getResp(), mov.getSubscritor(),
@@ -2284,15 +2218,14 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("/app/expediente/mov/anotar_lote")
     public void aAnotarLote() {
-        final List<ExMobil> provItens = dao().consultarParaAnotarEmLote(
+        final List<ExMobil> provItens = dao.consultarParaAnotarEmLote(
                 getLotaTitular());
 
         final List<ExMobil> itens = new ArrayList<>();
 
         for (ExMobil m : provItens) {
             if (!m.isApensado()
-                    && Ex.getInstance()
-                    .getComp()
+                    && comp
                     .pode(ExPodeAcessarDocumento.class, getTitular(),
                             getLotaTitular(), m)) {
                 itens.add(m);
@@ -2319,7 +2252,7 @@ public class ExMovimentacaoController extends ExController {
                 .setNmFuncaoSubscritor(nmFuncaoSubscritor)
                 .setDescrMov(descrMov).setObsOrgao(obsOrgao);
 
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final Pattern p = Pattern.compile("chk_([0-9]+)");
 
@@ -2330,11 +2263,10 @@ public class ExMovimentacaoController extends ExController {
                     throw new AplicacaoException(
                             "Não foi possível ler a Id do documento e o número da via.");
                 }
-                final ExMobil mob = dao().consultar(Long.valueOf(m.group(1)),
+                final ExMobil mob = dao.consultar(Long.valueOf(m.group(1)),
                         ExMobil.class, false);
 
-                Ex.getInstance()
-                        .getBL()
+                bl
                         .anotar(getCadastrante(), getLotaTitular(), mob,
                                 mov.getDtMov(), mov.getLotaResp(),
                                 mov.getResp(), mov.getSubscritor(),
@@ -2360,7 +2292,7 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setSigla(sigla);
         buscarDocumento(builder);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer vinculação de papel", ExPodeFazerVinculacaoDePapel.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível fazer vinculação de papel", ExPodeFazerVinculacaoDePapel.class, getTitular(), getLotaTitular(), builder.getMob());
 
         final List<ExPapel> papeis = this.getListaExPapel();
 
@@ -2418,7 +2350,7 @@ public class ExMovimentacaoController extends ExController {
             movimentacaoBuilder.setLotaResponsavelSel(new DpLotacaoSelecao());
         }
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
         if (mov.getResp() == null && mov.getLotaResp() == null) {
             throw new AplicacaoException(
@@ -2435,7 +2367,7 @@ public class ExMovimentacaoController extends ExController {
             }
         }
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer vinculação de papel", ExPodeFazerVinculacaoDePapel.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Não é possível fazer vinculação de papel", ExPodeFazerVinculacaoDePapel.class, getTitular(), getLotaTitular(), builder.getMob());
 
         assert responsavelSel != null;
         assert lotaResponsavelSel != null;
@@ -2468,9 +2400,7 @@ public class ExMovimentacaoController extends ExController {
                     "Acompanhamento do documento não pode ser cadastrado para o usuário selecionado.");
         }
 
-        Ex.getInstance()
-                .getBL()
-                .vincularPapel(getCadastrante(), getLotaTitular(),
+        bl.vincularPapel(getCadastrante(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(), mov.getLotaResp(),
                         mov.getResp(), mov.getSubscritor(), mov.getTitular(),
                         mov.getDescrMov(), mov.getNmFuncaoSubscritor(),
@@ -2494,7 +2424,7 @@ public class ExMovimentacaoController extends ExController {
         result.include("mob", mob);
         result.include("listaMarcadores", this.getListaMarcadoresGerais());
         result.include("listaMarcadoresAtivos", this.getListaMarcadoresAtivos(mobilGeral));
-        result.include("listaMarcadoresLotacao", dao
+        result.include("listaMarcadoresLotacao", cpDao
                 .listarCpMarcadoresPorLotacao(getLotaTitular(), true));
         result.include("dataLimite", this.getDataLimiteDemanda(mobilGeral));
     }
@@ -2505,7 +2435,7 @@ public class ExMovimentacaoController extends ExController {
         final BuscaDocumentoBuilder builder = BuscaDocumentoBuilder.novaInstancia().setSigla(sigla);
         buscarDocumento(builder);
 
-        Ex.getInstance().getBL().atualizarDnmAcesso(builder.getMob().getDoc());
+        docBl.atualizarDnmAcesso(builder.getMob().getDoc());
 
         result.use(Results.http()).body("Acesso: " + builder.getMob().doc().getDnmAcesso()
                 + "\n Alterado: " + builder.getMob().doc().getDnmDtAcesso()).setStatusCode(200);
@@ -2545,7 +2475,7 @@ public class ExMovimentacaoController extends ExController {
      * {@link CpMarcador#getOrdem()}
      */
     private List<CpMarcador> getListaMarcadoresGerais() {
-        List<CpMarcador> marcadores = dao().listarCpMarcadoresGerais(true);
+        List<CpMarcador> marcadores = dao.listarCpMarcadoresGerais(true);
         marcadores.sort(CpMarcador.ORDEM_COMPARATOR);
 
         return marcadores;
@@ -2564,7 +2494,7 @@ public class ExMovimentacaoController extends ExController {
         if (marcador == null)
             throw new AplicacaoException("Marcador deve ser informado.");
 
-        CpMarcador m = dao().consultar(marcador, CpMarcador.class, false);
+        CpMarcador m = dao.consultar(marcador, CpMarcador.class, false);
 
         final ExMovimentacaoBuilder movimentacaoBuilder = ExMovimentacaoBuilder
                 .novaInstancia();
@@ -2595,11 +2525,9 @@ public class ExMovimentacaoController extends ExController {
         }
 
         movimentacaoBuilder.setIdMarcador(marcador);
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
         mov.setDescrMov(texto);
-        Ex.getInstance()
-                .getBL()
-                .marcar(getCadastrante(), getLotaCadastrante(), getTitular(), getLotaTitular(),
+        bl.marcar(getCadastrante(), getLotaCadastrante(), getTitular(), getLotaTitular(),
                         builder.getMob(), mov.getDtMov(),
                         mov.getSubscritor(), mov.getLotaSubscritor(),
                         mov.getDescrMov(),
@@ -2609,7 +2537,7 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("app/expediente/mov/transferir_lote")
     public void aTransferirLote(Integer paramoffset) {
-        Long tamanho = dao().consultarQuantidadeParaTransferirEmLote(getLotaTitular());
+        Long tamanho = dao.consultarQuantidadeParaTransferirEmLote(getLotaTitular());
 
         LOGGER.debug("TAMANHO : " + tamanho);
 
@@ -2619,8 +2547,8 @@ public class ExMovimentacaoController extends ExController {
                 : 0;
 
         final List<ExMobil> provItens = (tamanho <= MAX_ITENS_PAGINA_TRAMITACAO_LOTE)
-                ? dao().consultarParaTransferirEmLote(getLotaTitular(), null, null)
-                : dao().consultarParaTransferirEmLote(getLotaTitular(), offset, MAX_ITENS_PAGINA_TRAMITACAO_LOTE);
+                ? dao.consultarParaTransferirEmLote(getLotaTitular(), null, null)
+                : dao.consultarParaTransferirEmLote(getLotaTitular(), offset, MAX_ITENS_PAGINA_TRAMITACAO_LOTE);
 
         final DpPessoaSelecao titularSel = new DpPessoaSelecao();
         final DpPessoaSelecao subscritorSel = new DpPessoaSelecao();
@@ -2678,10 +2606,10 @@ public class ExMovimentacaoController extends ExController {
                 .setLotaResponsavelSel(lotaResponsavelSel).setCpOrgaoSel(cpOrgaoSel).setObsOrgao(obsOrgao)
                 .setDtDevolucaoMovString(dtDevolucaoMovString).setResponsavelSel(responsavelSel);
 
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         boolean despaUnico = false;
-        final Date dt = dao().dt();
+        final Date dt = dao.dt();
         mov.setDtIniMov(dt);
         ExMobil nmobil = new ExMobil();
         final HashMap<ExMobil, AplicacaoException> MapMensagens = new HashMap<>();
@@ -2701,11 +2629,11 @@ public class ExMovimentacaoController extends ExController {
         for (Long idDocumento : documentosSelecionados) {
             try {
                 final Long idTpDespacho = despaUnico ? tpdall : 0L;
-                ExTipoDespacho tpd = dao().consultar(idTpDespacho, ExTipoDespacho.class, false);
+                ExTipoDespacho tpd = dao.consultar(idTpDespacho, ExTipoDespacho.class, false);
 
-                final ExMobil mobil = dao().consultar(idDocumento, ExMobil.class, false);
+                final ExMobil mobil = dao.consultar(idDocumento, ExMobil.class, false);
 
-                if (!Ex.getInstance().getComp().pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mobil)) {
+                if (!comp.pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mobil)) {
                     if (msgErroNivelAcessoso == null)
                         msgErroNivelAcessoso = new AplicacaoException("O documento não pode ser transferido por estar inacessível ao usuário.");
 
@@ -2717,8 +2645,7 @@ public class ExMovimentacaoController extends ExController {
                     nmobil = mobil;
                     mobeis.add(mobil);
 
-                    Ex.getInstance()
-                            .getBL()
+                    bl
                             .transferir(mov.getOrgaoExterno(),
                                     mov.getObsOrgao(), getCadastrante(),
                                     getLotaTitular(), mobil,
@@ -2787,7 +2714,7 @@ public class ExMovimentacaoController extends ExController {
             offset = 0;
         }
         getP().setOffset(offset);
-        final List<ExItemDestinacao> listaProv = dao()
+        final List<ExItemDestinacao> listaProv = dao
                 .consultarParaArquivarIntermediarioEmLote(getLotaTitular(),
                         offset);
 
@@ -2799,7 +2726,7 @@ public class ExMovimentacaoController extends ExController {
                 "Não disponíveis", false);
 
         for (ExItemDestinacao item : listaProv) {
-            final boolean pode = Ex.getInstance().getComp().pode(ExPodeArquivarIntermediario.class, getTitular(), getLotaTitular(), item.getMob());
+            final boolean pode = comp.pode(ExPodeArquivarIntermediario.class, getTitular(), getLotaTitular(), item.getMob());
             if (pode) {
                 if (item.getMob().doc().isEletronico()) {
                     digitais.adicionar(item);
@@ -2818,7 +2745,7 @@ public class ExMovimentacaoController extends ExController {
 
         result.include(
                 "tamanho",
-                dao().consultarQuantidadeParaArquivarIntermediarioEmLote(
+                dao.consultarQuantidadeParaArquivarIntermediarioEmLote(
                         getLotaTitular()));
         result.include("itens", listaFinal);
     }
@@ -2841,7 +2768,7 @@ public class ExMovimentacaoController extends ExController {
                 .setNmFuncaoSubscritor(nmFuncaoSubscritor)
                 .setDescrMov(descrMov);
 
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final Pattern p = Pattern.compile("chk_([0-9]+)");
 
@@ -2852,11 +2779,10 @@ public class ExMovimentacaoController extends ExController {
                     throw new AplicacaoException(
                             "Não foi possível ler a Id do documento e o número da via.");
                 }
-                final ExMobil mob = dao().consultar(Long.valueOf(m.group(1)),
+                final ExMobil mob = dao.consultar(Long.valueOf(m.group(1)),
                         ExMobil.class, false);
 
-                Ex.getInstance()
-                        .getBL()
+                bl
                         .arquivarIntermediario(getCadastrante(),
                                 getLotaTitular(), mob, mov.getDtMov(),
                                 mov.getSubscritor(), mov.getDescrMov());
@@ -2881,7 +2807,7 @@ public class ExMovimentacaoController extends ExController {
             offset = 0;
         }
         getP().setOffset(offset);
-        final List<ExItemDestinacao> listaProv = dao()
+        final List<ExItemDestinacao> listaProv = dao
                 .consultarParaArquivarPermanenteEmLote(getLotaTitular(), offset);
 
         final ExTopicoDestinacao digitais = new ExTopicoDestinacao("Digitais",
@@ -2892,10 +2818,7 @@ public class ExMovimentacaoController extends ExController {
                 "Não disponíveis", false);
 
         for (final ExItemDestinacao item : listaProv) {
-            boolean pode = Ex
-                    .getInstance()
-                    .getComp()
-                    .pode(ExPodeArquivarPermanente.class, getTitular(), getLotaTitular(),
+            boolean pode = comp.pode(ExPodeArquivarPermanente.class, getTitular(), getLotaTitular(),
                             item.getMob());
             if (pode) {
                 if (item.getMob().doc().isEletronico()) {
@@ -2915,7 +2838,7 @@ public class ExMovimentacaoController extends ExController {
 
         result.include(
                 "tamanho",
-                dao().consultarQuantidadeParaArquivarPermanenteEmLote(
+                dao.consultarQuantidadeParaArquivarPermanenteEmLote(
                         getLotaTitular()));
         result.include("itens", listaFinal);
     }
@@ -2937,7 +2860,7 @@ public class ExMovimentacaoController extends ExController {
                 .setSubstituicao(substituicao).setTitularSel(titularSel)
                 .setNmFuncaoSubscritor(nmFuncaoSubscritor);
 
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final Pattern p = Pattern.compile("chk_([0-9]+)");
 
@@ -2952,13 +2875,12 @@ public class ExMovimentacaoController extends ExController {
                                 "Não foi possível ler a Id do documento e o número da via.");
                     }
 
-                    final ExMobil mob = dao().consultar(
+                    final ExMobil mob = dao.consultar(
                             Long.valueOf(m.group(1)), ExMobil.class, false);
 
                     erro = mob.getSigla();
 
-                    Ex.getInstance()
-                            .getBL()
+                    bl
                             .arquivarPermanente(getCadastrante(),
                                     getLotaTitular(), mob, mov.getDtMov(),
                                     mov.getSubscritor());
@@ -2980,8 +2902,8 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("/app/expediente/mov/assinar_lote")
     public void assina_lote() {
-        boolean apenasComSolicitacaoDeAssinatura = !Ex.getInstance().getConf().podePorConfiguracao(getTitular(), ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
-        final List<ExDocumento> itensComoSubscritor = dao().listarDocPendenteAssinatura(getTitular(), apenasComSolicitacaoDeAssinatura);
+        boolean apenasComSolicitacaoDeAssinatura = !conf.podePorConfiguracao(getTitular(), ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
+        final List<ExDocumento> itensComoSubscritor = dao.listarDocPendenteAssinatura(getTitular(), apenasComSolicitacaoDeAssinatura);
         final List<ExDocumento> itensFinalizados = new ArrayList<>();
 
         for (final ExDocumento doc : itensComoSubscritor) {
@@ -2993,15 +2915,13 @@ public class ExMovimentacaoController extends ExController {
         boolean podeAssinarComCertDigital = false;
 
         for (final ExDocumento exDocumento : itensFinalizados) {
-            if (Ex.getInstance()
-                    .getComp()
+            if (comp
                     .pode(ExPodeAssinarComSenha.class, getTitular(), getLotaTitular(),
                             exDocumento.getMobilGeral())) {
                 documentosQuePodemSerAssinadosComSenha.add(exDocumento);
             }
 
-            if (!podeAssinarComCertDigital && Ex.getInstance()
-                    .getComp()
+            if (!podeAssinarComCertDigital && comp
                     .pode(ExPodeAssinar.class, getTitular(), getLotaTitular(),
                             exDocumento.getMobilGeral())) {
                 podeAssinarComCertDigital = true;
@@ -3018,8 +2938,8 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("/app/expediente/mov/assinar_tudo")
     public void assina_tudo() {
-        boolean apenasComSolicitacaoDeAssinatura = !Ex.getInstance().getConf().podePorConfiguracao(getTitular(), ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
-        List<ExAssinavelDoc> assinaveis = Ex.getInstance().getBL()
+        boolean apenasComSolicitacaoDeAssinatura = !conf.podePorConfiguracao(getTitular(), ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
+        List<ExAssinavelDoc> assinaveis = bl
                 .obterAssinaveis(getTitular(), getLotaTitular(), apenasComSolicitacaoDeAssinatura);
 
         result.include("assinaveis", assinaveis);
@@ -3053,7 +2973,7 @@ public class ExMovimentacaoController extends ExController {
             }
 
             byte[] assinatura = Base64.getDecoder().decode(assinaturaB64);
-            Date dt = dao().consultarDataEHoraDoServidor();
+            Date dt = dao.consultarDataEHoraDoServidor();
 
             byte[] certificado = Base64.getDecoder().decode(certificadoB64);
 
@@ -3071,8 +2991,7 @@ public class ExMovimentacaoController extends ExController {
 
             result.include(
                     "msg",
-                    Ex.getInstance()
-                            .getBL()
+                    bl
                             .assinarDocumento(getCadastrante(),
                                     getLotaTitular(), mob.doc(), dt,
                                     assinatura, certificado, tpMovAssinatura, juntar, tramitar,
@@ -3096,11 +3015,10 @@ public class ExMovimentacaoController extends ExController {
         final ExMobil mob = builder.getMob();
         final ExMovimentacaoBuilder movimentacaoBuilder = ExMovimentacaoBuilder
                 .novaInstancia().setMob(mob);
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .assinarDocumentoComSenha(getCadastrante(),
                             getLotaTitular(), doc, mov.getDtMov(),
                             nomeUsuarioSubscritor, senhaUsuarioSubscritor, senhaIsPin, true,
@@ -3127,15 +3045,14 @@ public class ExMovimentacaoController extends ExController {
                     .novaInstancia().setId(id);
             buscarDocumento(builder, true);
 
-            final ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class,
+            final ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class,
                     false);
 
             if (copia
                     || (tipoAssinaturaMov != null && tipoAssinaturaMov.equals("C")))
                 tpMovAssinatura = ExTipoDeMovimentacao.CONFERENCIA_COPIA_COM_SENHA;
 
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .assinarMovimentacaoComSenha(getCadastrante(),
                             getLotaTitular(), mov, mov.getDtMov(),
                             nomeUsuarioSubscritor, senhaUsuarioSubscritor, senhaIsPin, true,
@@ -3162,14 +3079,13 @@ public class ExMovimentacaoController extends ExController {
                 .getUltimaMovimentacao(ExTipoDeMovimentacao.AGENDAMENTO_DE_PUBLICACAO_BOLETIM);
 
         if (movPedidoBI != null && !movPedidoBI.isCancelada()) {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .cancelar(getTitular(), getLotaTitular(), builder.getMob(),
                             movPedidoBI, null, null, null,
                             "Pedido cancelado pela unidade gestora do BI");
 
             // Verifica se está na base de teste
-            String mensagemTeste = Ex.getInstance().getBL().mensagemDeTeste();
+            String mensagemTeste = notificador.mensagemDeTeste();
 
             StringBuilder sb = new StringBuilder(
                     "Informamos que o pedido de publicação no Boletim Interno do documento "
@@ -3197,7 +3113,7 @@ public class ExMovimentacaoController extends ExController {
             ArrayList<String> emailsSolicitantes = new ArrayList<>();
             emailsSolicitantes.add(
                     movPedidoBI.getCadastrante()
-                            .getEmailPessoaAtual()
+                            .getHistoricoAtual().getEmailPessoa()
             );
 
             Correio.enviar(null,
@@ -3213,8 +3129,7 @@ public class ExMovimentacaoController extends ExController {
 
     @Get("/app/expediente/mov/atender_pedido_publicacao")
     public void aAtenderPedidoPublicacao() {
-        if (!Ex.getInstance()
-                .getConf()
+        if (!conf
                 .podePorConfiguracao(
                         getTitular(),
                         getLotaTitular(),
@@ -3222,7 +3137,7 @@ public class ExMovimentacaoController extends ExController {
             throw new AplicacaoException("Operação restrita");
 
         result.include("itensSolicitados",
-                dao().listarSolicitados(getTitular().getOrgaoUsuario()));
+                dao.listarSolicitados(getTitular().getOrgaoUsuario()));
     }
 
     @Transacional
@@ -3253,7 +3168,7 @@ public class ExMovimentacaoController extends ExController {
                             .getUltimaMovimentacao(
                                     ExTipoDeMovimentacao.PEDIDO_PUBLICACAO);
 
-                    Ex.getInstance().getComp()
+                    comp
                             .afirmar("O documento não está nas condições de ser remetido", ExPodeRemeterParaPublicacaoSolicitadaNoDiario.class, getTitular(), getLotaTitular(),
                                     doque.getMobilGeral());
 
@@ -3264,15 +3179,14 @@ public class ExMovimentacaoController extends ExController {
                         stipoMateria = "A";
 
                     // remete, o que pode gerar erros
-                    Ex.getInstance()
-                            .getBL()
+                    bl
                             .remeterParaPublicacao(getCadastrante(),
                                     getLotaTitular(), doque.getMobilGeral(),
-                                    dao().dt(), getCadastrante(),
+                                    dao.dt(), getCadastrante(),
                                     getCadastrante(), getLotaTitular(),
                                     move.getDtDispPublicacao(), stipoMateria,
-                                    move.getLotaPublicacao(),
-                                    move.getDescrPublicacao());
+                                    publicacaoDJEBL.getLotaPublicacao(move),
+                                    publicacaoDJEBL.getDescrPublicacao(move));
                 } catch (final Throwable e) {
                     cont++;
                     msgDocumentosErro.append(cont)
@@ -3303,21 +3217,20 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance().getComp()
+        comp
                 .afirmar("Usuário não tem permissão de cancelar pedido de publicação no DJE.", ExPodeAtenderPedidoPublicacaoNoDiario.class, getTitular(), getLotaTitular(), mob);
 
         ExMovimentacao movPedidoDJE = mob
                 .getUltimaMovimentacao(ExTipoDeMovimentacao.PEDIDO_PUBLICACAO);
 
         if (movPedidoDJE != null && !movPedidoDJE.isCancelada()) {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .cancelar(getTitular(), getLotaTitular(), builder.getMob(),
                             movPedidoDJE, null, null, null,
                             "Pedido cancelado pela unidade gestora do DJE");
 
             // Verifica se está na base de teste
-            String mensagemTeste = Ex.getInstance().getBL().mensagemDeTeste();
+            String mensagemTeste = notificador.mensagemDeTeste();
 
             StringBuilder sb = new StringBuilder(
                     "Informamos que o pedido de publicação no DJE do documento "
@@ -3344,7 +3257,7 @@ public class ExMovimentacaoController extends ExController {
             // Envia endereço eletrónico para o servidor que fez o pedido
             ArrayList<String> emailsSolicitantes = new ArrayList<>();
             emailsSolicitantes.add(movPedidoDJE.getCadastrante()
-                    .getEmailPessoaAtual());
+                    .getHistoricoAtual().getEmailPessoa());
 
             Correio.enviar(null,
                     emailsSolicitantes.toArray(new String[0]),
@@ -3398,7 +3311,7 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(builder);
         final ExMobil mob = builder.getMob();
 
-        final ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class,
+        final ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class,
                 false);
 
         if (mov == null
@@ -3407,9 +3320,7 @@ public class ExMovimentacaoController extends ExController {
             throw new AplicacaoException("Não existe a anotação a ser cancelada.");
         }
 
-        Ex.getInstance()
-                .getBL()
-                .cancelar(
+        bl.cancelar(
                         getTitular(),
                         getLotaTitular(),
                         builder.getMob(),
@@ -3440,8 +3351,7 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance()
-                .getComp()
+        comp
                 .afirmar("Usuário não tem permissão de cancelar ciência.", ExPodeCancelarCiencia.class, getTitular(), getLotaTitular(), mob);
 
         Set<ExMovimentacao> setMovCiente = mob.getMovsNaoCanceladas(ExTipoDeMovimentacao.CIENCIA);
@@ -3458,14 +3368,12 @@ public class ExMovimentacaoController extends ExController {
         }
 
         if (movCiencia != null && !movCiencia.isCancelada()) {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .cancelar(getTitular(), getLotaTitular(), builder.getMob(),
                             movCiencia, null, null, null,
                             "Ciência: " + movCiencia.getDescrMov());
             if (movAss != null) {
-                Ex.getInstance()
-                        .getBL()
+                bl
                         .cancelar(
                                 getTitular(),
                                 getLotaTitular(),
@@ -3483,7 +3391,7 @@ public class ExMovimentacaoController extends ExController {
     }
 
     private void validarCancelamentoJuntada(ExMobil mob) {
-        Ex.getInstance().getComp().afirmar("Não é possível cancelar juntada. Ação não permitida",
+        comp.afirmar("Não é possível cancelar juntada. Ação não permitida",
                 ExPodeCancelarJuntada.class, getTitular(), getLotaTitular(), mob);
     }
 
@@ -3503,7 +3411,7 @@ public class ExMovimentacaoController extends ExController {
             ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
                     .setDtMovString(dtMovString).setSubstituicao(substituicao)
                     .setSubscritorSel(subscritorSel).setTitularSel(titularSel)
-                    .construir(dao());
+                    .construir(dao);
 
             BuscaDocumentoBuilder builder = BuscaDocumentoBuilder.novaInstancia()
                     .setSigla(sigla);
@@ -3512,8 +3420,7 @@ public class ExMovimentacaoController extends ExController {
 
             validarCancelamentoJuntada(builder.getMob());
 
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .cancelarJuntada(getCadastrante(), getLotaTitular(),
                             builder.getMob(), mov.getDtMov(),
                             mov.getSubscritor(), mov.getTitular(), descrMov);
@@ -3528,7 +3435,7 @@ public class ExMovimentacaoController extends ExController {
     @Get({"/app/expediente/mov/cancelar", "/expediente/mov/cancelar.action"})
     public void cancelar(Long id) throws Exception {
         String descrMov;
-        ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class, false);
+        ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class, false);
 
         BuscaDocumentoBuilder builder = BuscaDocumentoBuilder.novaInstancia()
                 .setId(id);
@@ -3566,8 +3473,7 @@ public class ExMovimentacaoController extends ExController {
                     .equals(ExTipoDeMovimentacao.VINCULACAO_PAPEL)) {
                 if ((idPessoa != null && mov.getSubscritor() != null && mov.getSubscritor().getId().equals(idPessoa))
                         || (idLotacao != null && mov.getLotaSubscritor() != null && mov.getLotaSubscritor().getId().equals(idLotacao))) {
-                    Ex.getInstance()
-                            .getBL()
+                    bl
                             .cancelar(getTitular(), getLotaTitular(), builder.getMob(),
                                     mov, null, null, null,
                                     mov.getDescrMov()
@@ -3591,7 +3497,7 @@ public class ExMovimentacaoController extends ExController {
                                            String descrMov, DpPessoaSelecao subscritorSel,
                                            DpPessoaSelecao titularSel) throws Exception {
 
-        ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class, false);
+        ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class, false);
 
         ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia().setDtMovString(dtMovString)
@@ -3604,13 +3510,11 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(builder, true);
 
         ExMobil mob = builder.getMob();
-        ExMovimentacao movForm = movBuilder.construir(dao());
+        ExMovimentacao movForm = movBuilder.construir(dao);
 
         validarCancelar(mov, mob);
 
-        Ex.getInstance()
-                .getBL()
-                .cancelar(getCadastrante(), getLotaTitular(), mob, mov,
+        bl.cancelar(getCadastrante(), getLotaTitular(), mob, mov,
                         movForm.getDtMov(), movForm.getSubscritor(),
                         movForm.getTitular(), descrMov);
         ExDocumentoController.redirecionarParaExibir(result, sigla);
@@ -3649,14 +3553,12 @@ public class ExMovimentacaoController extends ExController {
                 .setSubstituicao(substituicao).setDescrMov(descrMov)
                 .setSubscritorSel(subscritorSel).setTitularSel(titularSel);
 
-        ExMovimentacao mov = movBuilder.construir(dao());
+        ExMovimentacao mov = movBuilder.construir(dao);
         ExMobil mob = builder.getMob();
 
         validarRetirarEditalEliminacao(mob);
 
-        Ex.getInstance()
-                .getBL()
-                .retirarDeEditalEliminacao(mob, getCadastrante(),
+        bl.retirarDeEditalEliminacao(mob, getCadastrante(),
                         getLotaTitular(), mov.getSubscritor(),
                         mov.getLotaSubscritor(), mov.getTitular(),
                         mov.getLotaTitular(), mov.getDescrMov()
@@ -3682,27 +3584,27 @@ public class ExMovimentacaoController extends ExController {
     }
 
     private void validarRetirarEditalEliminacao(ExMobil mob) {
-        Ex.getInstance().getComp().afirmar("Não é possível desapensar", ExPodeDesapensar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível desapensar", ExPodeDesapensar.class, getTitular(), getLotaTitular(), mob);
     }
 
     private void validarCancelar(ExMovimentacao mov, ExMobil mob) {
         if (mov.getExTipoMovimentacao() == ExTipoDeMovimentacao.ANEXACAO) {
-            Ex.getInstance().getComp().afirmar("Não é possível cancelar anexo", ExPodeCancelarAnexo.class, getTitular(), getLotaTitular(), mob, mov);
+            comp.afirmar("Não é possível cancelar anexo", ExPodeCancelarAnexo.class, getTitular(), getLotaTitular(), mob, mov);
         } else if (mov.getExTipoMovimentacao() == ExTipoDeMovimentacao.ANEXACAO_DE_ARQUIVO_AUXILIAR) {
-            Ex.getInstance().getComp().afirmar("Não é possível cancelar arquivo auxiliar", ExPodeCancelarArquivoAuxiliar.class, getTitular(), getLotaTitular(), mov);
+            comp.afirmar("Não é possível cancelar arquivo auxiliar", ExPodeCancelarArquivoAuxiliar.class, getTitular(), getLotaTitular(), mov);
         } else if (ExTipoDeMovimentacao.hasDespacho(mov.getExTipoMovimentacao())) {
-            Ex.getInstance().getComp().afirmar("Não é possível cancelar despacho", ExPodeCancelarDespacho.class, getTitular(), getLotaTitular(), mov);
+            comp.afirmar("Não é possível cancelar despacho", ExPodeCancelarDespacho.class, getTitular(), getLotaTitular(), mov);
         } else if (mov.getExTipoMovimentacao() == ExTipoDeMovimentacao.VINCULACAO_PAPEL) {
-            Ex.getInstance().getComp().afirmar("Não é possível cancelar definição de perfil", ExPodeCancelarVinculacaoPapel.class, getTitular(), getLotaTitular(), mov);
+            comp.afirmar("Não é possível cancelar definição de perfil", ExPodeCancelarVinculacaoPapel.class, getTitular(), getLotaTitular(), mov);
         } else if (mov.getExTipoMovimentacao() == ExTipoDeMovimentacao.REFERENCIA) {
-            Ex.getInstance().getComp().afirmar("Não é possível cancelar o documento vinculado", ExPodeCancelarVinculacao.class, getTitular(), getLotaTitular(), mov);
+            comp.afirmar("Não é possível cancelar o documento vinculado", ExPodeCancelarVinculacao.class, getTitular(), getLotaTitular(), mov);
         } else if (mov.getExTipoMovimentacao() == ExTipoDeMovimentacao.MARCACAO) {
             ExPodeCancelarMarcacao.afirmar(mov, getTitular(), getLotaTitular());
         } else if (mov.getExTipoMovimentacao() == ExTipoDeMovimentacao.PRAZO_ASSINATURA) {
-            Ex.getInstance().getComp().afirmar("Usuário não permitido a cancelar ou alterar o prazo de assinatura. Se o documento estiver"
+            comp.afirmar("Usuário não permitido a cancelar ou alterar o prazo de assinatura. Se o documento estiver"
                     + " assinado, deve ser o subscritor; senão deve ser quem cadastrou o prazo.", ExPodeCancelarOuAlterarPrazoDeAssinatura.class, getTitular(), getLotaTitular(), mov);
         } else {
-            Ex.getInstance().getComp().afirmar("não é permitido cancelar esta movimentação.", ExPodeCancelar.class, getTitular(), getLotaTitular(), mob, mov);
+            comp.afirmar("não é permitido cancelar esta movimentação.", ExPodeCancelar.class, getTitular(), getLotaTitular(), mob, mov);
         }
     }
 
@@ -3716,7 +3618,7 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer arquivamento intermediário. Verifique se o documento não se encontra em lotação diferente de "
+        comp.afirmar("Não é possível fazer arquivamento intermediário. Verifique se o documento não se encontra em lotação diferente de "
                 + getLotaTitular().getSigla(), ExPodeArquivarIntermediario.class, getTitular(), getLotaTitular(), mob);
 
         result.include("doc", doc);
@@ -3757,13 +3659,11 @@ public class ExMovimentacaoController extends ExController {
                 .setTitularSel(titularSel).setDtMovString(dtMovString)
                 .setSubstituicao(substituicao).setSubscritorSel(subscritorSel);
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer arquivamento intermediário", ExPodeArquivarIntermediario.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível fazer arquivamento intermediário", ExPodeArquivarIntermediario.class, getTitular(), getLotaTitular(), mob);
 
-        Ex.getInstance()
-                .getBL()
-                .arquivarIntermediario(getCadastrante(), getLotaTitular(),
+        bl.arquivarIntermediario(getCadastrante(), getLotaTitular(),
                         mob, mov.getDtMov(), mov.getSubscritor(),
                         mov.getDescrMov()
                 );
@@ -3780,7 +3680,7 @@ public class ExMovimentacaoController extends ExController {
         ExDocumento doc = buscarDocumento(builder, true);
         ExMobil mob = builder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível desapensar", ExPodeDesapensar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível desapensar", ExPodeDesapensar.class, getTitular(), getLotaTitular(), mob);
 
         if (doc.isEletronico()) {
             SigaTransacionalInterceptor.upgradeParaTransacional();
@@ -3815,15 +3715,13 @@ public class ExMovimentacaoController extends ExController {
                 .setTitularSel(titularSel).setDtMovString(dtMovString)
                 .setSubstituicao(substituicao).setMob(builder.getMob());
 
-        final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
+        final ExMovimentacao mov = movimentacaoBuilder.construir(dao);
 
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível desapensar", ExPodeDesapensar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível desapensar", ExPodeDesapensar.class, getTitular(), getLotaTitular(), mob);
 
-        Ex.getInstance()
-                .getBL()
-                .desapensarDocumento(getCadastrante(), getLotaTitular(),
+        bl.desapensarDocumento(getCadastrante(), getLotaTitular(),
                         mob, mov.getDtMov(), mov.getSubscritor(),
                         mov.getTitular()
                 );
@@ -3843,7 +3741,7 @@ public class ExMovimentacaoController extends ExController {
         final ExDocumento doc = buscarDocumento(builder, true);
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível reclassificar", ExPodeReclassificar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível reclassificar", ExPodeReclassificar.class, getTitular(), getLotaTitular(), mob);
 
         result.include("mob", mob);
         result.include("doc", doc);
@@ -3876,9 +3774,9 @@ public class ExMovimentacaoController extends ExController {
                 .setObsOrgao(obsOrgao).setSubstituicao(substituicao)
                 .setTitularSel(titularSel).setSubscritorSel(subscritorSel)
                 .setClassificacaoSel(classificacaoSel).setMob(mob)
-                .construir(dao());
+                .construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível reclassificar", ExPodeReclassificar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível reclassificar", ExPodeReclassificar.class, getTitular(), getLotaTitular(), mob);
 
         if (mov.getExDocumento().isEletronico()) {
             SimpleDateFormat sdf = new SimpleDateFormat();
@@ -3887,9 +3785,7 @@ public class ExMovimentacaoController extends ExController {
             result.include("dtRegMov", sdf.format(new Date()));
         }
 
-        Ex.getInstance()
-                .getBL()
-                .avaliarReclassificar(getCadastrante(), getLotaTitular(),
+        bl.avaliarReclassificar(getCadastrante(), getLotaTitular(),
                         mob, mov.getDtMov(), mov.getSubscritor(),
                         mov.getExClassificacao(), mov.getDescrMov(), false
                 );
@@ -3905,9 +3801,7 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setSigla(sigla);
         final ExDocumento doc = buscarDocumento(builder, true);
 
-        Ex.getInstance()
-                .getBL()
-                .simularAssinaturaDocumento(getCadastrante(), getLotaTitular(),
+        bl.simularAssinaturaDocumento(getCadastrante(), getLotaTitular(),
                         doc);
 
         result.redirectTo("/app/expediente/doc/exibir?sigla=" + sigla);
@@ -3923,9 +3817,7 @@ public class ExMovimentacaoController extends ExController {
         final ExMobil mob = builder.getMob();
         final ExMovimentacao mov = builder.getMov();
 
-        Ex.getInstance()
-                .getBL()
-                .simularAssinaturaMovimentacao(
+        bl.simularAssinaturaMovimentacao(
                         getCadastrante(),
                         getLotaTitular(),
                         mov,
@@ -3960,7 +3852,7 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacaoBuilder movBuilder = ExMovimentacaoBuilder
                 .novaInstancia().setMob(mob);
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
         mov.setDtMov(new Date());
         mov.setSubscritor(getTitular());
@@ -3980,7 +3872,7 @@ public class ExMovimentacaoController extends ExController {
                     "Não é possível anexar arquivo em volume encerrado.");
         }
 
-        Ex.getInstance().getComp().afirmar("Arquivo não pode ser anexado", ExPodeAnexarArquivo.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Arquivo não pode ser anexado", ExPodeAnexarArquivo.class, getTitular(), getLotaTitular(), mob);
 
         // Obtem as pendências que serão resolvidas
         final String[] aidMov = getRequest().getParameterValues(
@@ -3989,7 +3881,7 @@ public class ExMovimentacaoController extends ExController {
         if (aidMov != null) {
             pendencias = new TreeSet<>();
             for (final String s : aidMov) {
-                pendencias.add(dao().consultar(Long.parseLong(s),
+                pendencias.add(dao.consultar(Long.parseLong(s),
                         ExMovimentacao.class, false));
             }
         }
@@ -4003,9 +3895,7 @@ public class ExMovimentacaoController extends ExController {
             }
         String sNmArqMov = new String(ab, StandardCharsets.UTF_8);
 
-        Ex.getInstance()
-                .getBL()
-                .anexarArquivo(getCadastrante(), getLotaTitular(), mob,
+        bl.anexarArquivo(getCadastrante(), getLotaTitular(), mob,
                         mov.getDtMov(), mov.getSubscritor(), sNmArqMov,
                         mov.getTitular(), mov.getLotaTitular(),
                         mov.getConteudoBlobMov2(), mov.getConteudoTpMov(),
@@ -4022,7 +3912,7 @@ public class ExMovimentacaoController extends ExController {
         final ExDocumento doc = buscarDocumento(builder, true);
         final ExMobil mob = builder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível avaliar", ExPodeAvaliar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível avaliar", ExPodeAvaliar.class, getTitular(), getLotaTitular(), mob);
 
         result.include("mob", mob);
         result.include("doc", doc);
@@ -4054,9 +3944,9 @@ public class ExMovimentacaoController extends ExController {
                 .setObsOrgao(obsOrgao).setSubstituicao(substituicao)
                 .setTitularSel(titularSel).setSubscritorSel(subscritorSel)
                 .setClassificacaoSel(classificacaoSel).setMob(mob)
-                .construir(dao());
+                .construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível avaliar", ExPodeAvaliar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível avaliar", ExPodeAvaliar.class, getTitular(), getLotaTitular(), mob);
 
         if (mov.getExDocumento().isEletronico()) {
             SimpleDateFormat sdf = new SimpleDateFormat();
@@ -4065,9 +3955,7 @@ public class ExMovimentacaoController extends ExController {
             result.include("dtRegMov", sdf.format(new Date()));
         }
 
-        Ex.getInstance()
-                .getBL()
-                .avaliarReclassificar(getCadastrante(), getLotaTitular(),
+        bl.avaliarReclassificar(getCadastrante(), getLotaTitular(),
                         mob, mov.getDtMov(), mov.getSubscritor(),
                         mov.getExClassificacao(), mov.getDescrMov(), true
                 );
@@ -4086,17 +3974,15 @@ public class ExMovimentacaoController extends ExController {
         Boolean podeAtenderPedidoPublicacao = Boolean.FALSE;
         DpLotacaoSelecao lot = new DpLotacaoSelecao();
 
-        if (doc.getExNivelAcessoAtual().getGrauNivelAcesso() != ExNivelAcesso.NIVEL_ACESSO_PUBLICO)
+        if (docBl.getNivelAcessoAtualDoc(doc).getGrauNivelAcesso() != ExNivelAcesso.NIVEL_ACESSO_PUBLICO)
             throw new AplicacaoException(
                     "O agendamento de publicação no DJE somente é permitido para documentos com nível de acesso Público.");
 
-        Ex.getInstance()
-                .getComp()
+        comp
                 .afirmar("Não foi possível o agendamento de publicação no DJE.", ExPodeAgendarPublicacao.class, getTitular(), getLotaTitular(),
                         builder.getMob());
 
-        if (Ex.getInstance()
-                .getConf()
+        if (conf
                 .podePorConfiguracao(
                         getTitular(),
                         getLotaTitular(),
@@ -4149,7 +4035,7 @@ public class ExMovimentacaoController extends ExController {
 
         ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
                 .setMob(docBuilder.getMob()).setDtDispon(dtDispon)
-                .construir(dao());
+                .construir(dao);
 
         if (idLotPublicacao != null)
             idPubl = idLotPublicacao;
@@ -4158,10 +4044,10 @@ public class ExMovimentacaoController extends ExController {
                 idPubl = lotaSubscritorSel.getId();
         }
 
-        String lotPublicacao = dao().consultar(idPubl, DpLotacao.class, false)
+        String lotPublicacao = dao.consultar(idPubl, DpLotacao.class, false)
                 .getSigla();
 
-        Ex.getInstance().getComp()
+        comp
                 .afirmar("Não foi possível o agendamento de publicação no DJE.", ExPodeAgendarPublicacao.class, getTitular(), getLotaTitular(),
                         docBuilder.getMob());
 
@@ -4171,10 +4057,8 @@ public class ExMovimentacaoController extends ExController {
 
         validarDataGravacao(mov, false);
 
-        Ex.getInstance()
-                .getBL()
-                .remeterParaPublicacao(getCadastrante(), getLotaTitular(),
-                        docBuilder.getMob(), dao().dt(), mov.getSubscritor(),
+        bl.remeterParaPublicacao(getCadastrante(), getLotaTitular(),
+                        docBuilder.getMob(), dao.dt(), mov.getSubscritor(),
                         mov.getTitular(), getLotaTitular(),
                         mov.getDtDispPublicacao(),
                         tipoMateria.replaceAll("'", ""), lotPublicacao,
@@ -4209,7 +4093,7 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setId(id);
         buscarDocumento(builder, true);
 
-        final ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class, false);
+        final ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class, false);
 
         try {
             final String s = mov.assertAssinaturaValida(true);
@@ -4255,7 +4139,7 @@ public class ExMovimentacaoController extends ExController {
                 .getId();
         Long idLotDefault = null;
 
-        siglaSubscritor = PublicacaoDJEBL.obterUnidadeDocumento(doc);
+        siglaSubscritor = publicacaoDJEBL.obterUnidadeDocumento(doc);
         siglaCadastrante = getCadastrante().getLotacao().getSigla();
         siglaTitular = getLotaTitular().getSigla();
         lotFiltro = new DpLotacao();
@@ -4264,7 +4148,7 @@ public class ExMovimentacaoController extends ExController {
         lotFiltro.setSigla(siglaSubscritor);
         if (lotFiltro.getSigla().startsWith("-"))
             lotFiltro.setSigla(lotFiltro.getSigla().substring(1));
-        lotSubscritor = dao().consultarPorSigla(lotFiltro);
+        lotSubscritor = dao.consultarPorSigla(lotFiltro);
 
         if (lotSubscritor != null) {
             lotacoes.add(lotSubscritor);
@@ -4274,7 +4158,7 @@ public class ExMovimentacaoController extends ExController {
         if (!siglaSubscritor.equals(siglaCadastrante)
                 && idOrgaoUsuarioCadastrante.equals(idOrgaoUsuario)) {
             lotFiltro.setSigla(siglaCadastrante);
-            lotCadastrante = dao().consultarPorSigla(lotFiltro);
+            lotCadastrante = dao.consultarPorSigla(lotFiltro);
             if (lotCadastrante != null) {
                 lotacoes.add(lotCadastrante);
                 if (idLotDefault == null)
@@ -4288,7 +4172,7 @@ public class ExMovimentacaoController extends ExController {
                 .equals(idOrgaoUsuario)) || getLotaTitular()
                 .getOrgaoUsuario().getId().equals(idOrgaoUsuario))) {
             lotFiltro.setSigla(siglaTitular);
-            lotTitular = dao().consultarPorSigla(lotFiltro);
+            lotTitular = dao.consultarPorSigla(lotFiltro);
             if (lotTitular != null) {
                 lotacoes.add(lotTitular);
                 if (idLotDefault == null)
@@ -4346,12 +4230,12 @@ public class ExMovimentacaoController extends ExController {
     private List<ExTipoDespacho> getTiposDespacho(final ExMobil mob) {
         final List<ExTipoDespacho> tiposDespacho = new ArrayList<>();
         tiposDespacho.add(new ExTipoDespacho(0L, "[Nenhum]", "S"));
-        tiposDespacho.addAll(dao().consultarAtivos());
+        tiposDespacho.addAll(dao.consultarAtivos());
         tiposDespacho
                 .add(new ExTipoDespacho(-1, "[Outros] (texto curto)", "S"));
 
         if (mob != null
-                && Ex.getInstance().getComp()
+                && comp
                 .pode(ExPodeCriarDocFilho.class, getTitular(), getLotaTitular(), mob))
             tiposDespacho.add(new ExTipoDespacho(-2, "[Outros] (texto longo)",
                     "S"));
@@ -4364,7 +4248,7 @@ public class ExMovimentacaoController extends ExController {
     }
 
     private ExModelo getModeloDespachoAutomatico() {
-        return dao().consultarExModelo(null, "Despacho Automático");
+        return dao.consultarExModelo(null, "Despacho Automático");
     }
 
     private int processarTipoResponsavel(ExMobil mob) {
@@ -4439,16 +4323,14 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setSigla(sigla);
         final ExDocumento doc = buscarDocumento(builder, true);
 
-        if (doc.getExNivelAcessoAtual().getGrauNivelAcesso() != ExNivelAcesso.NIVEL_ACESSO_PUBLICO)
+        if (docBl.getNivelAcessoAtualDoc(doc).getGrauNivelAcesso() != ExNivelAcesso.NIVEL_ACESSO_PUBLICO)
 
             throw new AplicacaoException(
                     "A solicitação de publicação no BIE somente é permitida para documentos com nível de acesso Público.");
 
-        Ex.getInstance().getComp().afirmar("A solicitação de publicação no BIE apenas é permitida até as 17:00", ExPodeAgendarPublicacaoNoBoletim.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("A solicitação de publicação no BIE apenas é permitida até as 17:00", ExPodeAgendarPublicacaoNoBoletim.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .agendarPublicacaoBoletim(getCadastrante(),
+        bl.agendarPublicacaoBoletim(getCadastrante(),
                         getLotaTitular(), doc
                 );
 
@@ -4468,7 +4350,7 @@ public class ExMovimentacaoController extends ExController {
         } catch (final Exception ignored) {
         }
 
-        Ex.getInstance().getComp().afirmar("Publicação não permitida", ExPodePublicar.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Publicação não permitida", ExPodePublicar.class, getTitular(), getLotaTitular(), mob);
 
         result.include("sigla", sigla);
         result.include("doc", mob.getDoc());
@@ -4485,13 +4367,11 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia();
         movBuilder.setMob(builder.getMob());
         movBuilder.setDtPubl(dtPubl);
-        final ExMovimentacao mov = movBuilder.construir(dao());
+        final ExMovimentacao mov = movBuilder.construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Nao foi possivel fazer a publicacao", ExPodePublicar.class, getTitular(), getLotaTitular(), builder.getMob());
+        comp.afirmar("Nao foi possivel fazer a publicacao", ExPodePublicar.class, getTitular(), getLotaTitular(), builder.getMob());
 
-        Ex.getInstance()
-                .getBL()
-                .publicarBoletim(getCadastrante(), getLotaTitular(),
+        bl.publicarBoletim(getCadastrante(), getLotaTitular(),
                         mov.getExDocumento(), mov.getDtMov());
 
         ExDocumentoController.redirecionarParaExibir(result, sigla);
@@ -4514,11 +4394,11 @@ public class ExMovimentacaoController extends ExController {
 
         DpLotacaoSelecao lot = new DpLotacaoSelecao();
 
-        if (doc.getExNivelAcessoAtual().getGrauNivelAcesso() != ExNivelAcesso.NIVEL_ACESSO_PUBLICO)
+        if (docBl.getNivelAcessoAtualDoc(doc).getGrauNivelAcesso() != ExNivelAcesso.NIVEL_ACESSO_PUBLICO)
             throw new AplicacaoException(
                     "A solicitação de publicação no DJE somente é permitida para documentos com nível de acesso Público.");
 
-        Ex.getInstance().getComp().afirmar("Publicação não permitida", ExPodePedirPublicacao.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Publicação não permitida", ExPodePedirPublicacao.class, getTitular(), getLotaTitular(), mob);
 
         lot.setId(doc.getSubscritor().getLotacao().getId());
         lot.buscar();
@@ -4557,7 +4437,7 @@ public class ExMovimentacaoController extends ExController {
 
         final ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
                 .setMob(docBuilder.getMob()).setDtDispon(dtDispon)
-                .construir(dao());
+                .construir(dao);
 
         if (idLotPublicacao != null)
             idPubl = idLotPublicacao;
@@ -4566,16 +4446,14 @@ public class ExMovimentacaoController extends ExController {
                 idPubl = lotaSubscritorSel.getId();
         }
 
-        final String lotPublicacao = dao().consultar(idPubl, DpLotacao.class,
+        final String lotPublicacao = dao.consultar(idPubl, DpLotacao.class,
                 false).getSigla();
 
-        Ex.getInstance().getComp().afirmar("Publicação não permitida", ExPodePedirPublicacao.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Publicação não permitida", ExPodePedirPublicacao.class, getTitular(), getLotaTitular(), mob);
 
         validarDataGravacao(mov, true);
 
-        Ex.getInstance()
-                .getBL()
-                .pedirPublicacao(getCadastrante(), getLotaTitular(), mob,
+        bl.pedirPublicacao(getCadastrante(), getLotaTitular(), mob,
                         mov.getDtMov(), mov.getSubscritor(),
                         mov.getTitular(), mov.getLotaTitular(),
                         mov.getDtDispPublicacao(), tipoMateria,
@@ -4593,7 +4471,7 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(docBuilder, true);
         final ExMobil mob = docBuilder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer indicação para guarda permanente", ExPodeIndicarPermanente.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível fazer indicação para guarda permanente", ExPodeIndicarPermanente.class, getTitular(), getLotaTitular(), mob);
 
         result.include("mob", mob);
         result.include("sigla", sigla);
@@ -4616,9 +4494,9 @@ public class ExMovimentacaoController extends ExController {
         final ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
                 .setMob(mob).setDtMovString(dtMovString)
                 .setSubscritorSel(subscritorSel).setTitularSel(titularSel)
-                .setDescrMov(descrMov).construir(dao());
+                .setDescrMov(descrMov).construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível fazer indicação para guarda permanente", ExPodeIndicarPermanente.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível fazer indicação para guarda permanente", ExPodeIndicarPermanente.class, getTitular(), getLotaTitular(), mob);
 
         String dtRegMov = null;
         if (mov.getExDocumento().isEletronico()) {
@@ -4628,9 +4506,7 @@ public class ExMovimentacaoController extends ExController {
             mov.setSubscritor(getTitular());
         }
 
-        Ex.getInstance()
-                .getBL()
-                .indicarPermanente(getCadastrante(), getLotaTitular(), mob,
+        bl.indicarPermanente(getCadastrante(), getLotaTitular(), mob,
                         mov.getDtMov(), mov.getSubscritor(),
                         mov.getTitular(), mov.getDescrMov()
                 );
@@ -4646,7 +4522,7 @@ public class ExMovimentacaoController extends ExController {
         buscarDocumento(docBuilder, true);
         final ExMobil mob = docBuilder.getMob();
 
-        Ex.getInstance().getComp().afirmar("Não é possível reverter indicação para guarda permanente", ExPodeReverterIndicacaoPermanente.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível reverter indicação para guarda permanente", ExPodeReverterIndicacaoPermanente.class, getTitular(), getLotaTitular(), mob);
 
         result.include("mob", mob);
         result.include("sigla", sigla);
@@ -4668,9 +4544,9 @@ public class ExMovimentacaoController extends ExController {
         final ExMovimentacao mov = ExMovimentacaoBuilder.novaInstancia()
                 .setMob(mob).setDtMovString(dtMovString)
                 .setSubscritorSel(subscritorSel).setTitularSel(titularSel)
-                .setDescrMov(descrMov).construir(dao());
+                .setDescrMov(descrMov).construir(dao);
 
-        Ex.getInstance().getComp().afirmar("Não é possível reverter indicação para guarda permanente", ExPodeReverterIndicacaoPermanente.class, getTitular(), getLotaTitular(), mob);
+        comp.afirmar("Não é possível reverter indicação para guarda permanente", ExPodeReverterIndicacaoPermanente.class, getTitular(), getLotaTitular(), mob);
 
         String dtRegMov = null;
         if (mov.getExDocumento().isEletronico()) {
@@ -4680,9 +4556,7 @@ public class ExMovimentacaoController extends ExController {
             mov.setSubscritor(getTitular());
         }
 
-        Ex.getInstance()
-                .getBL()
-                .reverterIndicacaoPermanente(getCadastrante(),
+        bl.reverterIndicacaoPermanente(getCadastrante(),
                         getLotaTitular(), mob, mov.getDtMov(),
                         mov.getSubscritor(), mov.getTitular(),
                         mov.getDescrMov()
@@ -4718,7 +4592,7 @@ public class ExMovimentacaoController extends ExController {
                 tpMovAssinatura = ExTipoDeMovimentacao.CONFERENCIA_COPIA_DOCUMENTO;
 
             byte[] assinatura = Base64.getDecoder().decode(assinaturaB64);
-            Date dt = dao().consultarDataEHoraDoServidor();
+            Date dt = dao.consultarDataEHoraDoServidor();
 
             byte[] certificado = Base64.getDecoder().decode(certificadoB64);
             if (certificado != null && certificado.length != 0)
@@ -4728,8 +4602,7 @@ public class ExMovimentacaoController extends ExController {
 
             verificaNivelAcesso(mov.getExMobil());
 
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .assinarMovimentacao(getCadastrante(), getLotaTitular(),
                             mov, dt, assinatura, certificado, tpMovAssinatura);
         } catch (final Exception e) {
@@ -4773,7 +4646,7 @@ public class ExMovimentacaoController extends ExController {
             if (soLerXml != null)
                 sSoLerXml = soLerXml;
 
-            String xml = PublicacaoDJEBL.segundoRetorno(dataBusca, tipoCaderno, secao, sSoLerXml);
+            String xml = publicacaoDJEBL.segundoRetorno(dataBusca, tipoCaderno, secao, sSoLerXml);
             result.use(Results.http()).body(xml).setStatusCode(200);
         } catch (Exception e) {
             result.use(Results.http()).body(ExceptionUtils.getStackTrace(e)).setStatusCode(500);
@@ -4791,13 +4664,13 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setMob(documentoBuilder.getMob());
 
         final ExMovimentacao movimentacao = movimentacaoBuilder
-                .construir(dao());
+                .construir(dao);
 
         String descricao = movimentacaoBuilder.getDescrMov() == null ? descrMov : movimentacaoBuilder.getDescrMov();
 
         try {
 
-            Ex.getInstance().getComp().afirmar("Não é possível fazer ciência do documento."
+            comp.afirmar("Não é possível fazer ciência do documento."
                             + " Isso pode ocorrer se o documento não estiver apto a receber ciência ou devido a alguma regra para não permitir esta operação", ExPodeFazerCiencia.class, getTitular(), getLotaTitular(),
                     documentoBuilder.getMob());
 
@@ -4824,22 +4697,21 @@ public class ExMovimentacaoController extends ExController {
         final ExMovimentacaoBuilder builder = ExMovimentacaoBuilder
                 .novaInstancia();
 
-        final ExMovimentacao mov = builder.construir(dao());
+        final ExMovimentacao mov = builder.construir(dao);
 
         final BuscaDocumentoBuilder documentoBuilder = BuscaDocumentoBuilder
                 .novaInstancia().setSigla(sigla);
 
         buscarDocumento(documentoBuilder);
 
-        mov.setDtMov(dao().dt());
+        mov.setDtMov(dao.dt());
         mov.setSubscritor(getCadastrante());
         mov.setResp(getCadastrante());
         mov.setLotaResp(getLotaTitular());
         mov.setDescrMov(descrMov);
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .registrarCiencia(getCadastrante(), getLotaTitular(),
                             documentoBuilder.getMob(), mov.getDtMov(),
                             mov.getLotaResp(), mov.getResp(), mov.getSubscritor(),
@@ -4865,9 +4737,9 @@ public class ExMovimentacaoController extends ExController {
                 .novaInstancia().setMob(documentoBuilder.getMob());
 
         final ExMovimentacao movimentacao = movimentacaoBuilder
-                .construir(dao());
+                .construir(dao);
 
-        List<CpMarcador> marcadores = dao().listarCpMarcadoresGerais(true);
+        List<CpMarcador> marcadores = dao.listarCpMarcadoresGerais(true);
         Set<CpMarcador> marcadoresAtivo = this.getListaMarcadoresAtivos(documentoBuilder.getMob().getDoc().getMobilGeral());
         if (marcadores != null) {
             marcadores.removeAll(marcadoresAtivo);
@@ -4897,7 +4769,7 @@ public class ExMovimentacaoController extends ExController {
 
         /* Primeiro Passo — Documento para Público */
         CpToken sigaUrlPermanente;
-        sigaUrlPermanente = Ex.getInstance().getBL().publicarTransparencia(documentoBuilder.getMob(), getCadastrante(), getLotaCadastrante(), listaMarcadores, false);
+        sigaUrlPermanente = bl.publicarTransparencia(documentoBuilder.getMob(), getCadastrante(), getLotaCadastrante(), listaMarcadores, false);
 
         String url = Contexto.urlBase(request);
         String caminho = url + "/siga/public/app/sigalink/1/" + sigaUrlPermanente.getToken();
@@ -4926,8 +4798,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .exibirNoAcompanhamentoDoProtocolo(getCadastrante(), getLotaTitular(),
                             documentoBuilder.getMob(), getTitular());
 
@@ -4953,7 +4824,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
 
-        final ExMovimentacao mov = dao().consultar(id, ExMovimentacao.class,
+        final ExMovimentacao mov = dao.consultar(id, ExMovimentacao.class,
                 false);
 
         if (mov == null
@@ -4963,8 +4834,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .cancelar(getTitular(), getLotaTitular(), builder.getMob(),
                             mov, null, null, null,
                             "Disponibilização no acompanhamento do protocolo");
@@ -4985,7 +4855,7 @@ public class ExMovimentacaoController extends ExController {
         final ExDocumento doc = buscarDocumento(documentoBuilder);
         String dtPrazoStr = doc.getDtPrazoDeAssinaturaDDMMYYYYHHMM();
 
-        Ex.getInstance().getComp().afirmar("Não é permitido definir um prazo para assinatura para o documento.", ExPodeDefinirPrazoAssinatura.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
+        comp.afirmar("Não é permitido definir um prazo para assinatura para o documento.", ExPodeDefinirPrazoAssinatura.class, getTitular(), getLotaTitular(), documentoBuilder.getMob());
 
         result.include("sigla", sigla);
         result.include("mob", documentoBuilder.getMob());
@@ -5021,8 +4891,7 @@ public class ExMovimentacaoController extends ExController {
         }
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .definirPrazoAssinatura(getTitular(), getLotaTitular(),
                             documento, getTitular(), dthrPrazo);
 

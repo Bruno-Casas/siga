@@ -35,8 +35,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 
 @MappedSuperclass
 @NamedQueries({
@@ -53,7 +52,6 @@ public abstract class AbstractCpOrgao extends HistoricoSuporte implements
 	@SequenceGenerator(name = "CP_ORGAO_SEQ", sequenceName = "CORPORATIVO.CP_ORGAO_SEQ")
 	@GeneratedValue(generator = "CP_ORGAO_SEQ")
 	@Column(name = "ID_ORGAO", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idOrgao;
 
 	@Column(name = "BAIRRO_ORGAO", length = 50)
@@ -106,7 +104,6 @@ public abstract class AbstractCpOrgao extends HistoricoSuporte implements
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_ORGAO_USU", nullable = false)
-	@Desconsiderar
 	private CpOrgaoUsuario orgaoUsuario;
 
 	@Column(name = "HIS_IDE", length = 256)

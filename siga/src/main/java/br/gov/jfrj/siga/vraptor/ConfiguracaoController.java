@@ -3,17 +3,11 @@ package br.gov.jfrj.siga.vraptor;
 import java.util.Collections;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
-
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpConfiguracao;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpConfiguracaoComparator;
 import br.gov.jfrj.siga.cp.model.DpCargoSelecao;
 import br.gov.jfrj.siga.cp.model.DpFuncaoConfiancaSelecao;
@@ -22,25 +16,11 @@ import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 
 @Controller
-public class ConfiguracaoController extends SigaController {
+public class ConfiguracaoController extends VraptorController {
 
 	private static final String VERIFICADOR_ACESSO = "FE:Ferramentas;CFG:Cadastrar Configurações";
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ConfiguracaoController() {
-		super();
-	}
-
-	@Inject
-	public ConfiguracaoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so,
-			EntityManager em) {
-		super(request, result, dao, so, em);
-	}
 
 	@Get("app/configuracao/listar")
 	public void lista(Integer idTpConfiguracao, Long idOrgaoUsu) throws Exception {
@@ -72,11 +52,11 @@ public class ConfiguracaoController extends SigaController {
 		config.setCpTipoConfiguracao(CpTipoDeConfiguracao.getById(idTpConfiguracao));
 
 		if (idOrgaoUsu != null && idOrgaoUsu != 0) {
-			config.setOrgaoUsuario(dao().consultar(idOrgaoUsu, CpOrgaoUsuario.class, false));
+			config.setOrgaoUsuario(cpDao.consultar(idOrgaoUsu, CpOrgaoUsuario.class, false));
 		} else
 			config.setOrgaoUsuario(null);
 
-		List<CpConfiguracao> listConfig = Cp.getInstance().getConf().buscarConfiguracoesVigentes(config);
+		List<CpConfiguracao> listConfig = cpConf.buscarConfiguracoesVigentes(config);
 
 		for (CpConfiguracao cfg : listConfig) 
 			cfg.atualizarObjeto();
@@ -101,10 +81,10 @@ public class ConfiguracaoController extends SigaController {
 		CpConfiguracao config = new CpConfiguracao();
 
 		if (id != null) {
-			config = dao().consultar(id, CpConfiguracao.class, false);
+			config = cpDao.consultar(id, CpConfiguracao.class, false);
 			config.atualizarObjeto();
 		} else if (campoFixo) {
-			config = new CpConfiguracaoBuilder(CpConfiguracao.class, dao).setIdSituacao(idSituacao)
+			config = new CpConfiguracaoBuilder(CpConfiguracao.class, cpDao).setIdSituacao(idSituacao)
 					.setIdTpConfiguracao(idTpConfiguracao).setPessoaSel(pessoaSel).setLotacaoSel(lotacaoSel)
 					.setCargoSel(cargoSel).setFuncaoSel(funcaoSel).setPessoaObjetoSel(pessoaObjetoSel)
 					.setLotacaoObjetoSel(lotacaoObjetoSel).setCargoObjetoSel(cargoObjetoSel)
@@ -122,7 +102,7 @@ public class ConfiguracaoController extends SigaController {
 		result.include("id", id);
 		result.include("listaTiposConfiguracao", getListaTiposConfiguracao());
 		result.include("orgaosUsu", getOrgaosUsu());
-		result.include("listaTiposLotacao", CpConfiguracaoHelper.getListaTiposLotacao(dao));
+		result.include("listaTiposLotacao", CpConfiguracaoHelper.getListaTiposLotacao(cpDao));
 		result.include("nmTipoRetorno", nmTipoRetorno);
 		result.include("campoFixo", campoFixo);
 	}
@@ -134,9 +114,9 @@ public class ConfiguracaoController extends SigaController {
 		assertAcesso(VERIFICADOR_ACESSO);
 
 		if (id != null) {
-			CpConfiguracao config = dao().consultar(id, CpConfiguracao.class, false);
-			config.setHisDtFim(dao().consultarDataEHoraDoServidor());
-			dao().gravarComHistorico(config, getIdentidadeCadastrante());
+			CpConfiguracao config = cpDao.consultar(id, CpConfiguracao.class, false);
+			config.setHisDtFim(cpDao.consultarDataEHoraDoServidor());
+			cpDao.gravarComHistorico(config, getIdentidadeCadastrante());
 			result.redirectTo(this).lista(config.getCpTipoConfiguracao().getId(), null);
 		} else
 			throw new AplicacaoException("ID não informada");
@@ -154,14 +134,14 @@ public class ConfiguracaoController extends SigaController {
 			DpFuncaoConfiancaSelecao funcaoObjeto_funcaoSel, Long idOrgaoObjeto, Long idTpLotacao, String nmTipoRetorno,
 			boolean campoFixo) throws Exception {
 		assertAcesso(VERIFICADOR_ACESSO);
-		final CpConfiguracao config = new CpConfiguracaoBuilder(CpConfiguracao.class, dao).setId(id)
+		final CpConfiguracao config = new CpConfiguracaoBuilder(CpConfiguracao.class, cpDao).setId(id)
 				.setIdSituacao(idSituacao).setIdTpConfiguracao(idTpConfiguracao).setPessoaSel(pessoaSel)
 				.setLotacaoSel(lotacaoSel).setCargoSel(cargoSel).setFuncaoSel(funcaoSel).setIdOrgaoObjeto(idOrgaoObjeto)
 				.setPessoaObjetoSel(pessoaObjeto_pessoaSel).setLotacaoObjetoSel(lotacaoObjeto_lotacaoSel)
 				.setCargoObjetoSel(cargoObjeto_cargoSel).setFuncaoObjetoSel(funcaoObjeto_funcaoSel)
 				.setIdOrgaoUsu(idOrgaoUsu).setIdTpLotacao(idTpLotacao).construir();
 
-		CpConfiguracaoHelper.gravarConfiguracao(idTpConfiguracao, idSituacao, config, dao, getIdentidadeCadastrante());
+		CpConfiguracaoHelper.gravarConfiguracao(idTpConfiguracao, idSituacao, config, cpDao, getIdentidadeCadastrante());
 		result.redirectTo(this).lista(idTpConfiguracao, null);
 	}
 

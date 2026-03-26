@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.context.ApiContextSupport;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.model.WfProcedimento;
 import br.gov.jfrj.siga.wf.util.WfStarter;
@@ -21,7 +20,7 @@ public class WfApiV1Context extends ApiContextSupport {
     }
 
     public CpDao inicializarDao() {
-        return WfDao.getInstance();
+        return dao;
     }
 
     public EntityManager criarEntityManager() {

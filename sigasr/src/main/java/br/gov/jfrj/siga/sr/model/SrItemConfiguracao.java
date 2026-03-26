@@ -35,10 +35,9 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.sr.model.vo.PaginaItemConfiguracao;
 import br.gov.jfrj.siga.sr.model.vo.SrItemConfiguracaoVO;
@@ -48,7 +47,7 @@ import com.google.gson.JsonArray;
 @Entity
 @Table(name = "sr_item_configuracao", schema = "sigasr")
 @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
-public class SrItemConfiguracao extends HistoricoSuporte implements
+public class SrItemConfiguracao extends HistoricoSuporte<SrItemConfiguracao> implements
 		SrSelecionavel, Selecionavel {
 
 	public static final ActiveRecord<SrItemConfiguracao> AR = new ActiveRecord<>(
@@ -417,11 +416,6 @@ public class SrItemConfiguracao extends HistoricoSuporte implements
 		sb.append(" SrItemConfiguracao GROUP BY hisIdIni) ");
 
 		return sb;
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
 	}
 
 	@SuppressWarnings("unused")

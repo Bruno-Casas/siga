@@ -54,18 +54,6 @@ public class RequisicaoController extends TpController {
     @Inject
     private AutorizacaoGI autorizacaoGI;
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RequisicaoController() {
-		super();
-	}
-	
-	@Inject
-    public RequisicaoController(HttpServletRequest request, Result result, Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/listar")
     public void listar() {
 		EstadoRequisicao estReq = EstadoRequisicao.CANCELADA;
@@ -105,7 +93,7 @@ public class RequisicaoController extends TpController {
         for (int cont = 0; cont < req.length; cont++) {
             RequisicaoTransporte requisicao = RequisicaoTransporte.AR.findById(req[cont]);
             requisicao.setCpComplexo(novoComplexo);
-            requisicao.save();
+            dao.gravar(requisicao);
         }
 
         result.redirectTo(this).listarPAprovar();
@@ -196,7 +184,7 @@ public class RequisicaoController extends TpController {
         }
 
         requisicaoTransporte.setSolicitante(recuperaPessoa(requisicaoTransporte.getIdSolicitante()));
-        requisicaoTransporte.save();
+        dao.gravar(requisicaoTransporte);
 
         if (novaRequisicao) {
             Andamento andamento = new Andamento();
@@ -205,7 +193,7 @@ public class RequisicaoController extends TpController {
             andamento.setEstadoRequisicao(EstadoRequisicao.ABERTA);
             andamento.setRequisicaoTransporte(requisicaoTransporte);
             andamento.setResponsavel(getCadastrante());
-            andamento.save();
+            dao.gravar(andamento);
         }
 
         result.redirectTo(this).listar();
@@ -266,7 +254,7 @@ public class RequisicaoController extends TpController {
 
     protected void recuperarRequisicoes(StringBuilder criterioBusca, HashMap<String, Object> parametros, EstadoRequisicao[] estadosRequisicao) {
         if (!autorizacaoGI.ehAdministrador() && !autorizacaoGI.ehAdministradorMissao() && !autorizacaoGI.ehAdministradorMissaoPorComplexo() && !autorizacaoGI.ehAprovador()) {
-            criterioBusca.append(" and solicitante.idPessoaIni = :idPessoaIni");
+            criterioBusca.append(" and solicitante.hisIdIni = :idPessoaIni");
             parametros.put("idPessoaIni", getTitular().getIdInicial());
         } else {
             if (autorizacaoGI.ehAdministradorMissaoPorComplexo() || autorizacaoGI.ehAprovador()) {
@@ -334,7 +322,7 @@ public class RequisicaoController extends TpController {
         checarSolicitante(requisicaoTransporte.getSolicitante().getIdInicial(), requisicaoTransporte.getCpComplexo().getIdComplexo(), true);
 
         requisicaoTransporte.setCpOrgaoUsuario(getTitular().getOrgaoUsuario());
-        requisicaoTransporte.save();
+        dao.gravar(requisicaoTransporte);
         requisicaoTransporte.refresh();
 
         if (requisicaoTransporte.getId() == 0) {
@@ -344,7 +332,7 @@ public class RequisicaoController extends TpController {
             andamento.setEstadoRequisicao(EstadoRequisicao.ABERTA);
             andamento.setRequisicaoTransporte(requisicaoTransporte);
             andamento.setResponsavel(getCadastrante());
-            andamento.save();
+            dao.gravar(andamento);
         }
 
         result.redirectTo(this).listar();
@@ -536,7 +524,7 @@ public class RequisicaoController extends TpController {
         DpPessoa dpPessoa = DpPessoa.AR.findById(idSolicitante);
         HashMap<String, Object> parametros = new HashMap<String, Object>();
         parametros.put("idPessoaIni",  dpPessoa.getIdInicial());
-        return DpPessoa.AR.find("idPessoaIni = :idPessoaIni and dataFimPessoa = null", parametros).first();
+        return DpPessoa.AR.find("idPessoaIni = :idPessoaIni and hisDtFim = null", parametros).first();
     }
 
     private void tratarExcecoes(Exception e) {

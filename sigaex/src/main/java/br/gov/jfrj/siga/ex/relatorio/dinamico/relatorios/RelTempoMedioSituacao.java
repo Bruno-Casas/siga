@@ -7,7 +7,6 @@ import br.gov.jfrj.relatorio.dinamico.RelatorioTemplate;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeExibirQuemTemAcessoAoDocumento;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -63,14 +62,14 @@ public class RelTempoMedioSituacao extends RelatorioTemplate {
 
 
         Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-                "from DpLotacao lot " + "where lot.dataFimLotacao is null "
+                "from DpLotacao lot " + "where lot.hisDtFim is null "
                         + "and lot.orgaoUsuario = "
                         + parametros.get("orgaoUsuario")
                         + " and lot.siglaLotacao = '"
                         + parametros.get("lotacaoTitular") + "'");
         DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-        DpPessoa titular = ExDao.getInstance().consultar(
+        DpPessoa titular = dao.consultar(
                 new Long((String) parametros.get("idTit")), DpPessoa.class,
                 false);
 
@@ -82,8 +81,8 @@ public class RelTempoMedioSituacao extends RelatorioTemplate {
             Object[] obj = (Object[]) it.next();
             String lotaDoc = (String) obj[0];
             String modeloDoc = (String) obj[1];
-            if (Ex.getInstance().getBL().getComp().pode(ExPodeExibirQuemTemAcessoAoDocumento.class,
-                    titular, lotaTitular, ExDao.getInstance().consultarModeloPeloNome(modeloDoc)
+            if (this.bl.getComp().pode(ExPodeExibirQuemTemAcessoAoDocumento.class,
+                    titular, lotaTitular, dao.consultarModeloPeloNome(modeloDoc)
             )) {
                 List<String> listDados = new ArrayList();
 
@@ -269,7 +268,7 @@ public class RelTempoMedioSituacao extends RelatorioTemplate {
             DpPessoa pessoa = (DpPessoa) qryPes.getResultList().get(0);
             pessoaSet.add(pessoa);
 
-            query.setParameter("usuario", pessoa.getIdPessoaIni());
+            query.setParameter("usuario", pessoa.getHisIdIni());
         }
 
         query.setParameter("orgao", Long.valueOf((String) parametros.get("orgao")));

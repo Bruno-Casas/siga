@@ -47,7 +47,7 @@ public class WfRelatorioController extends WfController {
     @Path("/app/rel/listar-para-gerar-relatorios")
     public void listarParaGerarRelatorios() throws Exception {
         assertAcesso(VERIFICADOR_ACESSO);
-        List<WfDefinicaoDeProcedimento> modelos = dao().listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
+        List<WfDefinicaoDeProcedimento> modelos = cpDao.listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
         result.include("itens", modelos);
     }
 
@@ -55,7 +55,7 @@ public class WfRelatorioController extends WfController {
     @Path("/app/rel/medir/{sigla}")
     public void medir(String sigla) throws Exception {
         assertAcesso(ACESSO_RELATORIOS);
-        WfDefinicaoDeProcedimento pd = dao().consultarPorSigla(sigla, WfDefinicaoDeProcedimento.class, null);
+        WfDefinicaoDeProcedimento pd = cpDao.consultarPorSigla(sigla, WfDefinicaoDeProcedimento.class, null);
 
         result.include("orgao", getLotaTitular().getOrgaoUsuario().getNmOrgaoUsu());
         result.include("procedimento", pd);

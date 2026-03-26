@@ -3,10 +3,13 @@ package br.gov.jfrj.siga.ex.logic;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExModelo;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
+import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import com.crivano.jlogic.Expression;
 import com.crivano.jlogic.JLogic;
+
+import javax.enterprise.inject.spi.CDI;
 
 public class ExPodeExibirQuemTemAcessoAoDocumento implements Expression {
     ExModelo mod;
@@ -29,7 +32,9 @@ public class ExPodeExibirQuemTemAcessoAoDocumento implements Expression {
 
     @Override
     public boolean eval() {
-        return Ex.getInstance().getComp().getConf().podePorConfiguracao(null, null, null, null,
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+
+        return conf.podePorConfiguracao(null, null, null, null,
                 mod.getExFormaDocumento(), mod, null, null, null, titular.getCargo(), titular.getOrgaoUsuario(),
                 titular.getFuncaoConfianca(), lotaTitular, titular, null, null,
                 ExTipoDeConfiguracao.EXIBIR_QUEM_TEM_ACESSO_DOCUMENTO_LIMITADO, null, lotaTitular, null, null, null,

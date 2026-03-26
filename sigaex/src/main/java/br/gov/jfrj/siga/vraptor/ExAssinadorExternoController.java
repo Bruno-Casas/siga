@@ -39,21 +39,9 @@ import java.util.*;
 public class ExAssinadorExternoController extends ExController {
 
     private static final Logger LOGGER = Logger.getLogger(ExAssinadorExternoController.class);
-
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExAssinadorExternoController() {
-        super();
-    }
-
+    
     @Inject
-    public ExAssinadorExternoController(HttpServletRequest request, HttpServletResponse response,
-                                        ServletContext context, Result result, SigaObjects so, EntityManager em, Validator validator) {
-
-        super(request, response, context, result, ExDao.getInstance(), so, em);
-    }
+    private ExMobilBL mobBl;
 
     private class ExAssinadorExternoTest {
         String category;
@@ -92,13 +80,13 @@ public class ExAssinadorExternoController extends ExController {
             String permalink = urlapi.split("sigaex/public/app/")[0] + "siga/permalink/";
 
             Long cpf = Long.valueOf(sCpf);
-            List<DpPessoa> pessoas = dao().listarPorCpf(cpf);
+            List<DpPessoa> pessoas = cpDao.listarPorCpf(cpf);
             if (pessoas == null)
                 throw new Exception("Nenhuma pessoa localizada com o CPF: " + sCpf);
             List<ExAssinadorExternoListItem> list = new ArrayList<ExAssinadorExternoListItem>();
             for (DpPessoa pes : pessoas) {
-                boolean apenasComSolicitacaoDeAssinatura = !Ex.getInstance().getConf().podePorConfiguracao(pes, ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
-                List<ExAssinavelDoc> assinaveis = Ex.getInstance().getBL().obterAssinaveis(pes, pes.getLotacao(), apenasComSolicitacaoDeAssinatura);
+                boolean apenasComSolicitacaoDeAssinatura = !this.cpConf.podePorConfiguracao(pes, ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
+                List<ExAssinavelDoc> assinaveis = bl.obterAssinaveis(pes, pes.getLotacao(), apenasComSolicitacaoDeAssinatura);
                 for (ExAssinavelDoc ass : assinaveis) {
                     if (ass.isPodeAssinar()) {
                         String solicitantesDeAssinatura = ass.getDoc().getSolicitantesDeAssinaturaCompleto();
@@ -175,8 +163,8 @@ public class ExAssinadorExternoController extends ExController {
             sigla += ".pdf";
         }
 
-        ExMobil mob = Documento.getMobil(sigla);
-        ExMovimentacao mov = Documento.getMov(mob, sigla);
+        ExMobil mob = Documento.getMobil(dao, sigla);
+        ExMovimentacao mov = Documento.getMov(dao, mob, sigla);
 
         if (mov != null) {
             pdfd.pdf = mov.getConteudoBlobpdf();
@@ -196,13 +184,13 @@ public class ExAssinadorExternoController extends ExController {
     public void assinadorPopupHash(String id) throws Exception {
         try {
             String sigla = id2sigla(id) + ".pdf";
-            ExMobil mob = Documento.getMobil(sigla);
-            ExMovimentacao mov = Documento.getMov(mob, sigla);
+            ExMobil mob = Documento.getMobil(dao, sigla);
+            ExMovimentacao mov = Documento.getMov(dao, mob, sigla);
             ExDocumento doc = mob.getDoc();
 
             if (mov == null && !doc.isFinalizado()) {
                 DpPessoa cadastrante = obterCadastrante(null, mob, mov);
-                Ex.getInstance().getBL().finalizar(cadastrante, cadastrante.getLotacao(), doc);
+                bl.finalizar(cadastrante, cadastrante.getLotacao(), doc);
             }
 
             PdfData pdfd = getPdf(id);
@@ -282,19 +270,19 @@ public class ExAssinadorExternoController extends ExController {
             }
 
             byte[] assinatura = Base64.getDecoder().decode(envelope);
-            Date dt = dao().consultarDataEHoraDoServidor();
+            Date dt = cpDao.consultarDataEHoraDoServidor();
 
             if (id == null)
                 throw new Exception("Id não informada.");
             Long cpf = req.getLong("cpf");
             String sigla = id2sigla(id) + ".pdf";
 
-            ExMobil mob = Documento.getMobil(sigla);
-            ExMovimentacao mov = Documento.getMov(mob, sigla);
+            ExMobil mob = Documento.getMobil(dao, sigla);
+            ExMovimentacao mov = Documento.getMov(dao, mob, sigla);
 
             DpPessoa cadastrante = obterCadastrante(cpf, mob, mov);
 
-            boolean apenasComSolicitacaoDeAssinatura = !Ex.getInstance().getConf().podePorConfiguracao(cadastrante, ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
+            boolean apenasComSolicitacaoDeAssinatura = !this.cpConf.podePorConfiguracao(cadastrante, ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
             if (apenasComSolicitacaoDeAssinatura && !mob.doc().isAssinaturaSolicitada())
                 throw new Exception("Documento requer solicitação de assinatura. Provavelmente, o documento foi editado após a solicitação.");
 
@@ -305,7 +293,7 @@ public class ExAssinadorExternoController extends ExController {
                 ITipoDeMovimentacao tpMov = autenticar ? ExTipoDeMovimentacao.CONFERENCIA_COPIA_DOCUMENTO
                         : ExTipoDeMovimentacao.ASSINATURA_DIGITAL_MOVIMENTACAO;
 
-                Ex.getInstance().getBL().assinarMovimentacao(cadastrante, mov.getLotaTitular(), mov, dt, assinatura, null,
+                bl.assinarMovimentacao(cadastrante, mov.getLotaTitular(), mov, dt, assinatura, null,
                         tpMov);
                 msg = "OK";
             } else if (mob != null) {
@@ -313,7 +301,7 @@ public class ExAssinadorExternoController extends ExController {
                         : ExTipoDeMovimentacao.ASSINATURA_DIGITAL_DOCUMENTO;
                 // Nato: Assinatura externa não deve produzir transferência.
                 // Se preferir a configuração default, deveria trocar o último parâmetro por null.
-                msg = Ex.getInstance().getBL().assinarDocumento(cadastrante, getLotaTitular(), mob.doc(), dt, assinatura,
+                msg = bl.assinarDocumento(cadastrante, getLotaTitular(), mob.doc(), dt, assinatura,
                         null, tpMov, juntar, tramitar == null ? false : tramitar, exibirNoProtocolo, getTitular());
                 if (msg != null)
                     msg = "OK: " + msg;
@@ -335,7 +323,7 @@ public class ExAssinadorExternoController extends ExController {
     private DpPessoa obterCadastrante(Long cpf, ExMobil mob, ExMovimentacao mov) throws Exception {
         DpPessoa cadastrante = getCadastrante();
         if (cadastrante == null && cpf != null) {
-            List<DpPessoa> pessoas = ExDao.getInstance().consultarPessoasAtivasPorCpf(cpf);
+            List<DpPessoa> pessoas = dao.consultarPessoasAtivasPorCpf(cpf);
             SortedSet<ExMovimentacao> movimentacoesMobilGeral = null;
             for (DpPessoa p : pessoas) {
                 if (mov != null && mov.getResp() != null) {
@@ -397,8 +385,8 @@ public class ExAssinadorExternoController extends ExController {
             if (id == null)
                 throw new Exception("Id não informada.");
             String sigla = id2sigla(id) + ".pdf";
-            ExMobil mob = Documento.getMobil(sigla);
-            ExMovimentacao mov = Documento.getMov(mob, sigla);
+            ExMobil mob = Documento.getMobil(dao, sigla);
+            ExMovimentacao mov = Documento.getMov(dao, mob, sigla);
 
             DocIdGetResponse resp = new DocIdGetResponse();
             resp.signature = new ArrayList<>();
@@ -415,7 +403,7 @@ public class ExAssinadorExternoController extends ExController {
                     mob = mob.getDoc().getUltimoVolume();
                 if (mob.getDoc().isExpediente())
                     mob = mob.getDoc().getPrimeiraVia();
-                resp.status = mob.getMarcadores();
+                resp.status = mobBl.getMarcadores(mob);
                 resp.movement = new ArrayList<>();
 
                 for (ExMovimentacao m : mob.getExMovimentacaoSet()) {
@@ -449,7 +437,7 @@ public class ExAssinadorExternoController extends ExController {
 
             if (ref == null)
                 throw new Exception("Ref. não informada.");
-            ExMovimentacao mov = ExDao.getInstance().consultar(Long.parseLong(ref.split("_")[1]), ExMovimentacao.class,
+            ExMovimentacao mov = dao.consultar(Long.parseLong(ref.split("_")[1]), ExMovimentacao.class,
                     false);
             if (!(mov.getExTipoMovimentacao().equals(ExTipoDeMovimentacao.CONFERENCIA_COPIA_DOCUMENTO)
                     || mov.getExTipoMovimentacao().equals(ExTipoDeMovimentacao.ASSINATURA_DIGITAL_DOCUMENTO))) {

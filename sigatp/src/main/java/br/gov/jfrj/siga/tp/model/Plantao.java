@@ -271,10 +271,4 @@ public class Plantao extends TpModel implements ConvertableEntity, Comparable<Pl
         retorno = Plantao.AR.find("referencia", referencia).fetch();
         return retorno;
     }
-    
-    @Override
-    public void delete() {
-        ContextoPersistencia.em().remove(this);
-    }
-
 }

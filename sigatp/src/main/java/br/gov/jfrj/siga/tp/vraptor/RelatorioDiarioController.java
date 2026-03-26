@@ -26,19 +26,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Controller
 @Path("/app/relatorioDiario/")
 public class RelatorioDiarioController extends TpController {
-	
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioDiarioController() {
-		super();
-	}
-	
-	@Inject
-	public RelatorioDiarioController(HttpServletRequest request, Result result, Locale localization, 
-			 Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
 
 	@Path("/listar/{idVeiculo}")
 	public void listarPorVeiculo(Long idVeiculo) throws Exception {
@@ -79,7 +66,7 @@ public class RelatorioDiarioController extends TpController {
 	public void salvar(@Valid RelatorioDiario relatorioDiario) throws Exception {
 		redirecionarSeErroAoSalvar(relatorioDiario);
 		
-		relatorioDiario.save();
+		dao.gravar(relatorioDiario);
 		result.redirectTo(this).listarPorVeiculo(relatorioDiario.getVeiculo().getId());
 	}
 	
@@ -88,7 +75,7 @@ public class RelatorioDiarioController extends TpController {
 	@Path("/excluir/{id}")
 	public void excluir(Long id) throws Exception {
 		RelatorioDiario relatorioDiario = RelatorioDiario.AR.findById(id);
-		relatorioDiario.delete();
+		dao.excluir(relatorioDiario);
 		result.redirectTo(this).listarPorVeiculo(relatorioDiario.getVeiculo().getId());
 	}
 	

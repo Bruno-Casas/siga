@@ -4,8 +4,8 @@ import br.gov.jfrj.siga.base.HtmlToPlainText;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.ex.ExClassificacao;
 import br.gov.jfrj.siga.ex.ExDocumento;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExAcesso;
+import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.ex.util.MascaraUtil;
 import br.gov.jfrj.siga.ex.util.PdfToPlainText;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -14,55 +14,57 @@ import br.jus.trf2.xjus.record.api.IXjusRecordAPI.Facet;
 import br.jus.trf2.xjus.record.api.IXjusRecordAPI.Field;
 import br.jus.trf2.xjus.record.api.XjusRecordAPIContext;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
 public class RecordIdGet implements IXjusRecordAPI.IRecordIdGet {
 
+    @Inject
+    private ExDao dao;
+
+    @Inject
+    private ExBL bl;
+
     @Override
     public void run(Request req, Response resp, XjusRecordAPIContext ctx) throws Exception {
+        long primaryKey;
         try {
-            long primaryKey;
-            try {
-                primaryKey = Long.parseLong(req.id);
-            } catch (NumberFormatException nfe) {
-                throw new RuntimeException("REMOVED");
-            }
-            ExDocumento doc = ExDao.getInstance().consultar(primaryKey, ExDocumento.class, false);
+            primaryKey = Long.parseLong(req.id);
+        } catch (NumberFormatException nfe) {
+            throw new RuntimeException("REMOVED");
+        }
+        ExDocumento doc = dao.consultar(primaryKey, ExDocumento.class, false);
 
-            if (doc == null || doc.isCancelado()) {
-                throw new RuntimeException("REMOVED");
-            }
-
-            resp.id = req.id;
-            resp.url = Prop.get("/xjus.permalink.url") + doc.getCodigoCompacto();
-            resp.acl = "PUBLIC";
-            resp.refresh = "NEVER";
-            resp.code = doc.getCodigo();
-            resp.title = doc.getDescrDocumento();
-            resp.field = new ArrayList<>();
-            resp.facet = new ArrayList<>();
-            resp.refresh = "NEVER";
-            // resp.setLastModified(doc.getDtFinalizacao());
-
-            addMetadataForDoc(doc, resp);
-            addAclForDoc(doc, resp);
-
-            String html = doc.getHtml();
-            if (html != null) {
-                resp.content = HtmlToPlainText.getText(html).trim();
-                return;
-            }
-
-            byte[] pdf = doc.getPdf();
-            if (pdf != null) {
-                resp.content = PdfToPlainText.getText(pdf);
-            }
-        } finally {
-            ExDao.freeInstance();
+        if (doc == null || doc.isCancelado()) {
+            throw new RuntimeException("REMOVED");
         }
 
+        resp.id = req.id;
+        resp.url = Prop.get("/xjus.permalink.url") + doc.getCodigoCompacto();
+        resp.acl = "PUBLIC";
+        resp.refresh = "NEVER";
+        resp.code = doc.getCodigo();
+        resp.title = doc.getDescrDocumento();
+        resp.field = new ArrayList<>();
+        resp.facet = new ArrayList<>();
+        resp.refresh = "NEVER";
+        // resp.setLastModified(doc.getDtFinalizacao());
+
+        addMetadataForDoc(doc, resp);
+        addAclForDoc(doc, resp);
+
+        String html = doc.getHtml();
+        if (html != null) {
+            resp.content = HtmlToPlainText.getText(html).trim();
+            return;
+        }
+
+        byte[] pdf = doc.getPdf();
+        if (pdf != null) {
+            resp.content = PdfToPlainText.getText(pdf);
+        }
     }
 
     public void addField(Response resp, String name, String value) {
@@ -87,16 +89,16 @@ public class RecordIdGet implements IXjusRecordAPI.IRecordIdGet {
         addFacet(resp, name, value);
     }
 
-    public static void addAclForDoc(ExDocumento doc, Response resp) {
+    private void addAclForDoc(ExDocumento doc, Response resp) {
         if (doc.getDnmAcesso() == null || doc.isDnmAcessoMAisAntigoQueODosPais()) {
-            Ex.getInstance().getBL().atualizarDnmAcesso(doc);
+            this.bl.atualizarDnmAcesso(doc);
         }
         String sAcessos = doc.getDnmAcesso();
         if (sAcessos == null) {
-            Date dt = ExDao.getInstance().dt();
-            ExAcesso acesso = new ExAcesso();
+            Date dt = dao.dt();
+            ExAcesso acesso = new ExAcesso(dao);
             sAcessos = acesso.getAcessosString(doc, dt);
-            if (sAcessos == null || sAcessos.trim().length() == 0)
+            if (sAcessos == null || sAcessos.trim().isEmpty())
                 throw new RuntimeException("Não foi possível calcular os acesos de " + doc.getSigla());
         }
         resp.acl = sAcessos.replace(ExAcesso.ACESSO_PUBLICO, "PUBLIC");
@@ -130,7 +132,7 @@ public class RecordIdGet implements IXjusRecordAPI.IRecordIdGet {
                 for (String sigla : pais) {
                     ExClassificacao c = new ExClassificacao();
                     c.setSigla(sigla);
-                    ExClassificacao cPai = ExDao.getInstance().consultarPorSigla(c);
+                    ExClassificacao cPai = dao.consultarPorSigla(c);
                     if (cPai != null) {
                         addField(resp, "classificacao_" + MascaraUtil.getInstance().calcularNivel(c.getCodificacao()),
                                 cPai.getDescrClassificacao());

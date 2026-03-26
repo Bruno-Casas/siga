@@ -4,8 +4,10 @@ import br.gov.jfrj.siga.cp.logic.CpNaoENulo;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import com.crivano.jlogic.*;
 
+import javax.enterprise.inject.spi.CDI;
 import java.util.Objects;
 
 public class ExPodeSerMovimentado extends CompositeExpressionSupport {
@@ -18,8 +20,9 @@ public class ExPodeSerMovimentado extends CompositeExpressionSupport {
             if (this.mob.doc().isProcesso())
                 this.mob = this.mob.doc().getUltimoVolume();
             else {
+                ExMobilBL mobBl = CDI.current().select(ExMobilBL.class).get();
                 for (ExMobil m : this.mob.doc().getExMobilSet()) {
-                    if (!m.isGeral() && m.isAtendente(titular, lotaTitular)) {
+                    if (!m.isGeral() && mobBl.isAtendente(m, titular, lotaTitular)) {
                         this.mob = m;
                         break;
                     }

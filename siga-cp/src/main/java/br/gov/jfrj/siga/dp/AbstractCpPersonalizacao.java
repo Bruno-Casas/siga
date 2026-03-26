@@ -38,7 +38,7 @@ import javax.persistence.SequenceGenerator;
 import br.gov.jfrj.siga.model.Objeto;
 
 @MappedSuperclass
-@NamedQueries({ @NamedQuery(name = "consultarPersonalizacao", query = "select per from CpPersonalizacao per, DpPessoa pes where per.pessoa.idPessoa = pes.idPessoa and pes.idPessoaIni = :idPessoaIni") })
+@NamedQueries({ @NamedQuery(name = "consultarPersonalizacao", query = "select per from CpPersonalizacao per, DpPessoa pes where per.pessoa.idPessoa = pes.idPessoa and pes.hisIdIni = :idPessoaIni") })
 public abstract class AbstractCpPersonalizacao extends Objeto implements
 		Serializable {
 

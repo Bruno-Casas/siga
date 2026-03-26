@@ -20,19 +20,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Controller
 @Path("/app/lotacaoVeiculo/")
 public class LotacaoVeiculoController extends TpController {
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public LotacaoVeiculoController() {
-		super();
-	}
-	
-	@Inject
-	public LotacaoVeiculoController(HttpServletRequest request, Result result, 
-			 Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
 	
 	@Path("/listarPorVeiculo/{idVeiculo}")
 	public void listarPorVeiculo(Long idVeiculo) throws Exception {

@@ -32,18 +32,6 @@ public class AvariaController extends TpController {
 	private static final String LABEL_EDITAR = "views.label.editar";
 	private static final String LABEL_INCLUIR = "views.label.incluir";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AvariaController() {
-		super();
-	}
-	
-	@Inject	
-	public AvariaController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so, EntityManager em) throws Exception {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listar")
 	public void listar() {
 		List<Avaria> avarias = Avaria.listarTodos();
@@ -147,7 +135,7 @@ public class AvariaController extends TpController {
 			resultIncluirOuEditar(avaria);
 			validator.onErrorUse(Results.page()).of(AvariaController.class).editar(avaria.getVeiculo().getId(), avaria.getId(), true);
 		} else {
-			avaria.save();
+			dao.gravar(avaria);
 			if (fixarVeiculo)
 				result.redirectTo(this).listarPorVeiculo(avaria.getVeiculo().getId());
 			else
@@ -170,7 +158,7 @@ public class AvariaController extends TpController {
 		Avaria avaria;
 		avaria = Avaria.AR.findById(id);
 		Veiculo veiculo = avaria.getVeiculo();
-		avaria.delete();
+		dao.gravar(avaria);
 		if (fixarVeiculo) {
 			result.redirectTo(this).listarPorVeiculo(veiculo.getId());
 		} else {

@@ -55,7 +55,7 @@
 		<c:forEach var="secao" begin="0" end="1">
 			<c:remove var="primeiro" />
 			<c:forEach var="m" items="${itens}">
-				<c:if test="${(secao==0 and titular.idPessoaIni==m.ultimaMovimentacaoNaoCancelada.resp.idPessoaIni) or (secao==1 and titular.idPessoaIni!=m.ultimaMovimentacaoNaoCancelada.resp.idPessoaIni)}">
+				<c:if test="${(secao==0 and titular.hisIdIni==m.ultimaMovimentacaoNaoCancelada.resp.hisIdIni) or (secao==1 and titular.hisIdIni!=m.ultimaMovimentacaoNaoCancelada.resp.hisIdIni)}">
 					<c:if test="${empty primeiro}">
 						<h6>Atendente: 
 							<c:choose>

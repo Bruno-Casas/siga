@@ -62,7 +62,7 @@ public class ExUtilController extends ExController {
 	public ExUtilController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
 			Result result, SigaObjects so, EntityManager em, Validator validator) {
 
-		super(request, response, context, result, ExDao.getInstance(), so, em);
+		super(request, response, context, result, dao, so, em);
 	}
 
 	@Get("/public/app/util/test")

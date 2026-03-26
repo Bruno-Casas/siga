@@ -42,6 +42,8 @@ import freemarker.template.DefaultObjectWrapper;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class ProcessadorFreemarkerSimples implements TemplateLoader {
 
 	private Configuration cfg;
@@ -97,12 +99,14 @@ public class ProcessadorFreemarkerSimples implements TemplateLoader {
 			.expireAfterWrite(5, TimeUnit.MINUTES).build(new CacheLoader<String, String>() {
 				public String load(String source) throws Exception {
 					CpModelo mod;
+
+					CpDao dao = CDI.current().select(CpDao.class).get();
 					if ("DEFAULT".equals(source)) {
 						return FreemarkerSimplesDefault.getDefaultTemplate();
 					} else if ("GERAL".equals(source)) {
-						mod = CpDao.getInstance().consultaCpModeloGeral();
+						mod = dao.consultaCpModeloGeral();
 					} else {
-						mod = CpDao.getInstance().consultaCpModeloPorNome(source);
+						mod = dao.consultaCpModeloPorNome(source);
 					}
 					
 					String conteudoBlob = "";

@@ -36,18 +36,6 @@ public class RelatorioUsoVeiculosController extends TpController {
     private static final String _HORA_FIM_DIA = "23:59:59";
     private static final String _HORA_INICIO_DIA = "00:00:00";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioUsoVeiculosController() {
-		super();
-	}
-	
-	@Inject
-    public RelatorioUsoVeiculosController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/consultar")
     public void consultar() {
     	RelatorioUsoVeiculos r = new RelatorioUsoVeiculos();

@@ -14,11 +14,10 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.sr.model.vo.SelecionavelVO;
 import br.gov.jfrj.siga.sr.util.Util;
@@ -59,11 +58,6 @@ public class SrEquipe extends HistoricoSuporte {
     @Override
     public void setId(Long id) {
         this.setIdEquipe(id);
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return false;
     }
 
     public SrEquipe() {

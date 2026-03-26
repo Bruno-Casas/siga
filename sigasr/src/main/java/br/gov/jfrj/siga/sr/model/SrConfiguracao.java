@@ -281,8 +281,8 @@ public class SrConfiguracao extends CpConfiguracao {
 		sb.append(SrTipoDeConfiguracao.DESIGNACAO.getId());
 
 		if (atendente != null) {
-			sb.append(" and conf.atendente.idLotacaoIni = ");
-			sb.append(atendente.getIdLotacaoIni());
+			sb.append(" and conf.atendente.hisIdIni = ");
+			sb.append(atendente.getHisIdIni());
 		}
 
 		if (!mostrarDesativados)
@@ -302,9 +302,9 @@ public class SrConfiguracao extends CpConfiguracao {
 				"select conf from SrConfiguracao as conf where conf.cpTipoConfiguracao = ");
 		sb.append(SrTipoDeConfiguracao.DESIGNACAO.getId());
 
-		if (equipe != null && equipe.getLotacao() != null && equipe.getLotacao().getIdLotacaoIni() != null) {
-			sb.append(" and conf.atendente.idLotacaoIni = ");
-			sb.append(equipe.getLotacao().getIdLotacaoIni());
+		if (equipe != null && equipe.getLotacao() != null && equipe.getLotacao().getHisIdIni() != null) {
+			sb.append(" and conf.atendente.hisIdIni = ");
+			sb.append(equipe.getLotacao().getHisIdIni());
 		}
 
 		sb.append(" and conf.hisDtFim is null");

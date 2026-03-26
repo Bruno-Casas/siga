@@ -25,18 +25,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Path("/app/parametro")
 public class ParametroController extends TpController {
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ParametroController() {
-		super();
-	}
-	
-	@Inject
-	public ParametroController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/listar")
     public void listar() {
         List<Parametro> parametros = Parametro.listarTodos();
@@ -56,7 +44,7 @@ public class ParametroController extends TpController {
     @Path("/excluir/{id}")
     public void excluir(Long id) {
         Parametro parametro = Parametro.buscar(id);
-        parametro.delete();
+        dao.excluir(parametro);
         result.redirectTo(ParametroController.class).listar();
     }
 
@@ -76,7 +64,7 @@ public class ParametroController extends TpController {
             validator.onErrorUse(Results.page()).of(ParametroController.class).editar(parametro.getId());
             return;
         }
-        parametro.save();
+        dao.gravar(parametro);
         result.redirectTo(ParametroController.class).listar();
     }
 

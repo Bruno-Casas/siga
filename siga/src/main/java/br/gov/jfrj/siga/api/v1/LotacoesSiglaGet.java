@@ -11,7 +11,13 @@ import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class LotacoesSiglaGet implements ILotacoesSiglaGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (StringUtils.isEmpty(req.sigla))
@@ -19,7 +25,7 @@ public class LotacoesSiglaGet implements ILotacoesSiglaGet {
 
 		final DpLotacao flt = new DpLotacao();
 		flt.setSigla(req.sigla.toUpperCase());
-		DpLotacao lota = CpDao.getInstance().consultarPorSigla(flt);
+		DpLotacao lota = dao.consultarPorSigla(flt);
 		if (lota == null)
 			throw new SwaggerException("Nenhuma lotação foi encontrada contendo a sigla informada.", 404, null, req,
 					resp, null);
@@ -33,7 +39,7 @@ public class LotacoesSiglaGet implements ILotacoesSiglaGet {
 
 		rp.siglaLotacao = lota.getSigla();
 		rp.idLotacao = lota.getId().toString();
-		rp.idLotacaoIni = lota.getIdLotacaoIni().toString();
+		rp.hisIdIni = lota.getHisIdIni().toString();
 		rp.nome = lota.getNomeLotacao();
 		rp.sigla = lota.getSiglaCompleta();
 		// Orgao Pessoa

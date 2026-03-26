@@ -29,22 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Controller
-public class PrincipalController extends SigaController {
+public class PrincipalController extends VraptorController {
     HttpServletResponse response;
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public PrincipalController() {
-        super();
-    }
-
-    @Inject
-    public PrincipalController(HttpServletRequest request, HttpServletResponse response, Result result, CpDao dao,
-                               SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-        this.response = response;
-    }
 
     @Get("app/principal")
     public void principal(Boolean exibirAcessoAnterior, Boolean redirecionar) throws Exception {
@@ -61,7 +47,7 @@ public class PrincipalController extends SigaController {
         }
 
         if (exibirAcessoAnterior != null && exibirAcessoAnterior) {
-            CpAcesso a = dao.consultarAcessoAnterior(so.getCadastrante());
+            CpAcesso a = cpDao.consultarAcessoAnterior(so.getCadastrante());
             if (a != null) {
                 String acessoAnteriorData = Data.formatDDMMYY_AS_HHMMSS(a.getDtInicio());
                 String acessoAnteriorMaquina = a.getAuditIP();
@@ -138,7 +124,7 @@ public class PrincipalController extends SigaController {
         sigla = sigla.trim().toUpperCase();
 
         Map<String, CpOrgaoUsuario> mapAcronimo = new TreeMap<String, CpOrgaoUsuario>();
-        for (CpOrgaoUsuario ou : CpDao.getInstance().listarOrgaosUsuarios()) {
+        for (CpOrgaoUsuario ou : cpDao.listarOrgaosUsuarios()) {
             mapAcronimo.put(ou.getAcronimoOrgaoUsu(), ou);
             mapAcronimo.put(ou.getSiglaOrgaoUsu(), ou);
         }

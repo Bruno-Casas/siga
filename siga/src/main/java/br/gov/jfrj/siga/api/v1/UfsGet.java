@@ -10,7 +10,13 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.Uf;
 import br.gov.jfrj.siga.dp.CpUF;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class UfsGet implements IUfsGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		resp.list = listarUf(req, resp);
@@ -19,7 +25,7 @@ public class UfsGet implements IUfsGet {
 	}
 
 	private List<Uf> listarUf(Request req, Response resp) {
-		List<CpUF> l = CpDao.getInstance().consultarUF();
+		List<CpUF> l = dao.consultarUF();
 		return l.stream().map(this::ufToResultadoPesquisa).collect(Collectors.toList());
 	}
 

@@ -43,7 +43,7 @@ public interface ISigaApiV1 {
 
     public static class Lotacao implements ISwaggerModel {
         public String idLotacao;
-        public String idLotacaoIni;
+        public String hisIdIni;
         public String sigla;
         public String siglaLotacao;
         public String nome;
@@ -52,7 +52,7 @@ public interface ISigaApiV1 {
 
     public static class LotacaoAtual implements ISwaggerModel {
         public String idLotacao;
-        public String idLotacaoIni;
+        public String hisIdIni;
         public String sigla;
         public String nome;
         public String orgao;
@@ -60,7 +60,7 @@ public interface ISigaApiV1 {
 
     public static class Cargo implements ISwaggerModel {
         public String idCargo;
-        public String idCargoIni;
+        public String hisIdIni;
         public String idExterna;
         public String sigla;
         public String nome;
@@ -229,7 +229,7 @@ public interface ISigaApiV1 {
     public interface IPessoasPost extends ISwaggerMethod {
         public static class Request implements ISwaggerRequest {
             public String siglaOrgao;
-            public String idCargoIni;
+            public String hisIdIni;
             public String idFuncaoConfiancaIni;
             public String lotacao;
             public String formCpf;
@@ -317,7 +317,7 @@ public interface ISigaApiV1 {
         public static class Request implements ISwaggerRequest {
             public String siglaOrgaoQuery;
             public String texto;
-            public String idLotacaoIni;
+            public String hisIdIni;
         }
 
         public static class Response implements ISwaggerResponse {

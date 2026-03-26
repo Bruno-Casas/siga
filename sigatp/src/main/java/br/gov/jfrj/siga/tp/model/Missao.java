@@ -1,10 +1,7 @@
 package br.gov.jfrj.siga.tp.model;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -244,8 +241,8 @@ public class Missao extends TpModel implements ConvertableEntity, Comparable<Mis
 		}
 	}
 
-	public static List<Missao> buscarEmAndamento() {
-		return Missao.AR.find(FormatarDataHora.recuperaFuncaoTrunc() + "(dataHoraSaida) = " + FormatarDataHora.recuperaFuncaoTrunc() + "(" + CpDao.getInstance().consultarDataEHoraDoServidor() + ")").fetch();
+	public static List<Missao> buscarEmAndamento(Date servrDate) {
+		return Missao.AR.find(FormatarDataHora.recuperaFuncaoTrunc() + "(dataHoraSaida) = " + FormatarDataHora.recuperaFuncaoTrunc() + "(" + servrDate + ")").fetch();
 	}
 
 	public static Missao buscar(String sequence) throws Exception {

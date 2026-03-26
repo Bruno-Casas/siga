@@ -25,17 +25,14 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Historico;
 import br.gov.jfrj.siga.model.Selecionavel;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 @SuppressWarnings("serial")
 @Entity
 @Table(name = "corporativo.cp_papel")
 public class CpPapel extends AbstractCpPapel implements Serializable,
-		Selecionavel, Historico, Sincronizavel {
+		Selecionavel, Historico {
 
 	public String getDescricao() {
 		return (((getDpPessoa() == null) ? new String() : getDpPessoa()
@@ -76,14 +73,6 @@ public class CpPapel extends AbstractCpPapel implements Serializable,
 		return super.getIdePapel();
 	}
 
-	public String getLoteDeImportacao() {
-		return String.valueOf(super.getIdCpPapel());
-	}
-
-	public int getNivelDeDependencia() {
-		return SincronizavelSuporte.getNivelDeDependencia(this);
-	}
-
 	public void setDataFim(Date dataFim) {
 		super.setHisDtFim(dataFim);
 
@@ -106,10 +95,6 @@ public class CpPapel extends AbstractCpPapel implements Serializable,
 
 	public void setLoteDeImportacao(String loteDeImportacao) {
 
-	}
-
-	public boolean semelhante(Assemelhavel obj, int nivel) {
-		return SincronizavelSuporte.semelhante(this, obj, nivel);
 	}
 
 	public String getSigla() {

@@ -23,19 +23,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Path("app/solicitacao/conhecimento")
 public class ConhecimentoController extends SrController {
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public ConhecimentoController() {
-		super();
-	}
-	
-	@Inject
-	public ConhecimentoController(HttpServletRequest request, Result result,
-			SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-	}
-
 	@AssertAcesso(EDTCONH_CRIAR_CONHECIMENTOS)
 	@Path("/listar")
 	public void listar(boolean ajax, Long idItem, Long idAcao) throws Exception{

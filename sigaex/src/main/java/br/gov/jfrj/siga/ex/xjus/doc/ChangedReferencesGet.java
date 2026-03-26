@@ -23,7 +23,7 @@ public class ChangedReferencesGet implements IXjusRecordAPI.IChangedReferencesGe
         if (req.lastid == null)
             req.lastid = Utils.formatId(0L);
         try {
-            ExDao dao = ExDao.getInstance();
+            ExDao dao = dao;
             TypedQuery<Object[]> q = dao.em().createQuery(HQL, Object[].class);
             q.setMaxResults(Integer.parseInt(req.max));
             Date first = req.lastdate;

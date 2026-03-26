@@ -21,7 +21,6 @@ package br.gov.jfrj.siga.ex.vo;
 import br.gov.jfrj.siga.base.AcaoVO;
 import br.gov.jfrj.siga.base.SigaMessages;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.cp.CpTipoMarcadorEnum;
 import br.gov.jfrj.siga.cp.logic.CpPodeBoolean;
 import br.gov.jfrj.siga.cp.logic.CpPodeSempre;
@@ -30,7 +29,6 @@ import br.gov.jfrj.siga.cp.model.enm.ITipoDeMovimentacao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
 import br.gov.jfrj.siga.ex.logic.*;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
@@ -41,7 +39,6 @@ import br.gov.jfrj.siga.ex.util.ProcessadorModeloFreemarker;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import com.crivano.jlogic.And;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class ExDocumentoVO extends ExVO {
@@ -151,9 +148,9 @@ public class ExDocumentoVO extends ExVO {
             this.lotaCadastranteString = "";
 
         if (doc.getExClassificacaoAtual() != null) {
-            if (doc.getExClassificacaoAtual().getAtual() != null)
+            if (doc.getExClassificacaoAtual().getHistoricoAtual() != null)
                 this.classificacaoDescricaoCompleta = doc.getExClassificacaoAtual()
-                        .getAtual().getDescricaoCompleta();
+                        .getHistoricoAtual().getDescricaoCompleta();
             else
                 this.classificacaoDescricaoCompleta = doc.getExClassificacaoAtual()
                         .getDescricaoCompleta();
@@ -171,8 +168,8 @@ public class ExDocumentoVO extends ExVO {
 
         ExClassificacao classif = doc.getExClassificacaoAtual();
         if (classif != null) {
-            if (classif.getAtual() != null)
-                classif = classif.getAtual();
+            if (classif.getHistoricoAtual() != null)
+                classif = classif.getHistoricoAtual();
             this.classificacaoDescricaoCompleta = classif.getDescricaoCompleta();
             this.classificacaoSigla = classif.getSigla();
             this.classificacaoNome = classif.getNome();
@@ -184,10 +181,10 @@ public class ExDocumentoVO extends ExVO {
             this.setTipoDePrincipal(doc.getTipoDePrincipal().getDescr());
         }
 
-        if (doc.getExNivelAcessoAtual() != null)
-            this.nmNivelAcesso = doc.getExNivelAcessoAtual().getNmNivelAcesso();
+        if (docBl.getNivelAcessoAtualDoc(doc) != null)
+            this.nmNivelAcesso = docBl.getNivelAcessoAtualDoc(doc).getNmNivelAcesso();
         // Desabilitado temporariamente
-        this.listaDeAcessos = doc.getListaDeAcessos();
+        this.listaDeAcessos = docBl.getListaDeAcessosDoc(doc);
         if (doc.getExMobilPai() != null)
             this.paiSigla = doc.getExMobilPai().getSigla();
         if (doc.getExTipoDocumento() != null)
@@ -227,7 +224,6 @@ public class ExDocumentoVO extends ExVO {
             this.fDigital = false;
         }
 
-        ExCompetenciaBL comp = Ex.getInstance().getComp();
         for (ExMovimentacao movCossig : doc.getMovsCosignatario()) {
             ExMobilVO mobilVO = new ExMobilVO(doc.getMobilGeral(), titular, titular, lotaTitular,
                     exibirAntigo, serializavel);
@@ -299,7 +295,7 @@ public class ExDocumentoVO extends ExVO {
             }
         }
 
-        List<ExDocumento> documentosPublicadosNoBoletim = doc.getDocumentosPublicadosNoBoletim();
+        List<ExDocumento> documentosPublicadosNoBoletim = docBl.getDocumentosPublicadosNoBoletim(doc);
         if (documentosPublicadosNoBoletim != null) {
             for (ExDocumento documentoPublicado : documentosPublicadosNoBoletim) {
                 documentosPublicados.add(
@@ -318,7 +314,7 @@ public class ExDocumentoVO extends ExVO {
             }
         }
 
-        ExDocumento bol = doc.getBoletimEmQueDocFoiPublicado();
+        ExDocumento bol = docBl.getBoletimEmQueDocFoiPublicado(doc);
         if (bol != null)
             boletim = new ExDocumentoVO(bol,
                     bol.getMobilGeral(),
@@ -335,7 +331,7 @@ public class ExDocumentoVO extends ExVO {
         this.originalData = doc.getDtDocOriginalDDMMYYYY();
         this.originalOrgao = doc.getOrgaoExterno() != null ? doc.getOrgaoExterno().getDescricao() : null;
 
-        this.podeAnexarArquivoAuxiliar = Ex.getInstance().getComp().pode(ExPodeAnexarArquivoAuxiliar.class, titular, lotaTitular, mob);
+        this.podeAnexarArquivoAuxiliar = comp.pode(ExPodeAnexarArquivoAuxiliar.class, titular, lotaTitular, mob);
 
 
         this.dtLimiteDemandaJudicial = doc.getMobilGeral().getExMovimentacaoSet().stream() //
@@ -364,14 +360,6 @@ public class ExDocumentoVO extends ExVO {
         }
     }
 
-    /*
-     * Adicionado 14/02/2020
-     */
-
-    protected ExDao dao() {
-        return ExDao.getInstance();
-    }
-
     public List<Object> getListaDeAcessos() {
         return listaDeAcessos;
     }
@@ -392,7 +380,7 @@ public class ExDocumentoVO extends ExVO {
             this.fDigital = false;
         }
 
-        this.podeAnexarArquivoAuxiliar = Ex.getInstance().getComp().pode(ExPodeAnexarArquivoAuxiliar.class, titular, lotaTitular, mob);
+        this.podeAnexarArquivoAuxiliar = comp.pode(ExPodeAnexarArquivoAuxiliar.class, titular, lotaTitular, mob);
     }
 
     public void exibe() {
@@ -519,11 +507,11 @@ public class ExDocumentoVO extends ExVO {
     }
 
     public void calculaSetsDeMarcas() {
-        Date now = dao().consultarDataEHoraDoServidor();
+        Date now = dao.consultarDataEHoraDoServidor();
 
         for (ExMobil cadaMobil : doc.getExMobilSet()) {
             SortedSet<ExMarca> setSistema = new TreeSet<>();
-            SortedSet<ExMarca> set = cadaMobil.getExMarcaSetAtivas();
+            SortedSet<ExMarca> set = mobBl.getExMarcaSetAtivas(cadaMobil);
             for (ExMarca m : set) {
                 if ((m.getDtIniMarca() == null || !m.getDtIniMarca().after(now))
                         && (m.getDtFimMarca() == null || m.getDtFimMarca().after(now))) {
@@ -568,11 +556,11 @@ public class ExDocumentoVO extends ExVO {
         if (doc.getDtAssinatura() == null)
             return false;
 
-        List<ExMobil> mobs = dao().consultarMobilPorDocumento(doc);
+        List<ExMobil> mobs = dao.consultarMobilPorDocumento(doc);
         List<ExMovimentacao> movs = new ArrayList<>();
 
         for (ExMobil mob : mobs)
-            movs.addAll(dao().consultarMovimentoPorMobil(mob));
+            movs.addAll(dao.consultarMovimentoPorMobil(mob));
 
         movs.sort((m1, m2) -> m2.getData().compareTo(m1.getData()));
 
@@ -995,7 +983,7 @@ public class ExDocumentoVO extends ExVO {
     }
 
     private boolean mostrarEnviarSiafem(ExDocumento doc) {
-        return Ex.getInstance().getBL().obterFormularioSiafem(doc) != null && doc.getPrimeiraVia() != null;
+        return bl.obterFormularioSiafem(doc) != null && doc.getPrimeiraVia() != null;
     }
 
     public void addDadosComplementares() {

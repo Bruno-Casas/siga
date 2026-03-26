@@ -23,7 +23,7 @@ import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
 public class DpCargoDaoFiltro extends DaoFiltroSelecionavel {
     private String nome;
     private Long idOrgaoUsu;
-    private Long idCargoIni;
+    private Long hisIdIni;
     private boolean buscarInativos;
 
     public DpCargoDaoFiltro() {
@@ -58,12 +58,12 @@ public class DpCargoDaoFiltro extends DaoFiltroSelecionavel {
         this.nome = nome;
     }
 
-    public Long getIdCargoIni() {
-        return this.idCargoIni;
+    public Long getHisIdIni() {
+        return this.hisIdIni;
     }
 
-    public void setIdCargoIni(Long idCargoIni) {
-        this.idCargoIni = idCargoIni;
+    public void setHisIdIni(Long hisIdIni) {
+        this.hisIdIni = hisIdIni;
     }
 
     @Override

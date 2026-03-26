@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.context.AcessoPublicoEPrivado;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaArquivoGet;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
@@ -31,7 +30,7 @@ public class DocumentosSiglaArquivoGet implements IDocumentosSiglaArquivoGet {
 
         final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
         filter.setSigla(req.sigla);
-        ExMobil mob = (ExMobil) ExDao.getInstance().consultarPorSigla(filter);
+        ExMobil mob = (ExMobil) dao.consultarPorSigla(filter);
         if (mob == null)
             throw new PresentableUnloggedException(
                     "Não foi possível encontrar um documento a partir da sigla fornecida");

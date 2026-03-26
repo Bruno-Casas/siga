@@ -26,11 +26,10 @@ import javax.persistence.Transient;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
+
 import br.gov.jfrj.siga.sr.model.vo.DisponibilidadesPorOrgaoCache;
 import br.gov.jfrj.siga.sr.model.vo.DisponibilidadesPorOrgaoCacheHolder;
 import br.gov.jfrj.siga.sr.model.vo.PaginaItemConfiguracao;
@@ -103,11 +102,6 @@ public class SrDisponibilidade extends HistoricoSuporte implements Cloneable {
     @Override
     public void setId(Long id) {
         this.idDisponibilidade = id;
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return SincronizavelSuporte.semelhante(this, obj, profundidade);
     }
 
     public Long getIdDisponibilidade() {

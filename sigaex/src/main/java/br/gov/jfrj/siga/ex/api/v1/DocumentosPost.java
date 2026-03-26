@@ -8,9 +8,7 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosPost;
-import br.gov.jfrj.siga.ex.bl.AcessoConsulta;
-import br.gov.jfrj.siga.ex.bl.Ex;
-import br.gov.jfrj.siga.ex.bl.ExBL;
+import br.gov.jfrj.siga.ex.bl.*;
 import br.gov.jfrj.siga.ex.logic.ExPodeEditar;
 import br.gov.jfrj.siga.ex.logic.ExPodeRestringirAcesso;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
@@ -22,6 +20,7 @@ import com.crivano.swaggerservlet.SwaggerUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.inject.Inject;
 import javax.persistence.NoResultException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,15 +37,31 @@ import java.util.TreeSet;
 
 @Transacional
 public class DocumentosPost implements IDocumentosPost {
+
+    @Inject
+    private ExDao dao;
+
+    @Inject
+    private ExConfiguracaoBL conf;
+
+    @Inject
+    private ExBL bl;
+
+    @Inject
+    private ExCompetenciaBL comp;
+
+    @Inject
+    private ExDocumentoBL docBl;
+
+    @Inject
+    private NivelDeAcessoUtil nivelDeAcessoUtil;
+
     public DocumentosPost() {
         SwaggerUtils.setUploadHandler(new ArquivoUploadHandler());
     }
 
     @Override
     public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
-        final Ex ex = Ex.getInstance();
-        final ExBL exBL = ex.getBL();
-
         DpPessoa cadastrante = ctx.getCadastrante();
         ExModelo modelo = null;
         ExClassificacao classificacao = null;
@@ -56,9 +71,7 @@ public class DocumentosPost implements IDocumentosPost {
         if (req.sigla != null && !req.sigla.trim().isEmpty()) {
             ExMobil mob = ctx.buscarEValidarMobil(req.sigla, req, resp, "Documento a Salvar");
             try {
-                Ex.getInstance()
-                        .getComp()
-                        .afirmar("Edição do documento "
+                comp.afirmar("Edição do documento "
                                         + mob.getSigla()
                                         + " não é permitida. ("
                                         + ctx.getTitular().getSigla()
@@ -95,7 +108,7 @@ public class DocumentosPost implements IDocumentosPost {
             }
 
             ExMobil mob = new ExMobil();
-            mob.setExTipoMobil(dao().consultar(ExTipoMobil.TIPO_MOBIL_GERAL, ExTipoMobil.class, false));
+            mob.setExTipoMobil(dao.consultar(ExTipoMobil.TIPO_MOBIL_GERAL, ExTipoMobil.class, false));
             mob.setNumSequencia(1);
             mob.setExMovimentacaoSet(new TreeSet<ExMovimentacao>());
             mob.setExDocumento(doc);
@@ -114,9 +127,9 @@ public class DocumentosPost implements IDocumentosPost {
         doc.setExModelo(null);
         if (req.modelo != null) {
             if (StringUtils.isNumeric(req.modelo)) {
-                modelo = dao().consultar(Long.valueOf(req.modelo), ExModelo.class, false);
+                modelo = dao.consultar(Long.valueOf(req.modelo), ExModelo.class, false);
                 if (modelo != null) {
-                    doc.setExModelo(modelo.getModeloAtual());
+                    doc.setExModelo(modelo.getHistoricoAtual());
                     doc.setExFormaDocumento(modelo.getExFormaDocumento());
                 } else {
                     throw new AplicacaoException("Não foi possível encontrar um modelo com o id informado.");
@@ -136,7 +149,7 @@ public class DocumentosPost implements IDocumentosPost {
         }
 
         if (req.classificacao != null) {
-            classificacao = dao().consultarExClassificacao(req.classificacao);
+            classificacao = dao.consultarExClassificacao(req.classificacao);
             if (classificacao == null)
                 throw new AplicacaoException("Não foi possível encontrar a classificação informada.");
         } else {
@@ -145,11 +158,11 @@ public class DocumentosPost implements IDocumentosPost {
             if (classificacao == null)
                 throw new AplicacaoException("Modelo sem classificação automática, favor informar.");
         }
-        ExClassificacao cAtual = classificacao.getAtual();
+        ExClassificacao cAtual = classificacao.getHistoricoAtual();
         doc.setExClassificacao(cAtual);
 
         if (req.descricaotipodoc != null) {
-            ExTipoDocumento tipoDoc = dao().consultarExTipoDocumento(req.descricaotipodoc);
+            ExTipoDocumento tipoDoc = dao.consultarExTipoDocumento(req.descricaotipodoc);
             if (tipoDoc != null) {
                 doc.setExTipoDocumento(tipoDoc);
             } else {
@@ -157,12 +170,12 @@ public class DocumentosPost implements IDocumentosPost {
             }
         } else {
             for (ExTipoDocumento tp : modelo.getExFormaDocumento().getExTipoDocumentoSet()) {
-                doc.setExTipoDocumento(dao().consultar(tp.getId(), ExTipoDocumento.class, false));
+                doc.setExTipoDocumento(dao.consultar(tp.getId(), ExTipoDocumento.class, false));
                 break;
             }
             if (doc.getExTipoDocumento() == null)
                 doc.setExTipoDocumento(
-                        dao().consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO, ExTipoDocumento.class, false));
+                        dao.consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO, ExTipoDocumento.class, false));
         }
 
         doc.setOrgaoExterno(null);
@@ -177,7 +190,7 @@ public class DocumentosPost implements IDocumentosPost {
         }
 
         if (req.subscritor != null) {
-            DpPessoa subscritor = dao().getPessoaFromSigla(req.subscritor);
+            DpPessoa subscritor = dao.getPessoaFromSigla(req.subscritor);
             if (subscritor != null) {
                 doc.setSubscritor(subscritor);
             } else {
@@ -194,7 +207,7 @@ public class DocumentosPost implements IDocumentosPost {
         }
 
         if (req.titular != null) {
-            DpPessoa titular = dao().getPessoaFromSigla(req.titular);
+            DpPessoa titular = dao.getPessoaFromSigla(req.titular);
             if (titular != null) {
                 doc.setTitular(titular);
             } else {
@@ -207,7 +220,7 @@ public class DocumentosPost implements IDocumentosPost {
         }
 
         if (req.pessoadestinatario != null) {
-            DpPessoa destinatario = dao().getPessoaFromSigla(req.pessoadestinatario);
+            DpPessoa destinatario = dao.getPessoaFromSigla(req.pessoadestinatario);
             if (destinatario != null) {
                 doc.setDestinatario(destinatario);
             } else {
@@ -218,7 +231,7 @@ public class DocumentosPost implements IDocumentosPost {
         } else {
             doc.setDestinatario(null);
             if (req.lotadestinatario != null) {
-                DpLotacao lotaDestinatario = dao().getLotacaoFromSigla(req.lotadestinatario);
+                DpLotacao lotaDestinatario = dao.getLotacaoFromSigla(req.lotadestinatario);
                 if (lotaDestinatario != null) {
                     doc.setLotaDestinatario(lotaDestinatario);
                 } else {
@@ -228,7 +241,7 @@ public class DocumentosPost implements IDocumentosPost {
             } else {
                 doc.setLotaDestinatario(null);
                 if (req.orgaoexternodestinatario != null) {
-                    destinatarioOrgaoExterno = dao().getOrgaoFromSiglaExata(req.orgaoexternodestinatario);
+                    destinatarioOrgaoExterno = dao.getOrgaoFromSiglaExata(req.orgaoexternodestinatario);
                     if (destinatarioOrgaoExterno != null) {
                         doc.setOrgaoExternoDestinatario(destinatarioOrgaoExterno);
                         doc.setNmOrgaoExterno(req.destinatariocampoextra);
@@ -241,12 +254,12 @@ public class DocumentosPost implements IDocumentosPost {
             }
         }
         if (doc.getDtRegDoc() == null)
-            doc.setDtRegDoc(dao().dt());
+            doc.setDtRegDoc(dao.dt());
 
         if (req.nivelacesso != null) {
             ExNivelAcesso nivel;
             try {
-                nivel = dao().consultarExNidelAcesso(req.nivelacesso);
+                nivel = dao.consultarExNidelAcesso(req.nivelacesso);
             } catch (NoResultException e) {
                 throw new AplicacaoException("Nível de acesso não encontrado.");
             }
@@ -258,18 +271,18 @@ public class DocumentosPost implements IDocumentosPost {
                 doc.setExNivelAcesso(doc.getExModelo().getExNivelAcesso());
             } else {
 
-                final ExNivelAcesso nivelDefault = ExNivelAcesso.getNivelAcessoDefault(doc.getExTipoDocumento(),
+                final ExNivelAcesso nivelDefault = ExNivelAcesso.getNivelAcessoDefault(dao, conf, doc.getExTipoDocumento(),
                         doc.getExFormaDocumento(), doc.getExModelo(), doc.getExClassificacao(), ctx.getTitular(),
                         ctx.getLotaTitular());
 
                 if (nivelDefault != null) {
-                    doc.setExNivelAcesso(dao().consultar(nivelDefault, ExNivelAcesso.class, false));
+                    doc.setExNivelAcesso(dao.consultar(nivelDefault, ExNivelAcesso.class, false));
                 } else {
                     if (Boolean.TRUE.equals(Prop.getBool("doc.acesso.limitado"))) {
                         doc.setExNivelAcesso(
-                                dao().consultar(ExNivelAcesso.ID_LIMITADO_AO_ORGAO, ExNivelAcesso.class, false));
+                                dao.consultar(ExNivelAcesso.ID_LIMITADO_AO_ORGAO, ExNivelAcesso.class, false));
                     } else {
-                        doc.setExNivelAcesso(dao().consultar(ExNivelAcesso.ID_PUBLICO, ExNivelAcesso.class, false));
+                        doc.setExNivelAcesso(dao.consultar(ExNivelAcesso.ID_PUBLICO, ExNivelAcesso.class, false));
                     }
 
                 }
@@ -316,11 +329,11 @@ public class DocumentosPost implements IDocumentosPost {
             throw new AplicacaoException(
                     "Documento capturado não pode ser gravado sem que seja informado o arquivo PDF.");
 
-        if (!ex.getConf().podePorConfiguracao(ctx.getTitular(), ctx.getLotaTitular(), doc.getExTipoDocumento(),
+        if (!conf.podePorConfiguracao(ctx.getTitular(), ctx.getLotaTitular(), doc.getExTipoDocumento(),
                 doc.getExFormaDocumento(), doc.getExModelo(), doc.getExClassificacaoAtual(),
-                doc.getExNivelAcessoAtual(), ExTipoDeConfiguracao.CRIAR)) {
+                docBl.getNivelAcessoAtualDoc(doc), ExTipoDeConfiguracao.CRIAR)) {
 
-            if (!ex.getConf().podePorConfiguracao(ctx.getTitular(), ctx.getLotaTitular(), null, null, null,
+            if (!conf.podePorConfiguracao(ctx.getTitular(), ctx.getLotaTitular(), null, null, null,
                     doc.getExClassificacao(), null, ExTipoDeConfiguracao.CRIAR)) {
                 throw new AplicacaoException("Usuário não possui permissão de criar documento da classificação "
                         + doc.getExClassificacao().getCodificacao());
@@ -357,27 +370,27 @@ public class DocumentosPost implements IDocumentosPost {
             }
         }
 
-        exBL.gravar(cadastrante, ctx.getTitular(), ctx.getLotaTitular(), doc);
+        bl.gravar(cadastrante, ctx.getTitular(), ctx.getLotaTitular(), doc);
 
         if (req.titular != null && doc.getTitular() != doc.getSubscritor()) {
-            exBL.geraMovimentacaoSubstituicao(doc, ctx.getCadastrante());
+            bl.geraMovimentacaoSubstituicao(doc, ctx.getCadastrante());
         }
 
-        if (doc.getExMobilPai() != null && Ex.getInstance().getComp().pode(ExPodeRestringirAcesso.class, cadastrante,
+        if (doc.getExMobilPai() != null && comp.pode(ExPodeRestringirAcesso.class, cadastrante,
                 cadastrante.getLotacao(), doc.getExMobilPai())) {
-            exBL.copiarRestringir(doc.getMobilGeral(), doc.getExMobilPai().getDoc().getMobilGeral(), cadastrante,
+            bl.copiarRestringir(doc.getMobilGeral(), doc.getExMobilPai().getDoc().getMobilGeral(), cadastrante,
                     ctx.getTitular(), doc.getData());
         }
 
         if (!doc.isFinalizado()
                 && (doc.getExTipoDocumento().getIdTpDoc() == ExTipoDocumento.TIPO_DOCUMENTO_INTERNO_CAPTURADO
                 || doc.getExTipoDocumento().getIdTpDoc() == ExTipoDocumento.TIPO_DOCUMENTO_EXTERNO_CAPTURADO)
-                && (exBL.getConf().podePorConfiguracao(ctx.getTitular(), ctx.getLotaTitular(),
+                && (conf.podePorConfiguracao(ctx.getTitular(), ctx.getLotaTitular(),
                 ExTipoDeConfiguracao.FINALIZAR_AUTOMATICAMENTE_CAPTURADOS)))
-            exBL.finalizar(cadastrante, ctx.getLotaTitular(), doc);
+            bl.finalizar(cadastrante, ctx.getLotaTitular(), doc);
 
         try {
-            exBL.incluirCosignatariosAutomaticamente(cadastrante, ctx.getLotaTitular(), doc);
+            bl.incluirCosignatariosAutomaticamente(cadastrante, ctx.getLotaTitular(), doc);
         } catch (Exception e) {
             throw new AplicacaoException("Erro ao tentar incluir os cosignatários deste documento", 0, e);
         }
@@ -386,7 +399,7 @@ public class DocumentosPost implements IDocumentosPost {
     }
 
     private boolean isNivelAcessoValido(DpPessoa titular, DpLotacao lotaTitular, ExDocumento doc, ExNivelAcesso nivel) {
-        List<ExNivelAcesso> lst = NivelDeAcessoUtil.getListaNivelAcesso(doc.getExTipoDocumento(),
+        List<ExNivelAcesso> lst = nivelDeAcessoUtil.getListaNivelAcesso(doc.getExTipoDocumento(),
                 doc.getExFormaDocumento(), doc.getExModelo(), doc.getExClassificacao(), titular, lotaTitular);
         for (ExNivelAcesso nv : lst) {
             if (nv.equals(nivel)) {
@@ -394,10 +407,6 @@ public class DocumentosPost implements IDocumentosPost {
             }
         }
         return false;
-    }
-
-    protected ExDao dao() {
-        return ExDao.getInstance();
     }
 
     @Override

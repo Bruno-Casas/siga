@@ -21,6 +21,10 @@ package br.gov.jfrj.siga.dp.dao;
 import br.gov.jfrj.siga.cp.util.MatriculaUtils;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
+import br.gov.jfrj.siga.model.dao.ModeloDao;
+
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 
 public class DpLotacaoDaoFiltro extends DaoFiltroSelecionavel {
     private String nome;
@@ -29,10 +33,18 @@ public class DpLotacaoDaoFiltro extends DaoFiltroSelecionavel {
 
     private boolean buscarFechadas;
 
+    MatriculaUtils matriculaUtils;
+
+
     public DpLotacaoDaoFiltro() {
+        super();
+
+        matriculaUtils = CDI.current().select(MatriculaUtils.class).get();
     }
 
     public DpLotacaoDaoFiltro(String nome, Long idOrgaoUsu) {
+        this();
+
         this.nome = nome;
         this.idOrgaoUsu = idOrgaoUsu;
     }
@@ -65,16 +77,16 @@ public class DpLotacaoDaoFiltro extends DaoFiltroSelecionavel {
         if (siglaCompleta == null)
             return;
 
-        String orgaoUsu = MatriculaUtils.getSiglaDoOrgaoDaLotacao(siglaCompleta);
+        String orgaoUsu = matriculaUtils.getSiglaDoOrgaoDaLotacao(siglaCompleta);
         CpOrgaoUsuario cpOrgaoUsuario = new CpOrgaoUsuario();
         cpOrgaoUsuario.setSigla(orgaoUsu);
-        CpOrgaoUsuario orgaoUsuario = CpDao.getInstance().consultarPorSigla(cpOrgaoUsuario);
+        CpOrgaoUsuario orgaoUsuario = dao.consultarPorSigla(cpOrgaoUsuario);
 
         if (null != orgaoUsuario) {
             idOrgaoUsu = orgaoUsuario.getId();
         }
 
-        setSigla(MatriculaUtils.getSiglaDaLotacao(siglaCompleta));
+        setSigla(matriculaUtils.getSiglaDaLotacao(siglaCompleta));
     }
 
     @Override

@@ -26,7 +26,7 @@ public class AtivosGet implements IAtivosGet {
 
     public static SortedSet<WfTarefa> obterTarefasAtivas(DpPessoa titular, DpLotacao lotaTitular) {
         SortedSet<WfTarefa> tis = new TreeSet<>();
-        List<WfProcedimento> pis = WfDao.getInstance().consultarProcedimentosPorPessoaOuLotacao(titular, lotaTitular);
+        List<WfProcedimento> pis = dao.consultarProcedimentosPorPessoaOuLotacao(titular, lotaTitular);
         for (WfProcedimento pi : pis) {
             tis.add(new WfTarefa(pi));
         }

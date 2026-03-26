@@ -70,7 +70,7 @@ public class ModeloTest extends TestCase {
 		Map<String, Object> params = new TreeMap<String, Object>();
 
 		ExDocumento doc = new ExDocumento();
-		doc.setOrgaoUsuario(ExDao.getInstance().consultar(1L,
+		doc.setOrgaoUsuario(dao.consultar(1L,
 				CpOrgaoUsuario.class, false));
 		ExMovimentacao mov = new ExMovimentacao();
 		attrs.put("doc", doc);

@@ -43,7 +43,7 @@ public class DownloadAssincrono implements Callable<String> {
 		String bufName = null;
 		try (ExApiV1Context ctx = new ExApiV1Context()) {
 			ctx.init(null);
-			ExDao dao = ExDao.getInstance();
+			ExDao dao = dao;
 
 			final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
 			filter.setSigla(sigla);

@@ -283,7 +283,7 @@ public class Abastecimento extends TpModel implements Comparable<Abastecimento>,
 	}
 
 	public static List<Abastecimento> listarAbastecimentosDoCondutor(Condutor condutor) {
-		List<Abastecimento> abastecimentos = Abastecimento.AR.find("titular.idPessoaIni = ?", condutor.getDpPessoa().getIdInicial()).fetch();
+		List<Abastecimento> abastecimentos = Abastecimento.AR.find("titular.hisIdIni = ?", condutor.getDpPessoa().getIdInicial()).fetch();
 		Collections.sort(abastecimentos, Collections.reverseOrder());
 		return abastecimentos;
 	}
@@ -295,9 +295,9 @@ public class Abastecimento extends TpModel implements Comparable<Abastecimento>,
 				+ "where a.titular.idPessoa IS NOT NULL and a.titular.idPessoa in "
 				+ "("
 				+ "select t.idPessoa from DpPessoa t "
-				+ "where (t.idPessoaIni = " + admin.getIdInicial() + " or "
-				+ "t.lotacao.idLotacaoIni = " + admin.getLotacao().getIdInicial()
-				+ ") and t.dataFimPessoa IS NULL)";
+				+ "where (t.hisIdIni = " + admin.getIdInicial() + " or "
+				+ "t.lotacao.hisIdIni = " + admin.getLotacao().getIdInicial()
+				+ ") and t.hisDtFim IS NULL)";
 
 		Query qry = AR.em().createQuery(query);
 		retorno = ((List<Abastecimento>) qry.getResultList());
@@ -314,9 +314,9 @@ public class Abastecimento extends TpModel implements Comparable<Abastecimento>,
 					+ "and a.titular.idPessoa IS NULL or a.titular.idPessoa in "
 					+ "("
 					+ "select t.idPessoa from DpPessoa t "
-					+ "where (t.idPessoaIni = " + agente.getIdInicial() + " or "
-					+ "t.lotacao.idLotacaoIni = " + agente.getLotacao().getIdInicial()
-					+ ") and t.dataFimPessoa IS NULL)";
+					+ "where (t.hisIdIni = " + agente.getIdInicial() + " or "
+					+ "t.lotacao.hisIdIni = " + agente.getLotacao().getIdInicial()
+					+ ") and t.hisDtFim IS NULL)";
 
 		Query qry = AR.em().createQuery(query);
 		retorno = ((List<Abastecimento>) qry.getResultList());

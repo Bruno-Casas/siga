@@ -7,9 +7,11 @@ import br.gov.jfrj.siga.cp.model.enm.ITipoDeConfiguracao;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeMovimentacao;
 import br.gov.jfrj.siga.dp.*;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import com.crivano.jlogic.Expression;
 import com.crivano.jlogic.JLogic;
+
+import javax.enterprise.inject.spi.CDI;
 
 public class ExPodePorConfiguracao implements Expression {
     private CpServico cpServico;
@@ -47,7 +49,9 @@ public class ExPodePorConfiguracao implements Expression {
 
     @Override
     public boolean eval() {
-        CpSituacaoDeConfiguracaoEnum situacao = Ex.getInstance().getConf().situacaoPorConfiguracao(cpServico,
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+
+        CpSituacaoDeConfiguracaoEnum situacao = conf.situacaoPorConfiguracao(cpServico,
                 exTipoFormaDoc, exPapel, exTpDoc, exFormaDoc, exMod, exClassificacao, exVia, exTpMov, cargo, cpOrgaoUsu,
                 dpFuncaoConfianca, dpLotacao, dpPessoa, nivelAcesso, cpTpLotacao, idTpConf, pessoaObjeto, lotacaoObjeto,
                 complexoObjeto, cargoObjeto, funcaoConfiancaObjeto, orgaoObjeto);

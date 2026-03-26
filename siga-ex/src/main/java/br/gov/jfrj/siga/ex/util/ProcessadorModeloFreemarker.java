@@ -23,7 +23,7 @@ import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaFormats;
 import br.gov.jfrj.siga.cp.CpModelo;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -35,6 +35,7 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 import org.jsoup.parser.Parser;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -48,6 +49,8 @@ public class ProcessadorModeloFreemarker implements ProcessadorModelo,
         TemplateLoader {
 
     private final Configuration cfg;
+    private final ExDao dao;
+    private final ExBL bl;
 
     public ProcessadorModeloFreemarker() {
         super();
@@ -62,6 +65,10 @@ public class ProcessadorModeloFreemarker implements ProcessadorModelo,
         cfg.setLocalizedLookup(false);
         cfg.setLogTemplateExceptions(false);
         cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+
+        // CDI: Buscar alternativa mais adequada ao CDI
+        dao = CDI.current().select(ExDao.class).get();
+        bl = CDI.current().select(ExBL.class).get();
     }
 
     public String processarModelo(CpOrgaoUsuario ou, Map<String, Object> attrs,
@@ -70,7 +77,7 @@ public class ProcessadorModeloFreemarker implements ProcessadorModelo,
         Map<String, Object> root = new HashMap<>();
         root.put("func", new FuncoesEL());
         root.put("fmt", new SigaFormats());
-        root.put("exbl", Ex.getInstance().getBL());
+        root.put("exbl", bl);
 
         root.putAll(attrs);
         root.put("param", params);
@@ -170,7 +177,7 @@ public class ProcessadorModeloFreemarker implements ProcessadorModelo,
     public void closeTemplateSource(Object arg0) throws IOException {
     }
 
-    static LoadingCache<String, String> cache = CacheBuilder.newBuilder().maximumSize(1000)
+    private LoadingCache<String, String> cache = CacheBuilder.newBuilder().maximumSize(1000)
             .expireAfterWrite(Prop.get("debug.default.template.pathname") == null ? 5 : 1,
                     Prop.get("debug.default.template.pathname") == null ? TimeUnit.MINUTES : TimeUnit.SECONDS)
             .build(new CacheLoader<String, String>() {
@@ -179,9 +186,9 @@ public class ProcessadorModeloFreemarker implements ProcessadorModelo,
                     if ("DEFAULT".equals(source)) {
                         return FreemarkerDefault.getDefaultTemplate();
                     } else if ("GERAL".equals(source)) {
-                        mod = ExDao.getInstance().consultaCpModeloGeral();
+                        mod = dao.consultaCpModeloGeral();
                     } else {
-                        mod = ExDao.getInstance().consultaCpModeloPorNome(source);
+                        mod = dao.consultaCpModeloPorNome(source);
                     }
 
                     String conteudoBlob = "";

@@ -7,13 +7,17 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.DpSubstituicao;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
-public class CpSubstituicaoBL {
-    private static CpDao dao() {
-        return CpDao.getInstance();
-    }
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
-    public static void finalizarSubstituicao(DpPessoa cadastrante) {
-        CpPersonalizacao per = dao().consultarPersonalizacao(cadastrante);
+@ApplicationScoped
+public class CpSubstituicaoBL {
+
+    @Inject
+    private CpDao dao;
+
+    public void finalizarSubstituicao(DpPessoa cadastrante) {
+        CpPersonalizacao per = dao.consultarPersonalizacao(cadastrante);
 
         if (per == null) {
             per = new CpPersonalizacao();
@@ -22,16 +26,16 @@ public class CpSubstituicaoBL {
 
         per.setPesSubstituindo(null);
         per.setLotaSubstituindo(null);
-        dao().gravar(per);
+        dao.gravar(per);
     }
 
-    public static void substituir(DpPessoa cadastrante, Long id) {
+    public void substituir(DpPessoa cadastrante, Long id) {
         finalizarSubstituicao(cadastrante);
 
         if (id == null)
             throw new AplicacaoException("Dados não informados");
 
-        DpSubstituicao dpSub = dao().consultar(id, DpSubstituicao.class, false);
+        DpSubstituicao dpSub = dao.consultar(id, DpSubstituicao.class, false);
 
         if ((dpSub.getSubstituto() == null && !dpSub.getLotaSubstituto().equivale(cadastrante.getLotacao())
                 || (dpSub.getSubstituto() != null && !dpSub.getSubstituto().equivale(cadastrante))))
@@ -40,7 +44,7 @@ public class CpSubstituicaoBL {
         DpLotacao lotaTitular = dpSub.getLotaTitular();
         DpPessoa titular = dpSub.getTitular();
 
-        CpPersonalizacao per = dao().consultarPersonalizacao(cadastrante);
+        CpPersonalizacao per = dao.consultarPersonalizacao(cadastrante);
         if (per == null) {
             per = new CpPersonalizacao();
         }
@@ -48,7 +52,7 @@ public class CpSubstituicaoBL {
         per.setPesSubstituindo(titular != cadastrante ? titular : null);
         per.setLotaSubstituindo(lotaTitular != cadastrante.getLotacao() ? lotaTitular : null);
 
-        dao().gravar(per);
+        dao.gravar(per);
     }
 
 }

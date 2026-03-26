@@ -9,7 +9,13 @@ import br.gov.jfrj.siga.api.v1.ISigaApiV1.Orgao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class OrgaosSiglaGet implements IOrgaosSiglaGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (StringUtils.isEmpty(req.sigla))
@@ -17,7 +23,7 @@ public class OrgaosSiglaGet implements IOrgaosSiglaGet {
 
 		final CpOrgaoUsuario flt = new CpOrgaoUsuario();
 		flt.setSigla(req.sigla.toUpperCase());
-		CpOrgaoUsuario org = CpDao.getInstance().consultarPorSigla(flt);
+		CpOrgaoUsuario org = dao.consultarPorSigla(flt);
 		if (org == null)
 			throw new SwaggerException("Nenhum órgão foi encontrado com a sigla informada.", 404, null, req, resp,
 					null);

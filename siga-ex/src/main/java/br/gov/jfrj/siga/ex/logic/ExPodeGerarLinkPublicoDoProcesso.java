@@ -10,17 +10,21 @@ import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import com.crivano.jlogic.*;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class ExPodeGerarLinkPublicoDoProcesso extends CompositeExpressionSupport {
 
     private final ExMobil mob;
     private final DpPessoa titular;
     private final DpLotacao lotaTitular;
+    private final ExDao dao;
 
     public ExPodeGerarLinkPublicoDoProcesso(ExMobil mob, DpPessoa titular, DpLotacao lotaTitular) {
         super();
         this.mob = mob;
         this.titular = titular;
         this.lotaTitular = lotaTitular;
+        this.dao = CDI.current().select(ExDao.class).get();
     }
 
     @Override
@@ -32,7 +36,7 @@ public class ExPodeGerarLinkPublicoDoProcesso extends CompositeExpressionSupport
                 Or.of(
                         new ExEstaMarcadoComMarcadorOuOGeral(
                                 mob,
-                                ExDao.getInstance().consultar(
+                                dao.consultar(
                                         CpMarcadorEnum.COVID_19.getId(),
                                         CpMarcador.class,
                                         false

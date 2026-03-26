@@ -38,13 +38,6 @@ import br.gov.jfrj.siga.model.Objeto;
 public abstract class AbstractCpContrato extends Objeto implements
 		Serializable {
 
-//	@Id
-//	@SequenceGenerator(name = "CP_CONTRATO_SEQ", sequenceName = "CORPORATIVO.CP_CONTRATO_SEQ")
-//	@GeneratedValue(generator = "generator")
-//	@Column(name = "ID_CONTRATO", unique = true, nullable = false)
-//	@Desconsiderar
-//	private Long idContrato;
-//	
 	@Id
 	@Column(name = "ID_ORGAO_USU", unique = true, nullable = false)
 	private Long idOrgaoUsu;

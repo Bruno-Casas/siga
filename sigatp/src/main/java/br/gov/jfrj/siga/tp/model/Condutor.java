@@ -212,7 +212,7 @@ public class Condutor extends TpModel implements ConvertableEntity, Comparable<C
 		query.append(" WHERE c.id in ");
 		query.append("(SELECT m.condutor.id FROM Missao m");
 		query.append(" WHERE  m.condutor.id = c.id");
-		query.append(" AND    c.dpPessoa.idPessoaIni in (select d.idPessoaIni from DpPessoa d where d.orgaoUsuario.idOrgaoUsu = " + cpOrgaoUsuario.getIdOrgaoUsu() + " AND DATA_FIM_PESSOA IS NULL)");
+		query.append(" AND    c.dpPessoa.hisIdIni in (select d.hisIdIni from DpPessoa d where d.orgaoUsuario.idOrgaoUsu = " + cpOrgaoUsuario.getIdOrgaoUsu() + " AND DATA_FIM_PESSOA IS NULL)");
 
 		if (!mostrarCanceladosEFinalizados) {
 			query.append(" AND    m.estadoMissao != '" + EstadoMissao.CANCELADA + "'");
@@ -336,7 +336,7 @@ public class Condutor extends TpModel implements ConvertableEntity, Comparable<C
 		Map<String, Object> parametros = new HashMap<String,Object>();
 		parametros.put("cpOrgaoUsuario",orgaoUsuario);
 		parametros.put("idLotacaoIni",lotacao.getIdInicial());
-		List<Condutor> condutores = Condutor.AR.find("cpOrgaoUsuario=:cpOrgaoUsuario and dpPessoa.lotacao.idLotacaoIni = :idLotacaoIni", parametros).fetch();
+		List<Condutor> condutores = Condutor.AR.find("cpOrgaoUsuario=:cpOrgaoUsuario and dpPessoa.lotacao.hisIdIni = :idLotacaoIni", parametros).fetch();
 		Collections.sort(condutores);
 		return condutores;
 	}
@@ -345,7 +345,7 @@ public class Condutor extends TpModel implements ConvertableEntity, Comparable<C
 		Map<String, Object> parametros = new HashMap<String,Object>();
 		parametros.put("cpOrgaoUsuario",orgaoUsuario);
 		parametros.put("idLotacaoIni",titular.getIdInicial());
-		return Condutor.AR.find("dpPessoa.idPessoaIni=:idPessoaIni and cpOrgaoUsuario=:cpOrgaoUsuario", parametros).first();
+		return Condutor.AR.find("dpPessoa.hisIdIni=:idPessoaIni and cpOrgaoUsuario=:cpOrgaoUsuario", parametros).first();
 	}
 
 	public CategoriaCNH[] getCategorias() {

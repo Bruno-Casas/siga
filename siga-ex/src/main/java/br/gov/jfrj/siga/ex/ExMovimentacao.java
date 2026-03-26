@@ -35,7 +35,7 @@ import br.gov.jfrj.siga.bluc.service.ValidateResponse;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeMovimentacao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.ex.logic.ExPodeCancelarMarcacao;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.util.*;
@@ -44,6 +44,7 @@ import com.crivano.jlogic.Expression;
 import com.crivano.swaggerservlet.SwaggerUtils;
 import org.hibernate.annotations.BatchSize;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Entity;
@@ -126,42 +127,6 @@ public class ExMovimentacao extends AbstractExMovimentacao implements
         return getConteudoBlobMov();
 
     }
-
-    public String getLotaPublicacao() {
-        Map<String, String> atributosXML;
-        try {
-            String xmlString = this.getConteudoXmlString("boletimadm");
-            if (xmlString != null) {
-                atributosXML = PublicacaoDJEBL.lerXMLPublicacao(xmlString);
-                return atributosXML.get("UNIDADE");
-            }
-            return PublicacaoDJEBL.obterUnidadeDocumento(this.getExDocumento());
-        } catch (Exception e) {
-            return "Erro na leitura do arquivo XML (lotação de publicação)";
-
-        }
-
-    }
-
-    public String getDescrPublicacao() {
-        Map<String, String> atributosXML;
-        try {
-            String xmlString = this.getConteudoXmlString("boletimadm");
-            if (xmlString != null) {
-                atributosXML = PublicacaoDJEBL.lerXMLPublicacao(this
-                        .getConteudoXmlString("boletimadm"));
-                return atributosXML.get("DESCREXPEDIENTE");
-            }
-            return this.getExDocumento().getDescrDocumento();
-        } catch (Exception e) {
-            return "Erro na leitura do arquivo XML (descrição de publicação)";
-        }
-
-    }
-
-//	public Long getIdTpMov() {
-//		return getExTipoMovimentacao().getIdTpMov();
-//	}
 
     public void setConteudoBlobMov2(byte[] blob) {
         if (blob != null)
@@ -1340,7 +1305,10 @@ public class ExMovimentacao extends AbstractExMovimentacao implements
         validatereq.setSha256(BlucService.bytearray2b64(BlucService.calcSha256(pdf)));
         validatereq.setTime(dtMov);
         validatereq.setCrl("true");
-        ValidateResponse validateresp = Ex.getInstance().getBL().assertValid(bluc, validatereq);
+
+        // TODO: Adequar para uso do CDI
+        ExBL bl = CDI.current().select(ExBL.class).get();
+        ValidateResponse validateresp = bl.assertValid(bluc, validatereq);
 
         String sNome = validateresp.getCn();
 

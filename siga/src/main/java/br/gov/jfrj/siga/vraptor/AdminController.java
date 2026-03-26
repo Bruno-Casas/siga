@@ -26,6 +26,7 @@ package br.gov.jfrj.siga.vraptor;
 
 import java.util.Arrays;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Cipher;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -43,19 +44,10 @@ import br.gov.jfrj.siga.integracao.ldap.IntegracaoLdap;
 
 @Path("/app/admin/ldap")
 @Controller
-public class AdminController extends SigaController {
-	
+public class AdminController extends VraptorController {
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AdminController() {
-		super();
-	}
-
-	@Inject
-	public AdminController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
+	@PostConstruct
+	public void init() {
 		assertAcesso("FE;LDAP_ADMIN:Administrar Integracao LDAP");
 	}
 	

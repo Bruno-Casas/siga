@@ -4,9 +4,12 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import br.gov.jfrj.siga.ex.bl.ExTramiteBL.Pendencias;
 import com.crivano.jlogic.Expression;
 import com.crivano.jlogic.JLogic;
+
+import javax.enterprise.inject.spi.CDI;
 
 public class ExEstaPendenteDeRecebimento implements Expression {
 
@@ -21,8 +24,9 @@ public class ExEstaPendenteDeRecebimento implements Expression {
             if (this.mob.doc().isProcesso())
                 this.mob = this.mob.doc().getUltimoVolume();
             else {
+                ExMobilBL mobBl = CDI.current().select(ExMobilBL.class).get();
                 for (ExMobil m : this.mob.doc().getExMobilSet()) {
-                    if (!m.isGeral() && m.isAtendente(titular, lotaTitular)) {
+                    if (!m.isGeral() && mobBl.isAtendente(m, titular, lotaTitular)) {
                         this.mob = m;
                         break;
                     }

@@ -3,20 +3,33 @@ package br.gov.jfrj.siga.api.v1;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.gov.jfrj.siga.cp.bl.CpBL;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import com.crivano.swaggerservlet.SwaggerException;
 
 import br.gov.jfrj.siga.api.v1.ISigaApiV1.ILotacoesPost;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.RegraNegocioException;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.CpLocalidade;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
+import javax.inject.Inject;
+
 @Transacional
 public class LotacoesPost implements ILotacoesPost {
+
+	@Inject
+	private CpDao dao;
+
+	@Inject
+	private CpConfiguracaoBL conf;
+
+	@Inject
+	private CpBL cpBl;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		try {
@@ -52,11 +65,11 @@ public class LotacoesPost implements ILotacoesPost {
 
 			CpOrgaoUsuario orgaoFiltro = new CpOrgaoUsuario();
 			orgaoFiltro.setSigla(req.siglaOrgao);
-			CpOrgaoUsuario orgaoUsu = CpDao.getInstance().consultarPorSigla(orgaoFiltro);
+			CpOrgaoUsuario orgaoUsu = dao.consultarPorSigla(orgaoFiltro);
 			if (orgaoUsu == null)
 				throw new AplicacaoException("Órgão não existente.");
 			if (orgaoUsu.getId() != ctx.getTitular().getOrgaoUsuario().getId()
-					&& !Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(ctx.getTitular(),
+					&& !this.conf.podeUtilizarServicoPorConfiguracao(ctx.getTitular(),
 							ctx.getLotaTitular(),
 							"SIGA:Sistema Integrado de Gestão Administrativa;WS_REST: Acesso aos webservices REST;"
 									+ "CAD_LOTA_TODOS_ORGAOS: Cadatrar lotações em todos órgãos")) {
@@ -68,7 +81,7 @@ public class LotacoesPost implements ILotacoesPost {
 			Long idLocalidade = null;
 			if (req.idLocalidade != null) {
 				idLocalidade = Long.valueOf(req.idLocalidade);
-				List<CpLocalidade> localidade = (ArrayList<CpLocalidade>) CpDao.getInstance()
+				List<CpLocalidade> localidade = (ArrayList<CpLocalidade>) dao
 						.consultarPorIdOuIdInicial(CpLocalidade.class, "idLocalidade", null, idLocalidade);
 				if (localidade.isEmpty())
 					throw new AplicacaoException("Localidade não existente.");
@@ -79,14 +92,14 @@ public class LotacoesPost implements ILotacoesPost {
 			Long idLotaPai = null;
 			if (req.idLotacaoPaiIni != null) {
 				idLotaPai = Long.valueOf(req.idLotacaoPaiIni);
-				DpLotacao lotaPai = CpDao.getInstance().consultarPorIdInicial(DpLotacao.class,
+				DpLotacao lotaPai = dao.consultarPorIdInicial(DpLotacao.class,
 						Long.valueOf(req.idLotacaoPaiIni));
 				if (lotaPai != null)
 					throw new AplicacaoException("Lotação pai não existente.");
 				idLotaPai = lotaPai.getIdInicial();
 			}
 
-			DpLotacao lota = Cp.getInstance().getBL().criarLotacao(ctx.getIdentidadeCadastrante(), ctx.getTitular(),
+			DpLotacao lota = cpBl.criarLotacao(ctx.getIdentidadeCadastrante(), ctx.getTitular(),
 					ctx.getTitular().getLotacao(), null, req.nome, idOrgaoUsu, req.sigla, situacao,
 					(req.isAcessoExterno ? true : null), idLotaPai, idLocalidade);
 
@@ -100,10 +113,6 @@ public class LotacoesPost implements ILotacoesPost {
 	@Override
 	public String getContext() {
 		return "incluir lotacoes";
-	}
-
-	protected CpDao dao() {
-		return CpDao.getInstance();
 	}
 
 }

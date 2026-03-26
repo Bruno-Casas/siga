@@ -125,12 +125,12 @@ import java.util.List;
         @NamedQuery(name = "listarAnexoPendenteAssinatura", query = "select mov from ExMovimentacao mov join mov.exMobil mobil "
                 + "					where mobil in (select distinct(mob) from ExMobil mob join mob.exMarcaSet mar"
                 + "               		where mar.cpMarcador.idMarcador = 30) and (mov.exTipoMovimentacao in :enumList)"
-                + "					and mov.subscritor.idPessoaIni = :idPessoaIni"
+                + "					and mov.subscritor.hisIdIni = :idPessoaIni"
                 + "					order by mov.dtIniMov desc"),
         @NamedQuery(name = "listarDespachoPendenteAssinatura", query = "select mov from ExMovimentacao mov join mov.exMobil mobil "
                 + "					where mobil in (select distinct(mob) from ExMobil mob join mob.exMarcaSet mar"
                 + "               		where mar.cpMarcador.idMarcador = 29) and (mov.exTipoMovimentacao in :enumList)"
-                + "					and mov.subscritor.idPessoaIni = :idPessoaIni"
+                + "					and mov.subscritor.hisIdIni = :idPessoaIni"
                 + "					order by mov.dtIniMov desc"),
         // Somente os "em transferencia", "em transferencia eletronica" ou
         // "transferido para orgao externo"
@@ -145,12 +145,12 @@ import java.util.List;
                 + "                where (doc.idDoc=mob.exDocumento.idDoc"
                 + "                and mob.idMobil=mov.exMobil.idMobil"
                 + "                and lot.idLotacao=mov.lotaResp.idLotacao"
-                + "                and (lot.idLotacaoIni=:lotaTitular or 0 = :lotaTitular)" + "                )"),
+                + "                and (lot.hisIdIni=:lotaTitular or 0 = :lotaTitular)" + "                )"),
         // Voltar todas as movimentacoes realizadas por uma determinada pessoa
         // em um exato momento. Usado principalmente para gerar segunda-via de
         // protocolos.
         @NamedQuery(name = "consultarMovimentacoes", query = "from ExMovimentacao mov"
-                + " where mov.cadastrante.idPessoaIni = :pessoaIni and mov.dtIniMov = :data"
+                + " where mov.cadastrante.hisIdIni = :pessoaIni and mov.dtIniMov = :data"
                 + "                order by mov.dtTimestamp"),
         @NamedQuery(name = AbstractExMovimentacao.CONSULTAR_TRAMITACOES_POR_MOVIMENTACAO_NAMED_QUERY, query = AbstractExMovimentacao.CONSULTAR_TRAMITACOES_POR_MOVIMENTACAO_QUERY),
         @NamedQuery(name = AbstractExMovimentacao.CONSULTAR_TRAMITACOES_POR_MOVIMENTACAO_DOC_CANCELADO_NAMED_QUERY, query = AbstractExMovimentacao.CONSULTAR_TRAMITACOES_POR_MOVIMENTACAO_DOC_CANCELADO_QUERY),

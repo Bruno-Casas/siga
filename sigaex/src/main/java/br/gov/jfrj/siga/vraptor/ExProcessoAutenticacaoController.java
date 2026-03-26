@@ -18,7 +18,7 @@ import br.gov.jfrj.siga.ex.ExArquivo;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.vo.ExDocumentoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -48,18 +48,8 @@ public class ExProcessoAutenticacaoController extends ExController {
     private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private static final String APPLICATION_PDF = "application/pdf";
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExProcessoAutenticacaoController() {
-        super();
-    }
-
     @Inject
-    public ExProcessoAutenticacaoController(HttpServletRequest request, HttpServletResponse response,
-                                            ServletContext context, Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
-    }
+    private ExMobilBL mobBl;
 
     private void setDefaultResults() {
         result.include("request", getRequest());
@@ -115,7 +105,7 @@ public class ExProcessoAutenticacaoController extends ExController {
                 certificado = null;
 
             try {
-                Ex.getInstance().getBL().assinarMovimentacao(null, null, mov, dt, assinatura, certificado,
+                this.bl.assinarMovimentacao(null, null, mov, dt, assinatura, certificado,
                         ExTipoDeMovimentacao.ASSINATURA_DIGITAL_MOVIMENTACAO);
             } catch (final Exception e) {
                 throw new AplicacaoException(e.getMessage());
@@ -148,7 +138,7 @@ public class ExProcessoAutenticacaoController extends ExController {
             throw new AplicacaoException("Token inválido ou expirado. Por favor, entre novamente no link do protocolo.");
         }
 
-        ExArquivo arq = Ex.getInstance().getBL().buscarPorProtocolo(n);
+        ExArquivo arq = this.bl.buscarPorProtocolo(n);
 
         byte[] bytes;
 
@@ -158,13 +148,13 @@ public class ExProcessoAutenticacaoController extends ExController {
             Long idDocPai = arq.getIdDoc();
             ExMobilDaoFiltro flt = new ExMobilDaoFiltro();
             flt.setSigla(sigla);
-            ExMobil mob = ExDao.getInstance().consultarPorSigla(flt);
+            ExMobil mob = dao.consultarPorSigla(flt);
             if (mob == null) {
                 throw new AplicacaoException("Documento não encontrado: " + sigla);
             }
             if (!((idDocPai == mob.getExMobilPai().getDoc().getIdDoc()
                     || mob.getDoc().isDescricaoEspecieDespacho())
-                    && mob.isExibirNoAcompanhamento())) {
+                    && mobBl.isExibirNoAcompanhamento(mob))) {
                 throw new AplicacaoException("Documento não permitido para visualização: " + sigla);
             }
             arq = mob.doc();
@@ -175,7 +165,7 @@ public class ExProcessoAutenticacaoController extends ExController {
             bytes = baos.toByteArray();
         } else {
             if (idMov != null && idMov != 0) {
-                ExMovimentacao mov = dao().consultar(idMov, ExMovimentacao.class, false);
+                ExMovimentacao mov = cpDao.consultar(idMov, ExMovimentacao.class, false);
 
                 fileName = arq.getReferencia() + "_" + mov.getIdMov() + ".p7s";
                 contentType = mov.getConteudoTpMov();
@@ -187,7 +177,7 @@ public class ExProcessoAutenticacaoController extends ExController {
                 contentType = "application/pdf";
 
                 if (assinado)
-                    bytes = Ex.getInstance().getBL().obterPdfPorProtocolo(n);
+                    bytes = this.bl.obterPdfPorProtocolo(n);
                 else
                     bytes = arq.getPdf();
             }
@@ -198,7 +188,7 @@ public class ExProcessoAutenticacaoController extends ExController {
         final boolean fB64 = getRequest().getHeader("Accept") != null
                 && getRequest().getHeader("Accept").startsWith("text/vnd.siga.b64encoded");
         if (certificadoB64 != null) {
-            final Date dt = dao().consultarDataEHoraDoServidor();
+            final Date dt = cpDao.consultarDataEHoraDoServidor();
             getResponse().setHeader("Atributo-Assinavel-Data-Hora", Long.toString(dt.getTime()));
 
             // Chamar o BluC para criar o pacote assinavel
@@ -240,10 +230,10 @@ public class ExProcessoAutenticacaoController extends ExController {
         }
         String n = verifyJwtToken(jwt).get("n").toString();
 
-        ExArquivo arq = Ex.getInstance().getBL().buscarPorProtocolo(n);
+        ExArquivo arq = this.bl.buscarPorProtocolo(n);
         if (idMovJuntada != null) {
             // Se veio o id da mov de juntada do filho, mostra o documento pai
-            final ExMovimentacao movJuntada = dao().consultar(idMovJuntada, ExMovimentacao.class, false);
+            final ExMovimentacao movJuntada = cpDao.consultar(idMovJuntada, ExMovimentacao.class, false);
             // Confirma que é realmente o documento pai
             if (movJuntada != null && movJuntada.getExMobilRef() != null
                     && !movJuntada.isCancelada()
@@ -290,8 +280,8 @@ public class ExProcessoAutenticacaoController extends ExController {
                 }
             }
 
-            List<ExMobil> lstMobil = dao().consultarMobilPorDocumento(doc);
-            List<ExMovimentacao> lista = dao().consultarMovimentoIncluindoJuntadaPorMobils(lstMobil);
+            List<ExMobil> lstMobil = dao.consultarMobilPorDocumento(doc);
+            List<ExMovimentacao> lista = dao.consultarMovimentoIncluindoJuntadaPorMobils(lstMobil);
 
             DpPessoa p = new DpPessoa();
             DpLotacao l = new DpLotacao();
@@ -370,16 +360,16 @@ public class ExProcessoAutenticacaoController extends ExController {
                 && exDocumentoDto.getSigla().length() != 0) {
             final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
             filter.setSigla(exDocumentoDto.getSigla());
-            exDocumentoDto.setMob((ExMobil) dao().consultarPorSigla(filter));
+            exDocumentoDto.setMob((ExMobil) dao.consultarPorSigla(filter));
             if (exDocumentoDto.getMob() != null) {
                 exDocumentoDto.setDoc(exDocumentoDto.getMob().getExDocumento());
             }
         } else if (exDocumentoDto.getMob() == null && exDocumentoDto.getDocumentoViaSel().getId() != null) {
             exDocumentoDto.setIdMob(exDocumentoDto.getDocumentoViaSel().getId());
-            exDocumentoDto.setMob(dao().consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
+            exDocumentoDto.setMob(cpDao.consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
         } else if (exDocumentoDto.getMob() == null && exDocumentoDto.getIdMob() != null
                 && exDocumentoDto.getIdMob() != 0) {
-            exDocumentoDto.setMob(dao().consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
+            exDocumentoDto.setMob(cpDao.consultar(exDocumentoDto.getIdMob(), ExMobil.class, false));
         }
         if (exDocumentoDto.getMob() != null) {
             exDocumentoDto.setDoc(exDocumentoDto.getMob().doc());

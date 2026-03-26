@@ -35,8 +35,6 @@ import br.gov.jfrj.siga.cp.model.enm.CpMarcadorFinalidadeGrupoEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorTipoAplicacaoEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorTipoInteressadoEnum;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 @Entity
 // @Cacheable(false)
@@ -89,10 +87,6 @@ public class CpMarcador extends AbstractCpMarcador {
 	public void setId(Long id) {
 		setIdMarcador(id);
 		return;
-	}
-
-	public boolean semelhante(Assemelhavel obj, int nivel) {
-		return SincronizavelSuporte.semelhante(this, obj, nivel);
 	}
 
 	public boolean isAplicacaoGeral() {

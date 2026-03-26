@@ -1,0 +1,74 @@
+@Inject
+CpCompetenciaBL cpCompetenciaBL;
+
+
+package br.gov.jfrj.siga.cp.bl;
+
+public class Cp<TConf extends CpConfiguracaoBL, TComp extends CpCompetenciaBL, TBL extends CpBL> {
+	@SuppressWarnings("unchecked")
+	static private Cp instance;
+
+	TComp comp;
+	TConf conf;
+	TBL BL;
+
+	public TBL getBL() {
+		return BL;
+	}
+
+	public void setBL(TBL bl) {
+		BL = bl;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static Cp getInstance() {
+		if (instance == null) {
+			synchronized (Cp.class) {
+				if (instance == null) {
+					CpConfiguracaoBL confBL = new CpConfiguracaoBL();
+					CpConfiguracaoCacheComparator comparator = new CpConfiguracaoCacheComparator();
+					CpCompetenciaBL compBL = new CpCompetenciaBL();
+					CpBL cpBL = new CpBL();
+
+					instance = new Cp();
+					instance.setConf(confBL);
+					instance.getConf().setComparator(comparator);
+					instance.setComp(compBL);
+					//instance.getComp().setConfiguracaoBL(instance.getConf());
+					instance.setBL(cpBL);
+					//instance.getBL().setComp(instance.getComp());
+				}
+			}
+		}
+		return instance;
+	}
+
+	public static void setInstance(Cp instance) {
+		Cp.instance = instance;
+	}
+
+	public static boolean isInstantiated() {
+		return instance != null;
+	}
+
+	public static boolean isInstantiated(Class<? extends Cp> clazz) {
+		return isInstantiated() && clazz.isAssignableFrom(instance.getClass());
+	}
+
+	public TComp getComp() {
+		return comp;
+	}
+
+	public void setComp(TComp comp) {
+		this.comp = comp;
+	}
+
+	public TConf getConf() {
+		return conf;
+	}
+
+	public void setConf(TConf conf) {
+		this.conf = conf;
+	}
+
+}

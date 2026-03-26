@@ -24,19 +24,15 @@ import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.lang.reflect.Method;
 
+@ApplicationScoped
 public class CpCompetenciaBL {
 
-    CpConfiguracaoBL configuracaoBL;
-
-    public CpConfiguracaoBL getConfiguracaoBL() {
-        return configuracaoBL;
-    }
-
-    public void setConfiguracaoBL(CpConfiguracaoBL configuracaoBL) {
-        this.configuracaoBL = configuracaoBL;
-    }
+    @Inject
+    protected CpConfiguracaoBL cpConf;
 
     /**
      * Retorna a subsecretaria a que uma lotação pertence. Se a lotação já for
@@ -75,13 +71,13 @@ public class CpCompetenciaBL {
             e.printStackTrace();
         }
 
-        return resposta.booleanValue();
+        return resposta;
     }
 
     public boolean isIdentidadeBloqueada(CpIdentidade cpIdentidade)
             throws AplicacaoException {
         try {
-            return !configuracaoBL.podePorConfiguracao(cpIdentidade, CpTipoDeConfiguracao.FAZER_LOGIN);
+            return !cpConf.podePorConfiguracao(cpIdentidade, CpTipoDeConfiguracao.FAZER_LOGIN);
         } catch (final Exception e) {
             throw new AplicacaoException(
                     "Não foi possível verificar se a identidade está bloqueada.",
@@ -91,7 +87,7 @@ public class CpCompetenciaBL {
 
     public boolean isPessoaBloqueada(DpPessoa pes) throws AplicacaoException {
         try {
-            return !configuracaoBL.podePorConfiguracao(pes,
+            return !cpConf.podePorConfiguracao(pes,
                     CpTipoDeConfiguracao.FAZER_LOGIN);
         } catch (final Exception e) {
             throw new AplicacaoException(
@@ -100,15 +96,9 @@ public class CpCompetenciaBL {
         }
     }
 
-//	public boolean podeMovimentarViaWS(final DpPessoa titular,
-//			final DpLotacao lotaTitular) throws Exception {
-//		return configuracaoBL.podePorConfiguracao(titular, lotaTitular,
-//				CpTipoDeConfiguracao.AUTORIZAR_MOVIMENTACAO_POR_WS);
-//	}
-
     public boolean podeSegundoFatorPin(final DpPessoa titular,
                                        final DpLotacao lotaTitular) throws Exception {
-        return configuracaoBL.podePorConfiguracao(titular, lotaTitular, CpTipoDeConfiguracao.SEGUNDO_FATOR_PIN);
+        return cpConf.podePorConfiguracao(titular, lotaTitular, CpTipoDeConfiguracao.SEGUNDO_FATOR_PIN);
     }
 
 }

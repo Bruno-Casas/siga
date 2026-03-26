@@ -3,7 +3,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaRefazerPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeRefazer;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -19,7 +18,7 @@ public class DocumentosSiglaRefazerPost implements IDocumentosSiglaRefazerPost {
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        ExDocumento doc = Ex.getInstance().getBL().refazer(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc());
+        ExDocumento doc = this.bl.refazer(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc());
 
         resp.sigla = doc.getCodigo();
         resp.status = "OK";

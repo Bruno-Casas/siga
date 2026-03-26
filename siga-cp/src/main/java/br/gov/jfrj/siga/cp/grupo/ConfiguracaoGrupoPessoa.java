@@ -60,10 +60,10 @@ public class ConfiguracaoGrupoPessoa extends ConfiguracaoGrupo {
 		t_pesPessoaExemplo.setSesbPessoa(t_strSesb);
 		String t_strMatricula = t_strUpper.substring(2, 7);
 		t_pesPessoaExemplo.setMatricula(Long.parseLong(t_strMatricula));
-		DpPessoa t_pesPessoa =  CpDao.getInstance().consultarPorSigla(t_pesPessoaExemplo); */
+		DpPessoa t_pesPessoa =  dao.consultarPorSigla(t_pesPessoaExemplo); */
 		
 		Long t_lngId = Long.parseLong(p_strConteudo);
-		DpPessoa t_pesPessoa =  CpDao.getInstance().consultar(t_lngId,(new DpPessoa()).getClass(), false).getPessoaInicial();
+		DpPessoa t_pesPessoa =  dao.consultar(t_lngId,(new DpPessoa()).getClass(), false).getPessoaInicial();
 		setDpPessoa(t_pesPessoa);
 		conteudoConfiguracao = p_strConteudo;
 	}

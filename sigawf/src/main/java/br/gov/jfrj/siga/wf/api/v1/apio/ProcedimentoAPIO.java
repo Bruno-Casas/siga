@@ -1,6 +1,7 @@
 package br.gov.jfrj.siga.wf.api.v1.apio;
 
 import br.gov.jfrj.siga.base.AcaoVO;
+import br.gov.jfrj.siga.cp.util.CpProcessadorReferencias;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.jee.SigaLibsEL;
@@ -16,6 +17,7 @@ import br.gov.jfrj.siga.wf.model.enm.WfTipoDeVariavel;
 import br.gov.jfrj.siga.wf.util.WfTarefa;
 import br.gov.jfrj.siga.wf.util.WfUtil;
 
+import javax.enterprise.inject.spi.CDI;
 import java.util.List;
 
 public class ProcedimentoAPIO extends Procedimento {
@@ -55,7 +57,13 @@ public class ProcedimentoAPIO extends Procedimento {
         this.desabilitarFormulario = pi.isDesabilitarFormulario(titular, lotaTitular);
 
         try {
-            this.msgAviso = pi.getMsgAviso(titular, lotaTitular);
+            String s = pi.getMsgAvisoSemReferencias(titular, lotaTitular);
+
+            this.msgAviso = null;
+            if (s != null) {
+                CpProcessadorReferencias pr = CDI.current().select(CpProcessadorReferencias.class).get();
+                this.msgAviso = pr.marcarReferenciasParaDocumentos(s, null);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

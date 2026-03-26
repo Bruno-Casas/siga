@@ -29,7 +29,6 @@ import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.cp.*;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.grupo.*;
 import br.gov.jfrj.siga.cp.model.CpGrupoDeEmailSelecao;
@@ -55,25 +54,6 @@ import java.util.*;
 
 public abstract class GrupoController<T extends CpGrupo> extends
         GiSelecionavelControllerSupport<T, CpGrupoDaoFiltro> {
-
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public GrupoController() {
-        super();
-    }
-
-    @Inject
-    public GrupoController(HttpServletRequest request, Result result,
-                           CpDao dao, SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-    }
-
-    /**
-     *
-     */
-    private static final long serialVersionUID = 3768576909382652437L;
 
     // Campos da lista de configurações do grupo
     private ArrayList<ConfiguracaoGrupo> configuracoesGrupo;
@@ -120,10 +100,10 @@ public abstract class GrupoController<T extends CpGrupo> extends
         List<String> codigoTipoConfiguracao = new ArrayList<String>();
         List<String> conteudoConfiguracao = new ArrayList<String>();
 
-        Cp.getInstance().getConf().limparCacheSeNecessario();
+        this.cpConf.limparCacheSeNecessario();
 
         Integer t_idTpGrupo = getIdTipoGrupo();
-        setCpTipoGrupo(dao().consultar(t_idTpGrupo, CpTipoGrupo.class, false));
+        setCpTipoGrupo(cpDao.consultar(t_idTpGrupo, CpTipoGrupo.class, false));
 
         // idCpGrupo vazio indica inclusão
         if (idCpGrupo == null || idCpGrupo.equals("")) {
@@ -158,8 +138,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
             tiposConfiguracaoGrupoParaTipoDeGrupo = obterTiposConfiguracaoGrupoParaTipoDeGrupo(tpGrp);
             dscCpTipoGrupo = tpGrp.getDscTpGrupo();
             try {
-                configuracoesGrupo = Cp.getInstance().getConf()
-                        .obterCfgGrupo(dao().consultar(grp.getHisIdIni(), CpGrupo.class, false));
+                configuracoesGrupo = cpConf.obterCfgGrupo(cpDao.consultar(grp.getHisIdIni(), CpGrupo.class, false));
                 for (ConfiguracaoGrupo t_cfgConfiguracaoGrupo : configuracoesGrupo) {
                     CpConfiguracao t_cpcConfiguracaoCorrente = t_cfgConfiguracaoGrupo
                             .getCpConfiguracao();
@@ -198,23 +177,20 @@ public abstract class GrupoController<T extends CpGrupo> extends
      */
     protected String aExcluir(Long idCpGrupo) throws Exception {
         try {
-            ModeloDao.iniciarTransacao();
-            Date dt = dao().consultarDataEHoraDoServidor();
+            Date dt = cpDao.consultarDataEHoraDoServidor();
             CpGrupo grp = daoGrupo(idCpGrupo);
-            configuracoesGrupo = Cp.getInstance().getConf().obterCfgGrupo(grp);
+            configuracoesGrupo = this.cpConf.obterCfgGrupo(grp);
             for (ConfiguracaoGrupo t_cfgConfiguracaoGrupo : configuracoesGrupo) {
-                CpConfiguracao t_cpcConfiguracao = dao().consultar(
+                CpConfiguracao t_cpcConfiguracao = cpDao.consultar(
                         t_cfgConfiguracaoGrupo.getCpConfiguracao().getIdConfiguracao(), CpConfiguracao.class, false);
-                t_cpcConfiguracao = dao().carregar(t_cpcConfiguracao);
-                dao().gravarComHistorico(t_cpcConfiguracao,
+                t_cpcConfiguracao = cpDao.carregar(t_cpcConfiguracao);
+                cpDao.gravarComHistorico(t_cpcConfiguracao,
                         getIdentidadeCadastrante());
             }
-            grp = dao().carregar(grp);
+            grp = cpDao.carregar(grp);
             grp.setHisDtFim(dt);
-            dao().gravarComHistorico(grp, getIdentidadeCadastrante());
-            ModeloDao.commitTransacao();
+            cpDao.gravarComHistorico(grp, getIdentidadeCadastrante());
         } catch (Exception e) {
-            ModeloDao.rollbackTransacao();
             throw new AplicacaoException("Erro ao excluir grupo de id: "
                     + idCpGrupo + ".", 0, e);
         }
@@ -225,7 +201,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
         if (id == null) {
             return null;
         } else {
-            return dao().consultar(id, CpGrupo.class, false);
+            return cpDao.consultar(id, CpGrupo.class, false);
         }
     }
 
@@ -261,7 +237,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
         try {
             CpGrupo grp = null;
             CpGrupo grpNovo = null;
-            Date dt = dao().consultarDataEHoraDoServidor();
+            Date dt = cpDao.consultarDataEHoraDoServidor();
             CpTipoGrupo tpGrp = obterCpTipoGrupoPorId(getIdTipoGrupo());
             if (tpGrp == null) {
                 throw new AplicacaoException(
@@ -291,8 +267,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
             grpNovo.setDscGrupo(dscGrupo);
             grpNovo.setSiglaGrupo(siglaGrupo);
 
-            dao().iniciarTransacao();
-            grp = (CpGrupo) dao().gravarComHistorico(grpNovo, grp, dt,
+            grp = (CpGrupo) cpDao.gravarComHistorico(grpNovo, grp, dt,
                     getIdentidadeCadastrante());
             CpGrupo grupoInicial = null;
             idCpGrupo = grp.getIdGrupo();
@@ -329,14 +304,14 @@ public abstract class GrupoController<T extends CpGrupo> extends
                 cfg.setCpTipoConfiguracao(tipoConfiguracao);
                 cfg.setHisDtIni(dt);
                 cfgGrp.setCpConfiguracao(cfg);
-                grupoInicial = dao().consultar(grp.getHisIdIni(), CpGrupo.class, false);
+                grupoInicial = cpDao.consultar(grp.getHisIdIni(), CpGrupo.class, false);
                 cfgGrp.setCpGrupo(grupoInicial);
                 cfgGrp.atualizarCpConfiguracao();
-                dao().gravarComHistorico(cfg, getIdentidadeCadastrante());
+                cpDao.gravarComHistorico(cfg, getIdentidadeCadastrante());
             }
 
             // processa as configurações existentes
-            configuracoesGrupo = Cp.getInstance().getConf().obterCfgGrupo(grp);
+            configuracoesGrupo = this.cpConf.obterCfgGrupo(grp);
             for (int i = 0; i < idConfiguracao.size(); i++) {
                 Long idCfg = Long.parseLong(idConfiguracao.get(i));
                 for (ConfiguracaoGrupo cfgGrpGravada : configuracoesGrupo) {
@@ -359,9 +334,9 @@ public abstract class GrupoController<T extends CpGrupo> extends
                             }
 
                             CpConfiguracao t_cpcConfiguracao = cfgGrpGravada.getCpConfiguracao();
-                            t_cpcConfiguracao = dao().carregar(t_cpcConfiguracao);
+                            t_cpcConfiguracao = cpDao.carregar(t_cpcConfiguracao);
                             t_cpcConfiguracao.setHisDtFim(dt);
-                            dao().gravarComHistorico(t_cpcConfiguracao, getIdentidadeCadastrante());
+                            cpDao.gravarComHistorico(t_cpcConfiguracao, getIdentidadeCadastrante());
                         } else {
                             String cfgConteudo = conteudoConfiguracao.get(i);
                             // Nato: o ideal seria se pudéssemos utilizar o
@@ -402,8 +377,8 @@ public abstract class GrupoController<T extends CpGrupo> extends
                                 cfgGrpNova.setCpConfiguracao(cfgNova);
                                 cfgGrpNova.setCpGrupo(grp);
                                 cfgGrpNova.atualizarCpConfiguracao();
-                                cfgGrpGravada.setCpConfiguracao(dao.carregar(cfgGrpGravada.getCpConfiguracao()));
-                                dao().gravarComHistorico(cfgNova,
+                                cfgGrpGravada.setCpConfiguracao(cpDao.carregar(cfgGrpGravada.getCpConfiguracao()));
+                                cpDao.gravarComHistorico(cfgNova,
                                         cfgGrpGravada.getCpConfiguracao(), dt,
                                         getIdentidadeCadastrante());
                             }
@@ -412,8 +387,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
                 }
             }
 
-            dao().commitTransacao();
-            Cp.getInstance().getConf().limparCacheSeNecessario();
+            this.cpConf.limparCacheSeNecessario();
             return idCpGrupo;
         } catch (Exception e) {
             throw new AplicacaoException("Id do grupo: " + idCpGrupo
@@ -427,11 +401,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
     }
 
     private boolean podeEditarConfiguracoesAvancadas() throws Exception {
-        return Cp
-                .getInstance()
-                .getComp()
-                .getConfiguracaoBL()
-                .podeUtilizarServicoPorConfiguracao(getTitular(),
+        return cpConf.podeUtilizarServicoPorConfiguracao(getTitular(),
                         getLotaTitular(),
                         "SIGA;GI;GDISTR;CONF_AVANC:Configuracões Avançadas");
     }
@@ -442,8 +412,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
         if (lot == null) {
             throw new AplicacaoException("A unidade deve ser definida!");
         } else {
-            dao().iniciarTransacao();
-            CpTipoDeConfiguracao tpConf = dao().consultar(
+            CpTipoDeConfiguracao tpConf = cpDao.consultar(
                     CpTipoDeConfiguracao.GERENCIAR_GRUPO,
                     CpTipoDeConfiguracao.class, false);
             CpSituacaoDeConfiguracaoEnum situacao = CpSituacaoDeConfiguracaoEnum.PODE;
@@ -453,23 +422,20 @@ public abstract class GrupoController<T extends CpGrupo> extends
             conf.setCpTipoConfiguracao(tpConf);
             conf.setCpSituacaoConfiguracao(situacao);
             conf.setCpGrupo(daoGrupo(idCpGrupo));
-            conf.setHisDtIni(dao().consultarDataEHoraDoServidor());
-            dao().gravarComHistorico(conf, getIdentidadeCadastrante());
+            conf.setHisDtIni(cpDao.consultarDataEHoraDoServidor());
+            cpDao.gravarComHistorico(conf, getIdentidadeCadastrante());
             setIdCpGrupo(idCpGrupo);
-            dao().commitTransacao();
         }
 
     }
 
     protected void aExcluirGestorGrupo(Long idCpGrupo, Long idConfGestor) {
-        dao().iniciarTransacao();
-        CpConfiguracao conf = dao().consultar(idConfGestor,
+        CpConfiguracao conf = cpDao.consultar(idConfGestor,
                 CpConfiguracao.class, false);
-        conf.setHisDtFim(dao().consultarDataEHoraDoServidor());
-        dao().gravarComHistorico(conf, getIdentidadeCadastrante());
+        conf.setHisDtFim(cpDao.consultarDataEHoraDoServidor());
+        cpDao.gravarComHistorico(conf, getIdentidadeCadastrante());
 
         setIdCpGrupo(idCpGrupo);
-        dao().commitTransacao();
     }
 
     protected List<CpConfiguracao> getConfGestores(Long idCpGrupo) {
@@ -484,7 +450,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
             fltConf.setCpTipoConfiguracao(tpConf);
             fltConf.setCpSituacaoConfiguracao(situacao);
 
-            List<CpConfiguracao> confs = dao().consultar(fltConf);
+            List<CpConfiguracao> confs = cpDao.consultar(fltConf);
 
             Iterator<CpConfiguracao> it = confs.iterator();
             while (it.hasNext()) {
@@ -515,25 +481,23 @@ public abstract class GrupoController<T extends CpGrupo> extends
         }
         CpGrupoDaoFiltro flt = new CpGrupoDaoFiltro();
         Integer t_idTpGrupo = getIdTipoGrupo();
-        setCpTipoGrupo(dao().consultar(t_idTpGrupo, CpTipoGrupo.class, false));
+        setCpTipoGrupo(cpDao.consultar(t_idTpGrupo, CpTipoGrupo.class, false));
         flt.setIdTpGrupo(t_idTpGrupo);
-        int intQtd = dao().consultarQuantidade(flt);
+        int intQtd = cpDao.consultarQuantidade(flt);
         setTamanho(intQtd);
-        List<CpGrupo> itgGrupos = dao().consultarPorFiltro(flt, offset, 0);
+        List<CpGrupo> itgGrupos = cpDao.consultarPorFiltro(flt, offset, 0);
 
         Iterator<CpGrupo> it = itgGrupos.iterator();
 
-        CpConfiguracaoBL conf = Cp.getInstance().getConf();
         // se não for administrador, exibe apenas os grupos que pode gerir
         if (getIdTipoGrupo() == CpTipoGrupo.TIPO_GRUPO_GRUPO_DE_DISTRIBUICAO
-                && !conf.podeUtilizarServicoPorConfiguracao(
+                && !cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;GDISTR:Gerenciar grupos de distribuição")) {
             while (it.hasNext()) {
                 CpGrupo cpGrp = it.next();
-                CpConfiguracaoBL bl = Cp.getInstance().getConf();
-                if (!bl.podePorConfiguracao(getTitular(), getLotaTitular(),
+                if (!cpConf.podePorConfiguracao(getTitular(), getLotaTitular(),
                         cpGrp, CpTipoDeConfiguracao.GERENCIAR_GRUPO)) {
                     it.remove();
                 }
@@ -664,7 +628,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
      *
      */
     private CpTipoGrupo obterCpTipoGrupoPorId(Integer p_intIdTipoGrupo) {
-        return dao().consultar(p_intIdTipoGrupo, new CpTipoGrupo().getClass(),
+        return cpDao.consultar(p_intIdTipoGrupo, new CpTipoGrupo().getClass(),
                 false);
     }
 
@@ -700,7 +664,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
      */
     @SuppressWarnings("unchecked")
     private List<CpTipoGrupo> obterTiposGrupo() {
-        return (List<CpTipoGrupo>) dao().listarTiposGrupo();
+        return (List<CpTipoGrupo>) cpDao.listarTiposGrupo();
     }
 
     /**
@@ -720,7 +684,7 @@ public abstract class GrupoController<T extends CpGrupo> extends
         flt.setNome(Texto.removeAcentoMaiusculas(flt.getSigla()));
         flt.setSigla(null);
         try {
-            final List l = dao().consultarPorFiltro(flt);
+            final List l = cpDao.consultarPorFiltro(flt);
             if (l != null)
                 if (l.size() == 1)
                     return (DpLotacao) l.get(0);

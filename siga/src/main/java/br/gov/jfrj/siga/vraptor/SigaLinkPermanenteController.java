@@ -25,24 +25,12 @@ import java.io.InputStream;
 import java.util.Map;
 
 @Controller
-public class SigaLinkPermanenteController extends SigaController {
-    HttpServletResponse response;
-    String END_POINT_SIGALINK_DOC = "/sigaex/public/app/arquivo/obterDownloadDocumento";
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public SigaLinkPermanenteController() {
-        super();
-    }
+public class SigaLinkPermanenteController extends VraptorController {
 
     @Inject
-    public SigaLinkPermanenteController(HttpServletRequest request, HttpServletResponse response, Result result, CpDao dao,
-                                        SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-        this.response = response;
-    }
+    HttpServletResponse response;
 
+    String END_POINT_SIGALINK_DOC = "/sigaex/public/app/arquivo/obterDownloadDocumento";
 
     private static String getRecaptchaSiteKey() {
         String pwd = null;
@@ -121,7 +109,7 @@ public class SigaLinkPermanenteController extends SigaController {
         }
 
 
-        CpToken cpToken = dao().obterCpTokenPorTipoToken(Long.valueOf(tipoLink), token);
+        CpToken cpToken = cpDao.obterCpTokenPorTipoToken(Long.valueOf(tipoLink), token);
         if (cpToken != null) {
             if ("1".equals(tipoLink)) {
                 ExService exService = Service.getExService();

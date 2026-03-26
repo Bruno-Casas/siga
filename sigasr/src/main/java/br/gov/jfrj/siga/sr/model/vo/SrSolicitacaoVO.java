@@ -110,9 +110,9 @@ public class SrSolicitacaoVO {
 		this.setAtendente(SrViewUtil.selecionado(nomeAtendenteAbreviado,
 				nomeAtendente));
 		
-		this.setLotaAtendente(SrViewUtil.selecionado(m.getDpLotacaoIni().getLotacaoAtual()
+		this.setLotaAtendente(SrViewUtil.selecionado(m.getDpLotacaoIni().getHistoricoAtual()
 						.getSiglaCompleta(), m.getDpLotacaoIni()
-						.getLotacaoAtual().getNomeLotacao()));
+						.getHistoricoAtual().getNomeLotacao()));
 
 		this.setUltimaMovimentacao(ultMov != null ? ultMov.getDescricao()!= null ? 
 				SrViewUtil.selecionado(ultMov.getDescricao(), ultMov.getDescricao()) : "" : "");

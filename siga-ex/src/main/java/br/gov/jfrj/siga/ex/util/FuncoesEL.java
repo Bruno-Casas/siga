@@ -21,10 +21,11 @@ package br.gov.jfrj.siga.ex.util;
 import br.gov.jfrj.siga.base.*;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.dp.*;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExBL;
+import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
+import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.ex.bl.ExParte;
 import br.gov.jfrj.siga.ex.logic.*;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
@@ -42,6 +43,7 @@ import freemarker.ext.dom.NodeModel;
 import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.InputSource;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -58,7 +60,7 @@ import java.util.regex.Pattern;
 
 public class FuncoesEL {
     public static ExDao dao() {
-        return ExDao.getInstance();
+        return CDI.current().select(ExDao.class).get();
     }
 
     public static String concat(final String s, final String s2) {
@@ -90,10 +92,9 @@ public class FuncoesEL {
                                                      DpLotacao lotaTitular) throws Exception {
         if (lotaTitular == null && titular == null)
             return false;
-        return Ex
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(
+
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(
                         titular,
                         lotaTitular,
                         ExTipoDeMovimentacao.REMESSA_PARA_PUBLICACAO,
@@ -105,10 +106,10 @@ public class FuncoesEL {
             DpPessoa titular, DpLotacao lotaTitular) throws Exception {
         if (lotaTitular == null && titular == null)
             return false;
-        return Ex
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(
+
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+
+        return conf.podePorConfiguracao(
                         titular,
                         lotaTitular,
                         ExTipoDeMovimentacao.ARQUIVAMENTO_PERMANENTE,
@@ -120,10 +121,10 @@ public class FuncoesEL {
             DpPessoa titular, DpLotacao lotaTitular) throws Exception {
         if (lotaTitular == null && titular == null)
             return false;
-        return Ex
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(
+
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+
+        return conf.podePorConfiguracao(
                         titular,
                         lotaTitular,
                         ExTipoDeMovimentacao.ARQUIVAMENTO_INTERMEDIARIO,
@@ -135,10 +136,9 @@ public class FuncoesEL {
             DpPessoa titular, DpLotacao lotaTitular) throws Exception {
         if (lotaTitular == null && titular == null)
             return false;
-        return Ex
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(titular, lotaTitular,
+
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(titular, lotaTitular,
                         ExTipoDeConfiguracao.DEFINIR_PUBLICADORES);
 
     }
@@ -173,53 +173,59 @@ public class FuncoesEL {
         if (id == null || id == 0)
             return null;
 
-        return dao().consultar(id, DpPessoa.class, false);
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        return dao.consultar(id, DpPessoa.class, false);
     }
 
     public static Boolean podeUtilizarExtensaoEditor(DpLotacao lota, Long idMod)
             throws Exception {
-        ExModelo mod = dao().consultar(idMod, ExModelo.class, false);
-        return Ex
-                .getInstance()
-                .getConf()
-                .podePorConfiguracao(null, lota, mod,
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        ExModelo mod = dao.consultar(idMod, ExModelo.class, false);
+
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+        return conf.podePorConfiguracao(null, lota, mod,
                         ExTipoDeConfiguracao.UTILIZAR_EXTENSAO_EDITOR);
     }
 
     public static Boolean podeDelegarVisualizacao(DpPessoa cadastrante, DpLotacao lotacaoCadastrante) throws Exception {
-        return Ex.getInstance().getConf()
-                .podePorConfiguracao(cadastrante, lotacaoCadastrante, ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO);
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+
+        return conf.podePorConfiguracao(cadastrante, lotacaoCadastrante, ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO);
     }
 
     public static Boolean podeCriarNovoExterno(DpPessoa cadastrante, DpLotacao lotacaoCadastrante) throws Exception {
-        return Ex.getInstance().getConf().podePorConfiguracao(cadastrante, lotacaoCadastrante, ExTipoDeConfiguracao.CRIAR_NOVO_EXTERNO);
+        ExConfiguracaoBL conf = CDI.current().select(ExConfiguracaoBL.class).get();
+
+        return conf.podePorConfiguracao(cadastrante, lotacaoCadastrante, ExTipoDeConfiguracao.CRIAR_NOVO_EXTERNO);
     }
 
 
     public static List<CpLocalidade> consultarPorUF(String siglaUF) {
-        return dao().consultarLocalidadesPorUF(siglaUF);
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        return dao.consultarLocalidadesPorUF(siglaUF);
     }
 
     public static DpLotacao lotacao(Long id) throws AplicacaoException {
         if (id == null || id == 0)
             return null;
 
-        return dao().consultar(id, DpLotacao.class, false);
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        return dao.consultar(id, DpLotacao.class, false);
     }
 
     public static CpOrgao orgao(Long id) throws AplicacaoException {
         if (id == null || id == 0)
             return null;
 
-        return dao().consultar(id, CpOrgao.class, false);
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        return dao.consultar(id, CpOrgao.class, false);
     }
 
     public static CpOrgaoUsuario orgaoUsuario(String sigla) {
         CpOrgaoUsuario orgaoUsuario = new CpOrgaoUsuario();
         orgaoUsuario.setSiglaOrgaoUsu(sigla);
 
-        return ExDao.getInstance().consultarPorSigla(
-                orgaoUsuario);
+        return dao().consultarPorSigla(orgaoUsuario);
     }
 
     public static String destinacaoPorNumeroVia(ExDocumento doc, Short i) {
@@ -236,6 +242,7 @@ public class FuncoesEL {
         if (id == null || id == 0)
             return null;
 
+        ExDao dao = CDI.current().select(ExDao.class).get();
         DpLotacao lotacao = dao().consultar(id, DpLotacao.class, false);
 
         List<DpLotacao> lotacoes = dao().listarLotacoes();
@@ -363,15 +370,12 @@ public class FuncoesEL {
         return new ExEditalEliminacao(doc);
     }
 
-    public static ExTermoEliminacao termoEliminacao(ExDocumento doc) {
-        return new ExTermoEliminacao(doc);
-    }
-
     public static String verificaGenero(String autoridade) {
         return ExTratamento.genero(autoridade);
     }
 
     public static String cargoPessoa(Long idPessoa) throws AplicacaoException {
+        ExDao dao = CDI.current().select(ExDao.class).get();
         DpPessoa pes = dao().consultar(idPessoa, DpPessoa.class, false);
         if (pes != null)
             return pes.getCargo().getNomeCargo();
@@ -380,6 +384,8 @@ public class FuncoesEL {
     }
 
     public static String lotacaoPessoa(Long idPessoa) throws AplicacaoException {
+
+        ExDao dao = CDI.current().select(ExDao.class).get();
         DpPessoa pes = dao().consultar(idPessoa, DpPessoa.class, false);
         if (pes != null)
             return pes.getLotacao().getNomeLotacao();
@@ -408,6 +414,7 @@ public class FuncoesEL {
         }
 
         Map<String, List<ExDocumento>> m = new HashMap<String, List<ExDocumento>>();
+        ExDao dao = CDI.current().select(ExDao.class).get();
         ExModelo mod = dao().consultar(idMod, ExModelo.class, false);
 
         List<ExDocumento> documentos = dao().consultarPorModeloEAssinatura(usu,
@@ -456,6 +463,7 @@ public class FuncoesEL {
         Map<String, List<ExDocumento>> m = new HashMap<String, List<ExDocumento>>();
         List<ExDocumento> documentos = new ArrayList<ExDocumento>();
 
+        ExDao dao = CDI.current().select(ExDao.class).get();
         for (Long idMod : idsModelo) {
             ExModelo mod = dao().consultar(idMod, ExModelo.class, false);
             List<ExDocumento> l = dao().consultarPorModeloEAssinatura(usu, mod,
@@ -630,9 +638,8 @@ public class FuncoesEL {
                                         DpPessoa cadastrante, DpPessoa titular, DpLotacao lotaCadastrante,
                                         DpLotacao lotaTitular) throws Exception {
 
-        Ex.getInstance()
-                .getBL()
-                .criarWorkflow(cadastrante,
+        ExBL bl = CDI.current().select(ExBL.class).get();
+        bl.criarWorkflow(cadastrante,
                         titular == null ? cadastrante : titular,
                         lotaTitular == null ? lotaCadastrante : lotaTitular, d,
                         nomeProcesso);
@@ -682,17 +689,13 @@ public class FuncoesEL {
         }
 
         try {
+            ExBL bl = CDI.current().select(ExBL.class).get();
+
             if (docOuMov instanceof ExDocumento)
-                return Ex
-                        .getInstance()
-                        .getBL()
-                        .processarModelo((ExDocumento) docOuMov, acao, params,
+                return bl.processarModelo((ExDocumento) docOuMov, acao, params,
                                 null);
             else if (docOuMov instanceof ExMovimentacao)
-                return Ex
-                        .getInstance()
-                        .getBL()
-                        .processarModelo((ExMovimentacao) docOuMov, acao,
+                return bl.processarModelo((ExMovimentacao) docOuMov, acao,
                                 params, null);
         } catch (NullPointerException ex) {
             return "NullPointerException";
@@ -773,7 +776,8 @@ public class FuncoesEL {
         lotacao.setSigla(sigla);
         lotacao.setOrgaoUsuario(orgaoUsu);
 
-        final DpLotacao lotRetorno = CpDao.getInstance().consultarPorSigla(
+        ExDao dao = CDI.current().select(ExDao.class).get();
+        final DpLotacao lotRetorno = dao().consultarPorSigla(
                 lotacao);
 
         return lotRetorno == null ? "" : lotRetorno.getDescricao();
@@ -854,8 +858,11 @@ public class FuncoesEL {
     }
 
     public static List<ExTpDocPublicacao> listaPublicacao(Long idMod) {
+        ExDao dao = CDI.current().select(ExDao.class).get();
         ExModelo mod = dao().consultar(idMod, ExModelo.class, false);
-        return PublicacaoDJEBL.obterListaTiposMaterias(mod.getHisIdIni());
+
+        PublicacaoDJEBL publicacaoDJEBL = CDI.current().select(PublicacaoDJEBL.class).get();
+        return publicacaoDJEBL.obterListaTiposMaterias(mod.getHisIdIni());
     }
 
     public static CalculoPCD calculoPCD(String cargo, String funcao,
@@ -882,15 +889,13 @@ public class FuncoesEL {
 
     public static List<ExDocumento> consultarDocsDisponiveisParaInclusaoEmBoletim(
             CpOrgaoUsuario orgaoUsuario) {
-        final List<ExDocumento> l = ExDao.getInstance()
-                .consultarDocsDisponiveisParaInclusaoEmBoletim(orgaoUsuario);
-        return l;
+        return dao().consultarDocsDisponiveisParaInclusaoEmBoletim(orgaoUsuario);
     }
 
     public static List<ExDocumento> consultarDocsInclusosNoBoletim(
             ExDocumento doc) {
         if (doc.getIdDoc() != null) {
-            final List<ExDocumento> l = ExDao.getInstance().consultarDocsInclusosNoBoletim(doc);
+            final List<ExDocumento> l = dao().consultarDocsInclusosNoBoletim(doc);
             return l;
         }
 
@@ -928,83 +933,80 @@ public class FuncoesEL {
 
     public static Boolean podeAssinarComSenha(DpPessoa titular,
                                               DpLotacao lotaTitular, ExMobil mob) throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAssinarComSenha.class, titular, lotaTitular, mob);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAssinarComSenha.class, titular, lotaTitular, mob);
     }
 
     public static Boolean podeAssinarPor(DpPessoa titular,
                                          DpLotacao lotaTitular, ExMobil mob) throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAssinarPor.class, titular, lotaTitular, mob);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAssinarPor.class, titular, lotaTitular, mob);
     }
 
     public static Boolean deveAssinarComSenha(DpPessoa titular,
                                               DpLotacao lotaTitular, ExMobil mob) throws Exception {
-        return Ex.getInstance().getComp().pode(ExDeveAssinarComSenha.class, titular, lotaTitular, mob);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExDeveAssinarComSenha.class, titular, lotaTitular, mob);
     }
 
     public static Boolean podeAssinarMovimentacaoComSenha(DpPessoa titular,
                                                           DpLotacao lotaTitular, ExMovimentacao mov) throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAssinarMovimentacaoComSenha.class, titular, lotaTitular, mov);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAssinarMovimentacaoComSenha.class, titular, lotaTitular, mov);
     }
 
     public static Boolean podeAssinarMovimentacao(DpPessoa titular,
                                                   DpLotacao lotaTitular, ExMovimentacao mov) throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAssinarMovimentacao.class, titular, lotaTitular, mov);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAssinarMovimentacao.class, titular, lotaTitular, mov);
     }
 
     public static Boolean podeAssinar(DpPessoa titular,
                                       DpLotacao lotaTitular, ExMobil mob) throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAssinar.class, titular, lotaTitular, mob);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAssinar.class, titular, lotaTitular, mob);
     }
 
     public static Boolean podeAssinarMovimentacaoDoMobilComSenha(DpPessoa titular,
                                                                  DpLotacao lotaTitular, ExMobil mob) throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAssinarMovimentacaoComSenha.class, titular, lotaTitular, mob);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAssinarMovimentacaoComSenha.class, titular, lotaTitular, mob);
     }
 
     public static Boolean deveAssinarMovimentacaoComSenha(DpPessoa titular,
                                                           DpLotacao lotaTitular, ExMovimentacao mov) throws Exception {
-        return Ex.getInstance().getComp().pode(ExDeveAssinarMovimentacaoComSenha.class, titular, lotaTitular, mov);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExDeveAssinarMovimentacaoComSenha.class, titular, lotaTitular, mov);
     }
 
     public static Boolean podeAutenticarMovimentacaoComSenha(
             DpPessoa titular, DpLotacao lotaTitular, ExMovimentacao mov)
             throws Exception {
-        return Ex.getInstance().getComp().pode(ExPodeAutenticarMovimentacaoComSenha.class, titular, lotaTitular, mov);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAutenticarMovimentacaoComSenha.class, titular, lotaTitular, mov);
     }
 
     public static Boolean deveAutenticarMovimentacaoComSenha(
             DpPessoa titular, DpLotacao lotaTitular, ExMovimentacao mov)
             throws Exception {
-        return Ex.getInstance().getComp().pode(ExDeveAutenticarMovimentacaoComSenha.class, titular, lotaTitular, mov);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExDeveAutenticarMovimentacaoComSenha.class, titular, lotaTitular, mov);
     }
 
-    public static Boolean podeAutenticarComSenha(
-            DpPessoa titular, DpLotacao lotaTitular, ExMobil mob)
-            throws Exception {
-        return Ex
-                .getInstance()
-                .getComp()
-                .pode(ExPodeAutenticarComSenha.class, titular, lotaTitular,
-                        mob);
+    public static Boolean podeAutenticarComSenha(DpPessoa titular, DpLotacao lotaTitular, ExMobil mob) {
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAutenticarComSenha.class, titular, lotaTitular, mob);
     }
 
-    public static Boolean deveAutenticarComSenha(
-            DpPessoa titular, DpLotacao lotaTitular, ExMobil mob)
-            throws Exception {
-        return Ex
-                .getInstance()
-                .getComp()
-                .pode(ExDeveAutenticarComSenha.class, titular, lotaTitular,
-                        mob);
+    public static Boolean deveAutenticarComSenha(DpPessoa titular, DpLotacao lotaTitular, ExMobil mob) {
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExDeveAutenticarComSenha.class, titular, lotaTitular, mob);
     }
 
     public static Boolean podeAutenticarDocumento(DpPessoa titular,
                                                   DpLotacao lotaTitular, ExDocumento doc) throws Exception {
-        return Ex
-                .getInstance()
-                .getComp()
-                .pode(ExPodeAutenticarDocumento.class, titular, lotaTitular,
-                        doc);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeAutenticarDocumento.class, titular, lotaTitular, doc);
     }
 
     public static ExMovimentacao parteUltimaMovimentacao(ExDocumento doc,
@@ -1022,7 +1024,9 @@ public class FuncoesEL {
     }
 
     public static void email(String destinatarios, String assunto, String html, String txt) throws Exception {
-        Notificador.notificar(destinatarios, assunto, html, txt);
+        // TODO: CDI
+        Notificador notificador = CDI.current().select(Notificador.class).get();
+        notificador.notificar(destinatarios, assunto, html, txt);
     }
 
     public String dataAtual(ExDocumento doc) {
@@ -1057,8 +1061,8 @@ public class FuncoesEL {
 
     public static Boolean podeDisponibilizarNoAcompanhamentoDoProtocolo(DpPessoa titular,
                                                                         DpLotacao lotaTitular, ExDocumento doc) throws Exception {
-        return Ex.getInstance().getComp()
-                .pode(ExPodeDisponibilizarNoAcompanhamentoDoProtocolo.class, titular, lotaTitular, doc);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeDisponibilizarNoAcompanhamentoDoProtocolo.class, titular, lotaTitular, doc);
     }
 
     public static String calculaDiasAPartirDeHoje(Long qtdDias) {
@@ -1068,18 +1072,18 @@ public class FuncoesEL {
     }
 
     public static Boolean podeUtilizarSegundoFatorPin(DpPessoa pessoa, DpLotacao lotacao) throws Exception {
-        return Ex.getInstance().getComp()
-                .pode(ExPodeUtilizarSegundoFatorPIN.class, pessoa, lotacao);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExPodeUtilizarSegundoFatorPIN.class, pessoa, lotacao);
     }
 
     public static Boolean deveUtilizarSegundoFatorPin(DpPessoa pessoa, DpLotacao lotacao) throws Exception {
-        return Ex.getInstance().getComp()
-                .pode(ExDeveUtilizarSegundoFatorPIN.class, pessoa, lotacao);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExDeveUtilizarSegundoFatorPIN.class, pessoa, lotacao);
     }
 
     public static Boolean defaultUtilizarSegundoFatorPin(DpPessoa pessoa, DpLotacao lotacao) throws Exception {
-        return Ex.getInstance().getComp()
-                .pode(ExDefaultUtilizarSegundoFatorPIN.class, pessoa, lotacao);
+        ExCompetenciaBL comp = CDI.current().select(ExCompetenciaBL.class).get();
+        return comp.pode(ExDefaultUtilizarSegundoFatorPIN.class, pessoa, lotacao);
     }
 
     public static String slugify(String string, Boolean lowercase,

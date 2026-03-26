@@ -17,7 +17,6 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpUnidadeMedida;
 import br.gov.jfrj.siga.ex.ExTemporalidade;
 import br.gov.jfrj.siga.ex.ExVia;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
 
@@ -36,14 +35,14 @@ public class ExTemporalidadeController extends ExController {
 	@Inject
 	public ExTemporalidadeController(HttpServletRequest request, HttpServletResponse response, ServletContext context, Result result, SigaObjects so,
 			EntityManager em) {
-		super(request, response, context, result, ExDao.getInstance(), so, em);
+		super(request, response, context, result, dao, so, em);
 	}
 
 	@Get("app/expediente/temporalidade/listar")
 	public void listarTemporalidade() {
 		assertAcesso(ACESSO_FE_TT);
 
-		final List<ExTemporalidade> temporalidadeVigente = ExDao.getInstance().listarAtivos(ExTemporalidade.class, "descTemporalidade");
+		final List<ExTemporalidade> temporalidadeVigente = dao.listarAtivos(ExTemporalidade.class, "descTemporalidade");
 
 		result.include("temporalidadeVigente", temporalidadeVigente);
 	}
@@ -58,7 +57,7 @@ public class ExTemporalidadeController extends ExController {
 			throw new AplicacaoException("A temporalidade não está disponível. ID = " + idTemporalidade);
 		}
 
-		final List<CpUnidadeMedida> listaCpUnidade = ExDao.getInstance().listarUnidadesMedida();
+		final List<CpUnidadeMedida> listaCpUnidade = dao.listarUnidadesMedida();
 
 		result.include("exTemporal", exTemporal);
 		result.include("acao", acao);
@@ -84,8 +83,6 @@ public class ExTemporalidadeController extends ExController {
 			throw new AplicacaoException("Você deve especificar um valor para a unidade de medida informada!");
 		}
 
-		ModeloDao.iniciarTransacao();
-
 		ExTemporalidade exTemporal = buscarExTemporalidade(idTemporalidade);
 		if ("nova_temporalidade".equals(acao)) {
 			if (exTemporal != null) {
@@ -93,16 +90,14 @@ public class ExTemporalidadeController extends ExController {
 			} else {
 				exTemporal = new ExTemporalidade();
 				fillEntity(descTemporalidade, valorTemporalidade, idCpUnidade, exTemporal);
-				Ex.getInstance().getBL().incluirExTemporalidade(exTemporal, getIdentidadeCadastrante());
+				this.cpBl.incluirExTemporalidade(exTemporal, getIdentidadeCadastrante());
 			}
 		} else {
-			ExTemporalidade exTempNovo = Ex.getInstance().getBL().getCopia(exTemporal);
+			ExTemporalidade exTempNovo = this.cpBl.getCopia(exTemporal);
 			fillEntity(descTemporalidade, valorTemporalidade, idCpUnidade, exTempNovo);
 
-			Ex.getInstance().getBL().alterarExTemporalidade(exTempNovo, exTemporal, dao().consultarDataEHoraDoServidor(), getIdentidadeCadastrante());
+			this.cpBl.alterarExTemporalidade(exTempNovo, exTemporal, cpDao.consultarDataEHoraDoServidor(), getIdentidadeCadastrante());
 		}
-
-		ModeloDao.commitTransacao();
 
 		result.redirectTo("/app/expediente/temporalidade/listar");
 	}
@@ -113,7 +108,7 @@ public class ExTemporalidadeController extends ExController {
 
 		CpUnidadeMedida cpUnidade = null;
 		if (idCpUnidade > 0) {
-			cpUnidade = ExDao.getInstance().consultar(idCpUnidade, CpUnidadeMedida.class, false);
+			cpUnidade = dao.consultar(idCpUnidade, CpUnidadeMedida.class, false);
 
 		}
 		exTemporal.setCpUnidadeMedida(cpUnidade);
@@ -123,9 +118,8 @@ public class ExTemporalidadeController extends ExController {
 	@Get("app/expediente/temporalidade/excluir")
 	public void excluir(final Long idTemporalidade) {
 		assertAcesso(ACESSO_FE_TT);
-		ModeloDao.iniciarTransacao();
 		final ExTemporalidade exTemporal = buscarExTemporalidade(idTemporalidade);
-		Date dt = dao().consultarDataEHoraDoServidor();
+		Date dt = cpDao.consultarDataEHoraDoServidor();
 
 		if (exTemporal.getExViaArqCorrenteSet().size() > 0) {
 			StringBuffer sb = new StringBuffer();
@@ -163,15 +157,14 @@ public class ExTemporalidadeController extends ExController {
 					"Não é possível excluir a temporalidade documental, pois está associada às seguintes classificações documentais:<br/><br/>" + sb.toString());
 		}
 
-		dao().excluirComHistorico(exTemporal, dt, getIdentidadeCadastrante());
-		ModeloDao.commitTransacao();
+		cpDao.excluirComHistorico(exTemporal, dt, getIdentidadeCadastrante());
 
 		result.redirectTo("/app/expediente/temporalidade/listar");
 	}
 
 	private ExTemporalidade buscarExTemporalidade(final Long id) {
 		if (id != null) {			
-			return ExDao.getInstance().consultar(id, ExTemporalidade.class, false);
+			return dao.consultar(id, ExTemporalidade.class, false);
 		}
 		return null;
 	}

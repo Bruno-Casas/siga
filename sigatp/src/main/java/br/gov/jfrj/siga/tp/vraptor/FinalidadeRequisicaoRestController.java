@@ -24,18 +24,6 @@ public class FinalidadeRequisicaoRestController extends TpController {
 
     private static final String FUNCAO_NAO_IMPLEMENTADA = "Funcao nao implementada";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public FinalidadeRequisicaoRestController() {
-		super();
-	}
-	
-	@Inject
-    public FinalidadeRequisicaoRestController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/ver/{id}")
     public void ver(Long id) throws RestControllerException {
         try {

@@ -28,8 +28,6 @@ import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.*;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.NaoRecursivo;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -67,14 +65,12 @@ import java.util.Set;
         @NamedQuery(name = "consultarCpConfiguracoesPorTipoLotacao", query = "from CpConfiguracao cpcfg where (cpcfg.cpTipoLotacao.idTpLotacao = :idTpLotacao) and hisDtFim is null"),
         @NamedQuery(name = "consultarCacheDeConfiguracoesAtivas", query = " from "
                 + "CpConfiguracaoCache cpcfg where cpTipoConfiguracao in :tipos and hisDtFim is null")})
-public abstract class AbstractCpConfiguracao extends HistoricoAuditavelSuporte
+public abstract class AbstractCpConfiguracao extends HistoricoAuditavelSuporte<CpConfiguracao>
         implements Serializable, CpConvertableEntity {
 
     @Id
-    @SequenceGenerator(name = "CP_CONFIGURACAO_SEQ", sequenceName = "CORPORATIVO.CP_CONFIGURACAO_SEQ")
-    @GeneratedValue(generator = "CP_CONFIGURACAO_SEQ")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "ID_CONFIGURACAO", unique = true, nullable = false)
-    @Desconsiderar
     private Long idConfiguracao;
 
     @Column(name = "DESCR_CONFIGURACAO")
@@ -82,69 +78,55 @@ public abstract class AbstractCpConfiguracao extends HistoricoAuditavelSuporte
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ORGAO_USU")
-    @NaoRecursivo
     private CpOrgaoUsuario orgaoUsuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_LOTACAO")
-    @NaoRecursivo
     private DpLotacao lotacao;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_COMPLEXO")
-    @NaoRecursivo
     private CpComplexo complexo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_CARGO")
-    @NaoRecursivo
     private DpCargo cargo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_FUNCAO_CONFIANCA")
-    @NaoRecursivo
     private DpFuncaoConfianca funcaoConfianca;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_PESSOA")
-    @NaoRecursivo
     private DpPessoa dpPessoa;
 
     @Column(name = "ID_SIT_CONFIGURACAO")
-    @NaoRecursivo
     private CpSituacaoDeConfiguracaoEnum cpSituacaoConfiguracao;
 
     @Convert(converter = ITipoDeConfiguracaoConverter.class)
     @Column(name = "ID_TP_CONFIGURACAO")
-    @NaoRecursivo
     private ITipoDeConfiguracao cpTipoConfiguracao;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_SERVICO")
-    @NaoRecursivo
     private CpServico cpServico;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_IDENTIDADE")
-    @NaoRecursivo
     private CpIdentidade cpIdentidade;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_GRUPO")
-    @NaoRecursivo
     private CpGrupo cpGrupo;
 
     @Column(name = "NM_EMAIL", length = 50)
-    @NaoRecursivo
     private String nmEmail;
 
     @Column(name = "DESC_FORMULA", length = 1024)
-    @NaoRecursivo
     private String dscFormula;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_TP_LOTACAO")
-    @NaoRecursivo
     private CpTipoLotacao cpTipoLotacao;
 
     // @Temporal(TemporalType.TIMESTAMP)
@@ -162,38 +144,31 @@ public abstract class AbstractCpConfiguracao extends HistoricoAuditavelSuporte
     private CpConfiguracao configuracaoInicial;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "configuracaoInicial")
-    @Desconsiderar
     private Set<CpConfiguracao> configuracoesPosteriores = new HashSet<CpConfiguracao>(
             0);
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ORGAO_OBJETO")
-    @NaoRecursivo
     private CpOrgaoUsuario orgaoObjeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_LOTACAO_OBJETO")
-    @NaoRecursivo
     private DpLotacao lotacaoObjeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_COMPLEXO_OBJETO")
-    @NaoRecursivo
     private CpComplexo complexoObjeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_CARGO_OBJETO")
-    @NaoRecursivo
     private DpCargo cargoObjeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_FUNCAO_CONFIANCA_OBJETO")
-    @NaoRecursivo
     private DpFuncaoConfianca funcaoConfiancaObjeto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_PESSOA_OBJETO")
-    @NaoRecursivo
     private DpPessoa pessoaObjeto;
 
     public Set<CpConfiguracao> getConfiguracoesPosteriores() {

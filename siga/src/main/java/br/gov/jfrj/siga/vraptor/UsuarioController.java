@@ -6,22 +6,19 @@ import br.gov.jfrj.siga.base.*;
 import br.gov.jfrj.siga.base.util.CPFUtils;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.CpToken;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.util.MatriculaUtils;
 import br.gov.jfrj.siga.cp.util.SigaUtil;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.DpPessoaTrocaEmailDTO;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
 import br.gov.jfrj.siga.gi.integracao.IntegracaoLdapViaWebService;
 import br.gov.jfrj.siga.gi.service.GiService;
 import br.gov.jfrj.siga.integracao.ldap.IntegracaoLdap;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,20 +26,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Controller
-public class UsuarioController extends SigaController {
+public class UsuarioController extends VraptorController {
 
     private static final Logger LOG = Logger.getLogger(UsuarioAction.class);
+
+    @Inject
+    MatriculaUtils matriculaUtils;
 
     /**
      * @deprecated CDI eyes only
      */
     public UsuarioController() {
         super();
-    }
-
-    @Inject
-    public UsuarioController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-        super(request, result, CpDao.getInstance(), so, em);
     }
 
     @Get({"/app/usuario/trocar_senha", "/public/app/usuario/trocar_senha"})
@@ -63,16 +58,16 @@ public class UsuarioController extends SigaController {
             CpIdentidade i = null;
             nomeUsuario = nomeUsuario.replace(".", "").replace("-", "");
             if (!nomeUsuario.matches("[0-9]*")) {
-                i = CpDao.getInstance().consultaIdentidadeCadastrante(nomeUsuario, Boolean.TRUE);
+                i = cpDao.consultaIdentidadeCadastrante(nomeUsuario, Boolean.TRUE);
             }
-            lista1 = CpDao.getInstance()
+            lista1 = cpDao
                     .consultaIdentidadesPorCpf(i == null ? nomeUsuario : i.getDpPessoa().getCpfPessoa().toString());
 
-            Cp.getInstance().getBL().trocarSenhaDeIdentidadeGovSp(senhaAtual, senhaNova, senhaConfirma, nomeUsuario,
+            cpBl.trocarSenhaDeIdentidadeGovSp(senhaAtual, senhaNova, senhaConfirma, nomeUsuario,
                     getIdentidadeCadastrante(), lista1);
 
         } else {
-            CpIdentidade idNova = Cp.getInstance().getBL().trocarSenhaDeIdentidade(senhaAtual, senhaNova, senhaConfirma,
+            CpIdentidade idNova = cpBl.trocarSenhaDeIdentidade(senhaAtual, senhaNova, senhaConfirma,
                     nomeUsuario, getIdentidadeCadastrante());
             if ("on".equals(usuario.getTrocarSenhaRede())) {
                 try {
@@ -106,21 +101,21 @@ public class UsuarioController extends SigaController {
     @Get({"/app/usuario/trocar_email", "/public/app/usuario/trocar_email"})
     public void trocaEmail(UsuarioEmailAction usuario) {
         List<DpPessoaTrocaEmailDTO> lstDto = new ArrayList<DpPessoaTrocaEmailDTO>(
-                dao().listarTrocaEmailCPF(so.getCadastrante().getCpfPessoa()));
+                cpDao.listarTrocaEmailCPF(so.getCadastrante().getCpfPessoa()));
         if (lstDto.size() > 1)
             result.include("variosPerfis", true);
         else
             result.include("variosPerfis", false);
         result.include("usuarios", lstDto);
         result.include("matricula", so.getCadastrante().getSigla());
-        result.include("email", so.getCadastrante().getEmailPessoaAtual());
+        result.include("email", cpDao.obterPessoaAtual(so.getCadastrante()).getEmailPessoa());
         result.include("baseTeste", Prop.getBool("/siga.base.teste"));
     }
 
     @Transacional
     @Post({"/app/usuario/trocar_email_gravar", "/public/app/usuario/trocar_email_gravar"})
     public void gravarTrocaEmail(UsuarioEmailAction usuario) throws Exception {
-        String emailAtual = so.getCadastrante().getEmailPessoaAtual();
+        String emailAtual = cpDao.obterPessoaAtual(so.getCadastrante()).getEmailPessoa();
         String emailNovo = usuario.getEmailNovo();
         String emailConfirma = usuario.getEmailConfirma();
         String nomeUsuario = so.getCadastrante().getCpfFormatado().toUpperCase();
@@ -135,15 +130,15 @@ public class UsuarioController extends SigaController {
         if (!validarEmail(emailNovo) || !validarEmail(emailConfirma))
             throw new AplicacaoException("Favor, inserir um email válido");
 
-        if (dao().consultarQtdePorEmailIgualCpfDiferente(emailNovo, so.getCadastrante().getCpfPessoa(), so.getCadastrante().getIdPessoaIni()) > 0)
+        if (cpDao.consultarQtdePorEmailIgualCpfDiferente(emailNovo, so.getCadastrante().getCpfPessoa(), so.getCadastrante().getHisIdIni()) > 0)
             throw new AplicacaoException("Existem outros usuários utilizando esse endereço de email. Favor, inserir um email diferente");
 
         if (emailNovo.equals(emailConfirma)) {
             if (usuario.getTeste() != null && usuario.getTeste().equals("TRUE")) {
-                List<DpPessoa> lst = new ArrayList<DpPessoa>(dao().listarPorCpf(so.getCadastrante().getCpfPessoa()));
+                List<DpPessoa> lst = new ArrayList<DpPessoa>(cpDao.listarPorCpf(so.getCadastrante().getCpfPessoa()));
                 for (DpPessoa p : lst) {
                     try {
-                        Correio.enviar(p.getEmailPessoaAtual(), "Troca de Email",
+                        Correio.enviar(cpDao.obterPessoaAtual(p).getEmailPessoa(), "Troca de Email",
                                 "O Administrador do sistema removeu este endereço de email do seguinte usuário "
                                         + "\n" + "\n - Nome: " + p.getNomePessoa() + "\n - Matricula: "
                                         + p.getSigla() + "\n - Novo email: " + emailNovo
@@ -165,13 +160,9 @@ public class UsuarioController extends SigaController {
                                         + p.getSigla());
                     }
                     try {
-                        dao().iniciarTransacao();
                         p.setEmailPessoa(emailNovo);
-                        dao().gravar(p);
-                        dao().commitTransacao();
-
+                        cpDao.gravar(p);
                     } catch (final Exception e) {
-                        dao().rollbackTransacao();
                         throw new AplicacaoException("Ocorreu um erro durante a gravação", 0, e);
                     }
                 }
@@ -179,7 +170,7 @@ public class UsuarioController extends SigaController {
             } else {
                 DpPessoa pessoa = so.getCadastrante();
                 try {
-                    Correio.enviar(pessoa.getEmailPessoaAtual(), "Troca de Email",
+                    Correio.enviar(cpDao.obterPessoaAtual(pessoa).getEmailPessoa(), "Troca de Email",
                             "O Administrador do sistema removeu este endereço de email do seguinte usuário "
                                     + "\n" + "\n - Nome: " + pessoa.getNomePessoa() + "\n - Matricula: "
                                     + pessoa.getSigla() + "\n - Novo email: " + emailNovo
@@ -202,13 +193,10 @@ public class UsuarioController extends SigaController {
                 }
 
                 try {
-                    dao().iniciarTransacao();
                     pessoa.setEmailPessoa(emailNovo);
-                    dao().gravar(pessoa);
-                    dao().commitTransacao();
+                    cpDao.gravar(pessoa);
 
                 } catch (final Exception e) {
-                    dao().rollbackTransacao();
                     throw new AplicacaoException("Ocorreu um erro durante a gravação", 0, e);
                 }
             }
@@ -254,7 +242,7 @@ public class UsuarioController extends SigaController {
         switch (usuario.getMetodo()) {
             case 1:
 
-                idNova = Cp.getInstance().getBL().criarIdentidade(usuario.getMatricula(), usuario.getCpf(),
+                idNova = cpBl.criarIdentidade(usuario.getMatricula(), usuario.getCpf(),
                         getIdentidadeCadastrante(), usuario.getSenhaNova(), senhaGerada, isIntegradoAoAD);
                 if (isIntegradoAoAD) {
                     try {
@@ -266,7 +254,7 @@ public class UsuarioController extends SigaController {
                 }
                 break;
             case 2:
-                if (!Cp.getInstance().getBL().podeAlterarSenha(usuario.getAuxiliar1(), usuario.getCpf1(),
+                if (!cpBl.podeAlterarSenha(usuario.getAuxiliar1(), usuario.getCpf1(),
                         usuario.getSenha1(), usuario.getAuxiliar2(), usuario.getCpf2(), usuario.getSenha2(),
                         usuario.getMatricula(), usuario.getCpf(), usuario.getSenhaNova())) {
                     String mensagem = "Não foi possível alterar a senha!<br/>"
@@ -276,7 +264,7 @@ public class UsuarioController extends SigaController {
                     result.include("mensagem", mensagem);
                     result.redirectTo("/app/usuario/incluir_usuario");
                 } else {
-                    idNova = Cp.getInstance().getBL().criarIdentidade(usuario.getMatricula(), usuario.getCpf(),
+                    idNova = cpBl.criarIdentidade(usuario.getMatricula(), usuario.getCpf(),
                             getIdentidadeCadastrante(), usuario.getSenhaNova(), senhaGerada, isIntegradoAoAD);
                 }
                 break;
@@ -315,7 +303,7 @@ public class UsuarioController extends SigaController {
             throw new AplicacaoException("A matrícula informada é nula ou inválida.");
         }
 
-        String sesbPessoa = MatriculaUtils.getSiglaDoOrgaoDaMatricula(matricula);
+        String sesbPessoa = matriculaUtils.getSiglaDoOrgaoDaMatricula(matricula);
 
         if (sesbPessoa != null) {
             result = IntegracaoLdap.getInstancia().integrarComLdap(sesbPessoa);
@@ -348,8 +336,8 @@ public class UsuarioController extends SigaController {
             throw new AplicacaoException("A matrícula informada é nula ou inválida.");
         }
 
-        orgaoFlt.setSiglaOrgaoUsu(MatriculaUtils.getSiglaDoOrgaoDaMatricula(matricula));
-        CpOrgaoUsuario orgaoUsu = dao.consultarPorSigla(orgaoFlt);
+        orgaoFlt.setSiglaOrgaoUsu(matriculaUtils.getSiglaDoOrgaoDaMatricula(matricula));
+        CpOrgaoUsuario orgaoUsu = cpDao.consultarPorSigla(orgaoFlt);
 
         if (orgaoUsu == null) {
             throw new AplicacaoException("O órgão informado é nulo ou inválido.");
@@ -357,7 +345,7 @@ public class UsuarioController extends SigaController {
 
         List<DpPessoa> lstPessoa = null;
         try {
-            lstPessoa = dao.consultarPorMatriculaEOrgao(MatriculaUtils.getParteNumericaDaMatricula(matricula),
+            lstPessoa = cpDao.consultarPorMatriculaEOrgao(matriculaUtils.getParteNumericaDaMatricula(matricula),
                     orgaoUsu.getId(), false, false);
         } catch (Exception e) {
             throw new AplicacaoException("Formato de matrícula inválida.", 9, e);
@@ -369,7 +357,9 @@ public class UsuarioController extends SigaController {
 
         if (lstPessoa != null && lstPessoa.size() == 1) {
             DpPessoa p = lstPessoa.get(0);
-            if (p.getEmailPessoaAtual() != null && p.getEmailPessoaAtual().trim().length() > 0) {
+            String email = cpDao.obterPessoaAtual(p).getEmailPessoa();
+
+            if (StringUtils.isNotBlank(email)) {
                 return true;
             } else {
                 throw new AplicacaoException("Você ainda não possui um e-mail válido. Tente mais tarde.");
@@ -433,24 +423,24 @@ public class UsuarioController extends SigaController {
             dpPessoa.setCpf(cpf);
             dpPessoa.setNome("");
 
-            List<DpPessoa> usuarios = dao().consultarPorFiltro(dpPessoa);
+            List<DpPessoa> usuarios = cpDao.consultarPorFiltro(dpPessoa);
             boolean emailLocalizado = false;
             if (!usuarios.isEmpty()) {
                 for (DpPessoa usuario : usuarios) {
-                    if (emailOculto.equals(usuario.getEmailPessoaAtualParcialmenteOculto())) {
-                        boolean autenticaPeloBanco = Cp.getInstance().getBL().buscarModoAutenticacao(usuario.getOrgaoUsuario().getSiglaOrgaoUsu()).equals(GiService._MODO_AUTENTICACAO_BANCO);
+                    if (emailOculto.equals(cpDao.obterPessoaAtual(usuario).getEmailPessoaParcialmenteOculto())) {
+                        boolean autenticaPeloBanco = cpBl.buscarModoAutenticacao(usuario.getOrgaoUsuario().getSiglaOrgaoUsu()).equals(GiService._MODO_AUTENTICACAO_BANCO);
                         //Autenticação não for via banco
                         if (!autenticaPeloBanco)
                             throw new RuntimeException("O usuário deve modificar sua senha usando a interface do Windows "
                                     + "(acionando as teclas Ctrl, Alt e Del / Delete, opção 'Alterar uma senha')"
                                     + ", ou entrando em contato com a Central de Atendimento.");
 
-                        CpToken token = Cp.getInstance().getBL().gerarTokenResetSenha(cpf);
-                        Cp.getInstance().getBL().enviarEmailTokenResetSenha(usuario, "Código para redefinição de SENHA ", token.getToken());
+                        CpToken token = cpBl.gerarTokenResetSenha(cpf);
+                        cpBl.enviarEmailTokenResetSenha(usuario, "Código para redefinição de SENHA ", token.getToken());
                         emailLocalizado = true;
 
                         HashMap<String, Object> json = new HashMap<>();
-                        json.put("ldapEnable", Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(usuario, usuario.getLotacao(), "SIGA;GI;INT_LDAP"));
+                        json.put("ldapEnable", cpConf.podeUtilizarServicoPorConfiguracao(usuario, usuario.getLotacao(), "SIGA;GI;INT_LDAP"));
                         result.use(Results.json()).withoutRoot().from(json).serialize();
 
                         break;
@@ -495,19 +485,21 @@ public class UsuarioController extends SigaController {
 
             //Prosseguir com redefinição se JWT é válido e Token enviado para email é válido
             long cpf = Long.valueOf(request.getParameter("cpf"));
-            if (Cp.getInstance().getBL().isTokenValido(CpToken.TOKEN_SENHA, cpf, token)) {
+            if (cpBl.isTokenValido(CpToken.TOKEN_SENHA, cpf, token)) {
                 //Obter Todas as identidade para o CPF e redefinir a senha
                 List<CpIdentidade> listaIdentidadesCpf = new ArrayList<CpIdentidade>();
-                listaIdentidadesCpf = CpDao.getInstance().consultaIdentidadesPorCpf(strCpf);
-                Cp.getInstance().getBL().redefinirSenha(token, senhaNova, senhaConfirma, strCpf, listaIdentidadesCpf);
+                listaIdentidadesCpf = cpDao.consultaIdentidadesPorCpf(strCpf);
+                cpBl.redefinirSenha(token, senhaNova, senhaConfirma, strCpf, listaIdentidadesCpf);
 
-                Cp.getInstance().getBL().invalidarTokenUtilizado(CpToken.TOKEN_SENHA, cpf, token);
+                cpBl.invalidarTokenUtilizado(CpToken.TOKEN_SENHA, cpf, token);
 
                 //Redefinir senha de rede de todas as matrículas envolvidas
                 if (!listaIdentidadesCpf.isEmpty()) {
                     for (CpIdentidade usuario : listaIdentidadesCpf) {
-                        if ("true".equals(trocarSenhaRede) && Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(usuario.getPessoaAtual(), usuario.getPessoaAtual().getLotacao(), "SIGA;GI;INT_LDAP")) {
-                            String nomeUsuario = usuario.getPessoaAtual().getSiglaCompleta();
+                        DpPessoa pessoaAtual = cpDao.consultarPorIdInicial(usuario.getDpPessoa().getIdInicial());
+
+                        if ("true".equals(trocarSenhaRede) && cpConf.podeUtilizarServicoPorConfiguracao(pessoaAtual, pessoaAtual.getLotacao(), "SIGA;GI;INT_LDAP")) {
+                            String nomeUsuario = pessoaAtual.getSiglaCompleta();
                             try {
                                 IntegracaoLdapViaWebService.getInstancia().trocarSenha(nomeUsuario, senhaNova);
                             } catch (Exception e) {
@@ -523,8 +515,8 @@ public class UsuarioController extends SigaController {
                 //Obter email usado e enviar notificação
                 if (!listaIdentidadesCpf.isEmpty()) {
                     for (CpIdentidade usuario : listaIdentidadesCpf) {
-                        if (emailOculto.equals(usuario.getDpPessoa().getEmailPessoaAtualParcialmenteOculto())) {
-                            Cp.getInstance().getBL().enviarEmailDefinicaoSenha(usuario.getDpPessoa(), "Redefinição de SENHA", "Você redefiniu sua Senha.");
+                        if (emailOculto.equals(cpDao.obterPessoaAtual(usuario.getDpPessoa()).getEmailPessoaParcialmenteOculto())) {
+                            cpBl.enviarEmailDefinicaoSenha(usuario.getDpPessoa(), "Redefinição de SENHA", "Você redefiniu sua Senha.");
                             break;
                         }
                     }
@@ -534,7 +526,7 @@ public class UsuarioController extends SigaController {
                 throw new RegraNegocioException("Token para redefinição de Senha inválido ou expirado.");
             }
 
-            Cp.getInstance().getBL().consisteFormatoSenha(senhaNova);
+            cpBl.consisteFormatoSenha(senhaNova);
 
 
             result.use(Results.status()).noContent();

@@ -31,7 +31,7 @@ public class CpGrupoDeEmailSelecao extends Selecao<CpGrupo> {
 		if (getId() == null)
 			return null;
 
-		final CpGrupo o = CpDao.getInstance().consultar(getId(), CpGrupo.class,
+		final CpGrupo o = dao.consultar(getId(), CpGrupo.class,
 				false);
 
 		return o;
@@ -39,7 +39,7 @@ public class CpGrupoDeEmailSelecao extends Selecao<CpGrupo> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final CpGrupo o = CpDao.getInstance().consultar(getId(), CpGrupo.class,
+		final CpGrupo o = dao.consultar(getId(), CpGrupo.class,
 				false);
 		if (o == null)
 			return false;
@@ -56,7 +56,7 @@ public class CpGrupoDeEmailSelecao extends Selecao<CpGrupo> {
 		final CpGrupo oExemplo = new CpGrupoDeEmail();
 		oExemplo.setSigla(getSigla());
 
-		final CpGrupo o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final CpGrupo o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();
@@ -72,13 +72,13 @@ public class CpGrupoDeEmailSelecao extends Selecao<CpGrupo> {
 		/*
 		 * CpOrgaoUsuario ouFiltro = new CpOrgaoUsuario();
 		 * ouFiltro.setSigla(getSigla().substring(0, 2)); CpOrgaoUsuario ou =
-		 * CpDao.getInstance().consultarPorSigla(ouFiltro);
+		 * dao.consultarPorSigla(ouFiltro);
 		 */
 		final CpGrupo oExemplo = new CpGrupoDeEmail();
 		// oExemplo.setOrgaoUsuario(ou);
 		oExemplo.setSigla(getSigla().substring(2));
 
-		final CpGrupo o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final CpGrupo o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			return false;

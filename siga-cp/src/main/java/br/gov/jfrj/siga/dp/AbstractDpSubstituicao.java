@@ -45,19 +45,19 @@ import br.gov.jfrj.siga.model.Objeto;
 		@NamedQuery(name = "consultarSubstituicoesPermitidas", query = "from DpSubstituicao dps "
 				+ " where (dps.dtIniSubst < :dbDatetime or dps.dtIniSubst = null) "
 				+ " and (dps.dtFimSubst > :dbDatetime or dps.dtFimSubst = null) "
-				+ " and ((dps.substituto = null and dps.lotaSubstituto.idLotacao in (select lot.idLotacao from DpLotacao as lot where lot.idLotacaoIni = :idLotaSubstitutoIni)) or "
-				+ " dps.substituto.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.idPessoaIni = :idSubstitutoIni)) "
+				+ " and ((dps.substituto = null and dps.lotaSubstituto.idLotacao in (select lot.idLotacao from DpLotacao as lot where lot.hisIdIni = :idLotaSubstitutoIni)) or "
+				+ " dps.substituto.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.hisIdIni = :idSubstitutoIni)) "
 				+ " and dps.dtFimRegistro = null"),
 		@NamedQuery(name = "consultarOrdemData", query = "from DpSubstituicao as dps "
-				+ " where ((dps.titular = null and dps.lotaTitular.idLotacao in (select lot.idLotacao from DpLotacao as lot where lot.idLotacaoIni = :idLotaTitularIni)) or "
-				+ " dps.titular.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.idPessoaIni = :idTitularIni)) "
+				+ " where ((dps.titular = null and dps.lotaTitular.idLotacao in (select lot.idLotacao from DpLotacao as lot where lot.hisIdIni = :idLotaTitularIni)) or "
+				+ " dps.titular.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.hisIdIni = :idTitularIni)) "
 				+ " and dps.dtFimRegistro = null "
 				+ " order by dps.dtIniSubst, dps.dtFimSubst "),
 		@NamedQuery(name = "qtdeSubstituicoesAtivasPorTitular", query = "select count(1) from DpSubstituicao as dps "
 				+ " where (dps.dtIniSubst < :dbDatetime or dps.dtIniSubst = null) " 
 				+ " and (dps.dtFimSubst > :dbDatetime or dps.dtFimSubst = null)"
-				+ " and ((dps.titular = null and dps.lotaTitular.idLotacao in (select lot.idLotacao from DpLotacao as lot where lot.idLotacaoIni = :idLotaTitularIni)) or "
-				+ " dps.titular.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.idPessoaIni = :idTitularIni)) "
+				+ " and ((dps.titular = null and dps.lotaTitular.idLotacao in (select lot.idLotacao from DpLotacao as lot where lot.hisIdIni = :idLotaTitularIni)) or "
+				+ " dps.titular.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.hisIdIni = :idTitularIni)) "
 				+ " and dps.dtFimRegistro = null ")
 	})
 public abstract class AbstractDpSubstituicao extends Objeto implements

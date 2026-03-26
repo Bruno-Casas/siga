@@ -23,7 +23,6 @@
 package br.gov.jfrj.siga.dp;
 
 import java.io.Serializable;
-import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.FetchType;
@@ -35,13 +34,10 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavel;
-import br.gov.jfrj.siga.model.Objeto;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 
 /**
  * Classe que representa uma linha na tabela DP_FUNCAO_CONFIANCA. Você pode
@@ -54,37 +50,31 @@ import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 		@NamedQuery(name = "consultarPorFiltroDpFuncaoConfianca", query = "from DpFuncaoConfianca fun "
 				+ "  where ( :nome = null or upper(fun.nmFuncaoConfiancaAI) like upper('%' || :nome || '%'))"
 				+ "  	and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or fun.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
-				+ "   	and fun.dataFimFuncao = null"
+				+ "   	and fun.hisDtFim = null"
 				+ "   	order by upper(fun.nomeFuncao)"),
 		@NamedQuery(name = "consultarPorFiltroDpFuncaoConfiancaInclusiveInativas", query = "from DpFuncaoConfianca funcao "
 				+ "  	where  (:idOrgaoUsu = null or :idOrgaoUsu = 0L or funcao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
 				+ "  		and ( :nome = null or upper(funcao.nmFuncaoConfiancaAI) like upper('%' || :nome || '%'))"
-				+ "			and exists (select 1 from DpFuncaoConfianca fAux where fAux.idFuncaoIni = funcao.idFuncaoIni"
-				+ "				group by fAux.idFuncaoIni having max(fAux.dataInicioFuncao) = funcao.dataInicioFuncao)"
+				+ "			and exists (select 1 from DpFuncaoConfianca fAux where fAux.hisIdIni = funcao.hisIdIni"
+				+ "				group by fAux.hisIdIni having max(fAux.hisDtIni) = funcao.hisDtIni)"
 				+ "   	order by upper(funcao.nomeFuncao)"),
 		@NamedQuery(name = "consultarQuantidadeDpFuncaoConfianca", query = "select count(fun) from DpFuncaoConfianca fun "
 				+ "  where ( :nome = null or upper(fun.nmFuncaoConfiancaAI) like upper('%' || :nome || '%'))"
 				+ "  	and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or fun.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
-				+ "   	and fun.dataFimFuncao = null"),
-		@NamedQuery(name = "consultarQuantidadeDpFuncaoConfiancaInclusiveInativas", query = "select count(distinct funcao.idFuncaoIni) from DpFuncaoConfianca funcao "
+				+ "   	and fun.hisDtFim = null"),
+		@NamedQuery(name = "consultarQuantidadeDpFuncaoConfiancaInclusiveInativas", query = "select count(distinct funcao.hisIdIni) from DpFuncaoConfianca funcao "
 				+ "  	where  (:idOrgaoUsu = null or :idOrgaoUsu = 0L or funcao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
 				+ "  		and ( :nome = null or upper(funcao.nmFuncaoConfiancaAI) like upper('%' || :nome || '%'))"),
 		@NamedQuery(name = "consultarPorNomeOrgaoDpFuncaoConfianca", query = "select fun from DpFuncaoConfianca fun where upper(REMOVE_ACENTO(fun.nomeFuncao)) = upper(REMOVE_ACENTO(:nome)) and fun.orgaoUsuario.idOrgaoUsu = :idOrgaoUsuario")})
 
-public abstract class AbstractDpFuncaoConfianca extends Objeto implements
-		Serializable, HistoricoAuditavel  {
+public abstract class AbstractDpFuncaoConfianca extends HistoricoSuporte<DpFuncaoConfianca> implements
+		Serializable, HistoricoAuditavel<DpFuncaoConfianca>  {
 
 	@Id
 	@SequenceGenerator(name = "DP_FUNCAO_CONFIANCA_SEQ", sequenceName = "CORPORATIVO.DP_FUNCAO_CONFIANCA_SEQ")
 	@GeneratedValue(generator = "DP_FUNCAO_CONFIANCA_SEQ")
 	@Column(name = "ID_FUNCAO_CONFIANCA", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idFuncao;
-
-	/** Campos que geram versionamento de registro **/
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "DT_FIM_FUNCAO_CONFIANCA", length = 19)
-	private Date dataFimFuncao;
 	
 	@Column(name = "CATEGORIA_FUNCAO_CONFIANCA", length = 15)
 	private String categoriaFuncao;
@@ -106,31 +96,17 @@ public abstract class AbstractDpFuncaoConfianca extends Objeto implements
 	
 	@Column(name = "SIGLA_FUNCAO_CONFIANCA", length = 30)
 	private String siglaFuncaoConfianca;
-	
-	/******** ***********/
-		
-	@Desconsiderar
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "DT_INI_FUNCAO_CONFIANCA", length = 19)
-	private Date dataInicioFuncao;
-
-	@Column(name = "ID_FUN_CONF_INI")
-	@Desconsiderar
-	private Long idFuncaoIni;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_ORGAO_USU", nullable = false)
-	@Desconsiderar
 	private CpOrgaoUsuario orgaoUsuario;
 
 	@ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="HIS_IDC_INI")
-	@Desconsiderar
 	private CpIdentidade hisIdcIni;
 
 	@ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="HIS_IDC_FIM")
-	@Desconsiderar
 	private CpIdentidade hisIdcFim;
 
 	public CpOrgaoUsuario getOrgaoUsuario() {
@@ -241,30 +217,6 @@ public abstract class AbstractDpFuncaoConfianca extends Objeto implements
 	 */
 	public void setNomeFuncao(final String nomeFuncao) {
 		this.nomeFuncao = nomeFuncao;
-	}
-
-	public Date getDataFimFuncao() {
-		return dataFimFuncao;
-	}
-
-	public void setDataFimFuncao(Date dataFimFuncao) {
-		this.dataFimFuncao = dataFimFuncao;
-	}
-
-	public Date getDataInicioFuncao() {
-		return dataInicioFuncao;
-	}
-
-	public void setDataInicioFuncao(Date dataInicioFuncao) {
-		this.dataInicioFuncao = dataInicioFuncao;
-	}
-
-	public Long getIdFuncaoIni() {
-		return idFuncaoIni;
-	}
-
-	public void setIdFuncaoIni(Long idFuncaoIni) {
-		this.idFuncaoIni = idFuncaoIni;
 	}
 
 	public String getIdeFuncao() {

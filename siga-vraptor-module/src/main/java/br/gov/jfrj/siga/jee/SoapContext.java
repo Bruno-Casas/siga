@@ -55,8 +55,6 @@ public abstract class SoapContext implements Closeable {
 
         CurrentRequest.set(new RequestInfo(ctx, request, response));
 
-        ModeloDao.freeInstance();
-        initDao();
         if (this.transacional)
             em.getTransaction().begin();
     }

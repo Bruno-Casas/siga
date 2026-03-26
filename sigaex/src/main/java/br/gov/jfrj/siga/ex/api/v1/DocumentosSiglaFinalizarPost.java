@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaFinalizarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeFinalizar;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -18,7 +17,7 @@ public class DocumentosSiglaFinalizarPost implements IDocumentosSiglaFinalizarPo
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        Ex.getInstance().getBL().finalizar(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc());
+        this.bl.finalizar(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc());
 
         resp.sigla = mob.doc().getCodigo();
         resp.status = "OK";

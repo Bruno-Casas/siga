@@ -38,7 +38,6 @@ import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExTipoFormaDoc;
 import br.gov.jfrj.siga.ex.relatorio.dinamico.relatorios.*;
 import br.gov.jfrj.siga.ex.util.MascaraUtil;
@@ -91,7 +90,7 @@ public class ExRelatorioController extends ExController {
     @Inject
     public ExRelatorioController(HttpServletRequest request, HttpServletResponse response, ServletContext context, Result result, SigaObjects so,
                                  EntityManager em) {
-        super(request, response, context, result, CpDao.getInstance(), so, em);
+        super(request, response, context, result, cpDao, so, em);
     }
 
     @Get
@@ -305,7 +304,7 @@ public class ExRelatorioController extends ExController {
         addParametrosPersonalizadosOrgao(parameters);
         if (lotacaoDestinatarioSel != null
                 && lotacaoDestinatarioSel.getId() != null) {
-            final DpLotacao lota = dao().consultar(
+            final DpLotacao lota = cpDao.consultar(
                     lotacaoDestinatarioSel.getId(), DpLotacao.class, false);
 
             if (lota == null) {
@@ -477,7 +476,7 @@ public class ExRelatorioController extends ExController {
 
     @SuppressWarnings("unchecked")
     private List<ExTipoFormaDoc> getListaExTipoFormaDoc() {
-        final List<ExTipoFormaDoc> listaQry = (List<ExTipoFormaDoc>) dao.listarTodos(ExTipoFormaDoc.class, null);
+        final List<ExTipoFormaDoc> listaQry = (List<ExTipoFormaDoc>) cpDao.listarTodos(ExTipoFormaDoc.class, null);
         final List<ExTipoFormaDoc> resultado = new LinkedList<ExTipoFormaDoc>();
         final ExTipoFormaDoc todos = new ExTipoFormaDoc();
         todos.setDescTipoFormaDoc("(Todos)");
@@ -879,7 +878,7 @@ public class ExRelatorioController extends ExController {
         final Map<String, String> parametros = new HashMap<String, String>();
 
         if (lotacaoSel.getId() != null) {
-            DpLotacao lota = dao().consultar(lotacaoSel.getId(),
+            DpLotacao lota = cpDao.consultar(lotacaoSel.getId(),
                     DpLotacao.class, false);
             orgaoSelId = lota.getIdOrgaoUsuario();
             parametros.put("lotacaoRel", lota.getDescricao());
@@ -887,7 +886,7 @@ public class ExRelatorioController extends ExController {
             parametros.put("lotacaoRel", "Todas");
         }
         if (usuarioSel.getId() != null) {
-            DpPessoa usu = dao().consultar(usuarioSel.getId(), DpPessoa.class,
+            DpPessoa usu = cpDao.consultar(usuarioSel.getId(), DpPessoa.class,
                     false);
             orgaoSelId = usu.getOrgaoUsuario().getIdOrgaoUsu();
         }
@@ -945,7 +944,7 @@ public class ExRelatorioController extends ExController {
         final Map<String, String> parametros = new HashMap<String, String>();
 
         if (lotacaoSel.getId() != null) {
-            DpLotacao lota = dao().consultar(lotacaoSel.getId(),
+            DpLotacao lota = cpDao.consultar(lotacaoSel.getId(),
                     DpLotacao.class, false);
             orgaoSelId = lota.getIdOrgaoUsuario();
             parametros.put("lotacaoRel", lota.getDescricao());
@@ -953,7 +952,7 @@ public class ExRelatorioController extends ExController {
             parametros.put("lotacaoRel", "Todas");
         }
         if (usuarioSel.getId() != null) {
-            DpPessoa usu = dao().consultar(usuarioSel.getId(), DpPessoa.class,
+            DpPessoa usu = cpDao.consultar(usuarioSel.getId(), DpPessoa.class,
                     false);
             orgaoSelId = usu.getOrgaoUsuario().getIdOrgaoUsu();
         }
@@ -1059,7 +1058,7 @@ public class ExRelatorioController extends ExController {
                 result.include("listLinhas", rel.listLinhas);
                 result.include("totalDocumentos",
                         rel.totalDocumentos.toString());
-                result.include("orgaoPesqName", CpDao.getInstance()
+                result.include("orgaoPesqName", cpDao
                         .consultarPorId(ou).getNmOrgaoUsu());
             }
         } catch (AplicacaoException e) {
@@ -1107,7 +1106,7 @@ public class ExRelatorioController extends ExController {
         parametros.put("link_siga", "");
         parametros.put("orgaoUsuario", getLotaTitular().getOrgaoUsuario().getNmOrgaoUsu());
         if (lotacaoSel.getId() != null) {
-            DpLotacao lota = dao().consultar(lotacaoSel.getId(), DpLotacao.class, false);
+            DpLotacao lota = cpDao.consultar(lotacaoSel.getId(), DpLotacao.class, false);
             orgaoSelId = lota.getIdOrgaoUsuario();
             parametros.put("lotacaoRel", lota.getDescricao());
         } else {
@@ -1170,7 +1169,7 @@ public class ExRelatorioController extends ExController {
             consistePeriodo(dataInicial, dataFinal);
             DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
 
-            List listOrgaos = dao().consultarOrgaosMarcadosComo(orgaoUsu,
+            List listOrgaos = cpDao.consultarOrgaosMarcadosComo(orgaoUsu,
                     lotacaoSel.getId(), usuarioSel.getId(),
                     formatter.parse((String) dataInicial),
                     formatter.parse((String) dataFinal),
@@ -1277,7 +1276,7 @@ public class ExRelatorioController extends ExController {
         parametros.put("orgaoUsuario", orgaoUsu.getNmOrgaoUsu());
 
         if (lotacaoSel.getId() != null) {
-            DpLotacao lota = dao().consultar(lotacaoSel.getId(), DpLotacao.class, false);
+            DpLotacao lota = cpDao.consultar(lotacaoSel.getId(), DpLotacao.class, false);
             orgaoSelId = lota.getIdOrgaoUsuario();
             parametros.put("lotacaoRel", lota.getDescricao());
         } else {
@@ -1980,7 +1979,7 @@ public class ExRelatorioController extends ExController {
         final Map<String, String> parametros = new HashMap<String, String>();
 
         if (lotacaoSel.getId() != null) {
-            DpLotacao lota = dao().consultar(lotacaoSel.getId(),
+            DpLotacao lota = cpDao.consultar(lotacaoSel.getId(),
                     DpLotacao.class, false);
             orgaoSelId = lota.getIdOrgaoUsuario();
             parametros.put("lotacaoRel", lota.getDescricao());
@@ -1988,7 +1987,7 @@ public class ExRelatorioController extends ExController {
             parametros.put("lotacaoRel", "Todas");
         }
         if (usuarioSel.getId() != null) {
-            DpPessoa usu = dao().consultar(usuarioSel.getId(), DpPessoa.class,
+            DpPessoa usu = cpDao.consultar(usuarioSel.getId(), DpPessoa.class,
                     false);
             orgaoSelId = usu.getOrgaoUsuario().getIdOrgaoUsu();
         }
@@ -2092,12 +2091,12 @@ public class ExRelatorioController extends ExController {
                                final DpPessoaSelecao usuarioSel, Long orgaoUsu) {
         Long orgaoSelId = 0L;
         if (lotacaoSel.getId() != null) {
-            DpLotacao lota = dao().consultar(lotacaoSel.getId(),
+            DpLotacao lota = cpDao.consultar(lotacaoSel.getId(),
                     DpLotacao.class, false);
             orgaoSelId = lota.getIdOrgaoUsuario();
         }
         if (usuarioSel.getId() != null) {
-            DpPessoa usu = dao().consultar(usuarioSel.getId(), DpPessoa.class,
+            DpPessoa usu = cpDao.consultar(usuarioSel.getId(), DpPessoa.class,
                     false);
             orgaoSelId = usu.getOrgaoUsuario().getIdOrgaoUsu();
         }

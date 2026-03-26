@@ -18,7 +18,6 @@ import br.com.caelum.vraptor.observer.upload.DefaultUploadedFile;
 import br.com.caelum.vraptor.observer.upload.UploadedFile;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.sr.model.SrAcao;
 import br.gov.jfrj.siga.sr.model.SrConfiguracao;
 import br.gov.jfrj.siga.sr.model.SrConfiguracaoCache;
@@ -45,19 +44,6 @@ public class SolicitacaoEmailController extends SrController {
 			this.codigo = codigo;
 			this.mensagem = mensagem;
 		}
-	}
-	
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public SolicitacaoEmailController() {
-		super();
-	}
-	
-	@Inject
-	public SolicitacaoEmailController(HttpServletRequest request, Result result,  SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
 	}
 	
 	private UploadedFile getArquivoMsg(final byte[] mensagem, final String assunto) {
@@ -174,7 +160,7 @@ public class SolicitacaoEmailController extends SrController {
 		try {
 			Map<String, Object> parametros = new HashMap<String,Object>();
 			parametros.put("emailPessoa", emailPessoa);
-			pessoa = ((DpPessoa) DpPessoa.AR.find("emailPessoa = :emailPessoa and dataFimPessoa is null", parametros).first());
+			pessoa = ((DpPessoa) DpPessoa.AR.find("emailPessoa = :emailPessoa and hisDtFim is null", parametros).first());
 		}
 		catch(Exception e) {
 			return null;

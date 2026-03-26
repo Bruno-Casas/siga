@@ -21,7 +21,6 @@ import br.com.caelum.vraptor.observer.download.Download;
 import br.com.caelum.vraptor.observer.download.InputStreamDownload;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExModelo;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -52,12 +51,12 @@ public class ExFormulariosReportController extends ExController {
 	
 	@Get("app/expediente/rel/formularios")
 	public Download execute() throws Exception {
-		List<ExModelo> l = dao().listarExModelos();
+		List<ExModelo> l = cpDao.listarExModelos();
 		
 		SortedSet<ListItem> ll = new TreeSet<ListItem>();
 		for (ExModelo o : l) {
 			try {
-				if (Ex.getInstance().getConf().podePorConfiguracao(
+				if (this.cpConf.podePorConfiguracao(
 						getTitular(), getLotaTitular(), o,
 						ExTipoDeConfiguracao.CRIAR))
 					ll.add(new ListItem(o));

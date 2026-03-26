@@ -3,7 +3,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.RegraNegocioException;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.INumeracaoGenericaPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -62,7 +61,7 @@ public class NumeracaoGenericaPost implements INumeracaoGenericaPost {
     }
 
     protected ExDao dao() {
-        return ExDao.getInstance();
+        return dao;
     }
 
     @Override

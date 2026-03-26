@@ -26,18 +26,6 @@ public class TipoDePassageiroRestController extends TpController {
 
     private static final String FUNCAO_NAO_IMPLEMENTADA = "Funcao nao implementada";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public TipoDePassageiroRestController() {
-		super();
-	}
-	
-	@Inject
-    public TipoDePassageiroRestController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/ver")
     public void ver() throws RestControllerException {
         try {

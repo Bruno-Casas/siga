@@ -28,10 +28,7 @@ import br.gov.jfrj.siga.cp.CpConvertableEntity;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Formula;
@@ -46,7 +43,7 @@ import java.util.Objects;
 @Cacheable
 @Cache(region = CpDao.CACHE_CORPORATIVO, usage = CacheConcurrencyStrategy.READ_ONLY)
 public class CpOrgaoUsuario extends AbstractCpOrgaoUsuario implements
-        Serializable, Selecionavel, Assemelhavel, CpConvertableEntity {
+        Serializable, Selecionavel, CpConvertableEntity {
     public static ActiveRecord<CpOrgaoUsuario> AR = new ActiveRecord<>(
             CpOrgaoUsuario.class);
 
@@ -54,19 +51,15 @@ public class CpOrgaoUsuario extends AbstractCpOrgaoUsuario implements
     private String nmOrgaoAI;
 
     @Column(name = "HIS_DT_INI")
-    @Desconsiderar
     private Date hisDtIni;
 
     @Column(name = "HIS_DT_FIM")
-    @Desconsiderar
     private Date hisDtFim;
 
-    @Desconsiderar
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "HIS_IDC_INI")
     private CpIdentidade hisIdcIni;
 
-    @Desconsiderar
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "HIS_IDC_FIM")
     private CpIdentidade hisIdcFim;
@@ -157,10 +150,6 @@ public class CpOrgaoUsuario extends AbstractCpOrgaoUsuario implements
             return false;
         return this.getIdOrgaoUsu().longValue() == ((CpOrgaoUsuario) other)
                 .getIdOrgaoUsu().longValue();
-    }
-
-    public boolean semelhante(Assemelhavel obj, int nivel) {
-        return SincronizavelSuporte.semelhante(this, obj, nivel);
     }
 
     @Override

@@ -169,7 +169,7 @@ public class RelEstatisticaProcedimento extends RelatorioTemplate {
 		Map<Long, Long> mapaAmostraPI = new HashMap<Long, Long>();
 
 		WfDefinicaoDeProcedimento pd = WfDefinicaoDeProcedimento.AR.findById(pdId);
-		List<WfProcedimento> listaPD = WfDao.getInstance().consultarProcedimentosParaEstatisticas(pd, dataInicialDe,
+		List<WfProcedimento> listaPD = dao.consultarProcedimentosParaEstatisticas(pd, dataInicialDe,
 				dataInicialAte, dataFinalDe, dataFinalAte);
 
 		for (WfProcedimento pi : listaPD) {

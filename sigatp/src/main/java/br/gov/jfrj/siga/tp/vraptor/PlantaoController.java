@@ -40,18 +40,6 @@ public class PlantaoController extends TpController {
     private static final String CONDUTOR_ID = "condutor.id";
     private static final String PLANTAO = "plantao";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public PlantaoController() {
-		super();
-	}
-	
-	@Inject
-    public PlantaoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/listarPorCondutor/{idCondutor}")
     public void listarPorCondutor(Long idCondutor) throws Exception {
         Condutor condutor = buscaCondutor(idCondutor);
@@ -152,7 +140,7 @@ public class PlantaoController extends TpController {
                 result.include(PLANTAO, plantao);
                 redirecionaPaginaCasoOcorraErros(idCondutor, idPlantao);
             } else {
-                plantao.save();
+                dao.gravar(plantao);
                 result.redirectTo(PlantaoController.class).listarPorCondutor(idCondutor);
             }
         }
@@ -188,7 +176,7 @@ public class PlantaoController extends TpController {
                 tx.begin();
 
             try {
-                plantao.delete();
+                dao.excluir(plantao);
                 tx.commit();
 
                 result.redirectTo(PlantaoController.class).listarPorCondutor(idCondutor);

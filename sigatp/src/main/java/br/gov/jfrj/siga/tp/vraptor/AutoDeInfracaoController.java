@@ -31,19 +31,6 @@ import javax.transaction.Transactional;
 @Path("/app/autoDeInfracao")
 public class AutoDeInfracaoController extends TpController{
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AutoDeInfracaoController() {
-		super();
-	}
-	
-	@Inject	
-	public AutoDeInfracaoController(HttpServletRequest request, Result result,
-			 Locale localization,  Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(),  validator, so, em);
-	}
-
 	@Path("/listarPorVeiculo/{idVeiculo}")
 	public void listarPorVeiculo(Long idVeiculo) throws Exception {
 		Veiculo veiculo = Veiculo.AR.findById(idVeiculo);
@@ -125,7 +112,7 @@ public class AutoDeInfracaoController extends TpController{
 				validator.onErrorUse(Results.page()).of(AutoDeInfracaoController.class).editar(null, null);
 
 		} else {
-			autoDeInfracao.save();
+			dao.gravar(autoDeInfracao);
 			result.redirectTo(this).listar();
 		}
 	}
@@ -137,7 +124,7 @@ public class AutoDeInfracaoController extends TpController{
 	@Path("/excluir/{id}")
 	public void excluir(Long id) throws Exception {
 		AutoDeInfracao autoDeInfracao = AutoDeInfracao.AR.findById(id);
-		autoDeInfracao.delete();
+		dao.excluir(autoDeInfracao);
 
 		result.redirectTo(this).listar();
 	}

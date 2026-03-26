@@ -3,7 +3,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaDuplicarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeDuplicar;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -21,7 +20,7 @@ public class DocumentosSiglaDuplicarPost implements IDocumentosSiglaDuplicarPost
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        ExDocumento doc = Ex.getInstance().getBL().duplicar(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc());
+        ExDocumento doc = this.bl.duplicar(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc());
 
         resp.sigla = doc.getCodigo();
         resp.status = "OK";

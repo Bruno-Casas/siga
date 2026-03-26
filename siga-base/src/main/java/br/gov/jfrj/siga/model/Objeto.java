@@ -95,235 +95,232 @@ public class Objeto extends ObjetoBase{
 	public Objeto unproxyIfInstance(Class clazz) {
 		return isInstance(clazz) ? this : null;
 	}
-	
-	protected static EntityManager em() {
-		return ContextoPersistencia.em();
-	}
 
-	public void save() {
-		if (!em().contains(this)) {
-			em().persist(this);
-		}
 
-		/*
-	  	avoidCascadeSaveLoops.set(new HashSet<Objeto>());
-		try {
-			saveAndCascade(true);
-		} catch (UnexpectedException e) {
-			throw new RuntimeException(e);
-		} finally {
-			avoidCascadeSaveLoops.get().clear();
-		} 
-		try {
-			em().flush();
-		} catch (PersistenceException e) {
-			if (e.getCause() instanceof GenericJDBCException) {
-				throw new PersistenceException(
-						((GenericJDBCException) e.getCause()).getSQL(), e);
-			} else {
-				throw e;
-			}
-		}
-		avoidCascadeSaveLoops.set(new HashSet<Objeto>());
-		try {
-			saveAndCascade(false);
-		} catch (UnexpectedException e) {
-			throw new RuntimeException(e);
-		} finally {
-			avoidCascadeSaveLoops.get().clear();
-		}
-		*/
-	}
-	
-	public void refresh() {
-		em().refresh(this);
-	}
-
-	public void delete() {
-		try {
-			avoidCascadeSaveLoops.set(new HashSet<Objeto>());
-			try {
-				saveAndCascade(true);
-			} finally {
-				avoidCascadeSaveLoops.get().clear();
-			}
-			em().remove(this);
-			try {
-				em().flush();
-			} catch (PersistenceException e) {
-				if (e.getCause() instanceof GenericJDBCException) {
-					throw new PersistenceException(
-							((GenericJDBCException) e.getCause()).getSQL(), e);
-				} else {
-					throw e;
-				}
-			}
-			avoidCascadeSaveLoops.set(new HashSet<Objeto>());
-			try {
-				saveAndCascade(false);
-			} finally {
-				avoidCascadeSaveLoops.get().clear();
-			}
-		} catch (PersistenceException e) {
-			throw e;
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public Object _key() {
-		if (em() == null){
-			return null;
-		}
-		try {
-		Session session = (Session) (em().getDelegate());
-		ClassMetadata meta = session.getSessionFactory().getClassMetadata(
-				this.getClass());
-		return meta.getIdentifier(this, (SessionImplementor) session);
-		} catch (Exception ex) {
-			return null;
-		}
-	}
+//	public void save() {
+//		if (!em().contains(this)) {
+//			em().persist(this);
+//		}
+//
+//		/*
+//	  	avoidCascadeSaveLoops.set(new HashSet<Objeto>());
+//		try {
+//			saveAndCascade(true);
+//		} catch (UnexpectedException e) {
+//			throw new RuntimeException(e);
+//		} finally {
+//			avoidCascadeSaveLoops.get().clear();
+//		}
+//		try {
+//			em().flush();
+//		} catch (PersistenceException e) {
+//			if (e.getCause() instanceof GenericJDBCException) {
+//				throw new PersistenceException(
+//						((GenericJDBCException) e.getCause()).getSQL(), e);
+//			} else {
+//				throw e;
+//			}
+//		}
+//		avoidCascadeSaveLoops.set(new HashSet<Objeto>());
+//		try {
+//			saveAndCascade(false);
+//		} catch (UnexpectedException e) {
+//			throw new RuntimeException(e);
+//		} finally {
+//			avoidCascadeSaveLoops.get().clear();
+//		}
+//		*/
+//	}
+//
+//	public void refresh() {
+//		em().refresh(this);
+//	}
+//
+//	public void delete() {
+//		try {
+//			avoidCascadeSaveLoops.set(new HashSet<Objeto>());
+//			try {
+//				saveAndCascade(true);
+//			} finally {
+//				avoidCascadeSaveLoops.get().clear();
+//			}
+//			em().remove(this);
+//			try {
+//				em().flush();
+//			} catch (PersistenceException e) {
+//				if (e.getCause() instanceof GenericJDBCException) {
+//					throw new PersistenceException(
+//							((GenericJDBCException) e.getCause()).getSQL(), e);
+//				} else {
+//					throw e;
+//				}
+//			}
+//			avoidCascadeSaveLoops.set(new HashSet<Objeto>());
+//			try {
+//				saveAndCascade(false);
+//			} finally {
+//				avoidCascadeSaveLoops.get().clear();
+//			}
+//		} catch (PersistenceException e) {
+//			throw e;
+//		} catch (Throwable e) {
+//			throw new RuntimeException(e);
+//		}
+//	}
+//
+//	public Object _key() {
+//		if (em() == null){
+//			return null;
+//		}
+//		try {
+//		Session session = (Session) (em().getDelegate());
+//		ClassMetadata meta = session.getSessionFactory().getClassMetadata(
+//				this.getClass());
+//		return meta.getIdentifier(this, (SessionImplementor) session);
+//		} catch (Exception ex) {
+//			return null;
+//		}
+//	}
 
 	// ~~~ SAVING
 	public transient boolean willBeSaved = false;
 	static transient ThreadLocal<Set<Objeto>> avoidCascadeSaveLoops = new ThreadLocal<Set<Objeto>>();
 
-	private void saveAndCascade(boolean willBeSaved) throws UnexpectedException {
-		this.willBeSaved = willBeSaved;
-		if (avoidCascadeSaveLoops.get().contains(this)) {
-			return;
-		} else {
-			avoidCascadeSaveLoops.get().add(this);
-			if (willBeSaved) {
-			}
-		}
-		// Cascade save
-		try {
-			Set<Field> fields = new HashSet<Field>();
-			Class clazz = this.getClass();
-			while (!clazz.equals(Objeto.class)) {
-				Collections.addAll(fields, clazz.getDeclaredFields());
-				clazz = clazz.getSuperclass();
-			}
-			for (Field field : fields) {
-				field.setAccessible(true);
-				if (Modifier.isTransient(field.getModifiers())) {
-					continue;
-				}
-				boolean doCascade = false;
-				if (field.isAnnotationPresent(OneToOne.class)) {
-					doCascade = cascadeAll(field.getAnnotation(OneToOne.class)
-							.cascade());
-				}
-				if (field.isAnnotationPresent(OneToMany.class)) {
-					doCascade = cascadeAll(field.getAnnotation(OneToMany.class)
-							.cascade());
-				}
-				if (field.isAnnotationPresent(ManyToOne.class)) {
-					doCascade = cascadeAll(field.getAnnotation(ManyToOne.class)
-							.cascade());
-				}
-				if (field.isAnnotationPresent(ManyToMany.class)) {
-					doCascade = cascadeAll(field
-							.getAnnotation(ManyToMany.class).cascade());
-				}
-				if (doCascade) {
-					Object value = field.get(this);
-					if (value != null) {
-						if (value instanceof PersistentMap) {
-							if (((PersistentMap) value).wasInitialized()) {
+//	private void saveAndCascade(boolean willBeSaved) throws UnexpectedException {
+//		this.willBeSaved = willBeSaved;
+//		if (avoidCascadeSaveLoops.get().contains(this)) {
+//			return;
+//		} else {
+//			avoidCascadeSaveLoops.get().add(this);
+//			if (willBeSaved) {
+//			}
+//		}
+//		// Cascade save
+//		try {
+//			Set<Field> fields = new HashSet<Field>();
+//			Class clazz = this.getClass();
+//			while (!clazz.equals(Objeto.class)) {
+//				Collections.addAll(fields, clazz.getDeclaredFields());
+//				clazz = clazz.getSuperclass();
+//			}
+//			for (Field field : fields) {
+//				field.setAccessible(true);
+//				if (Modifier.isTransient(field.getModifiers())) {
+//					continue;
+//				}
+//				boolean doCascade = false;
+//				if (field.isAnnotationPresent(OneToOne.class)) {
+//					doCascade = cascadeAll(field.getAnnotation(OneToOne.class)
+//							.cascade());
+//				}
+//				if (field.isAnnotationPresent(OneToMany.class)) {
+//					doCascade = cascadeAll(field.getAnnotation(OneToMany.class)
+//							.cascade());
+//				}
+//				if (field.isAnnotationPresent(ManyToOne.class)) {
+//					doCascade = cascadeAll(field.getAnnotation(ManyToOne.class)
+//							.cascade());
+//				}
+//				if (field.isAnnotationPresent(ManyToMany.class)) {
+//					doCascade = cascadeAll(field
+//							.getAnnotation(ManyToMany.class).cascade());
+//				}
+//				if (doCascade) {
+//					Object value = field.get(this);
+//					if (value != null) {
+//						if (value instanceof PersistentMap) {
+//							if (((PersistentMap) value).wasInitialized()) {
+//
+//								cascadeOrphans(this,
+//										(PersistentCollection) value,
+//										willBeSaved);
+//
+//								for (Object o : ((Map) value).values()) {
+//									saveAndCascadeIfObjeto(o,
+//											willBeSaved);
+//								}
+//							}
+//						} else if (value instanceof PersistentCollection) {
+//							PersistentCollection col = (PersistentCollection) value;
+//							if (((PersistentCollection) value).wasInitialized()) {
+//
+//								cascadeOrphans(this,
+//										(PersistentCollection) value,
+//										willBeSaved);
+//
+//								for (Object o : (Collection) value) {
+//									saveAndCascadeIfObjeto(o,
+//											willBeSaved);
+//								}
+//							} else {
+//								cascadeOrphans(this, col, willBeSaved);
+//
+//								for (Object o : (Collection) value) {
+//									saveAndCascadeIfObjeto(o,
+//											willBeSaved);
+//								}
+//							}
+//						} else if (value instanceof Collection) {
+//							for (Object o : (Collection) value) {
+//								saveAndCascadeIfObjeto(o,
+//										willBeSaved);
+//							}
+//						} else if (value instanceof HibernateProxy
+//								&& value instanceof Objeto) {
+//							if (!((HibernateProxy) value)
+//									.getHibernateLazyInitializer()
+//									.isUninitialized()) {
+//								((Objeto) ((HibernateProxy) value)
+//										.getHibernateLazyInitializer()
+//										.getImplementation())
+//										.saveAndCascade(willBeSaved);
+//							}
+//						} else if (value instanceof Objeto) {
+//							((Objeto) value)
+//									.saveAndCascade(willBeSaved);
+//						}
+//					}
+//				}
+//			}
+//		} catch (Exception e) {
+//			throw new UnexpectedException("During cascading save()", e);
+//		}
+//	}
 
-								cascadeOrphans(this,
-										(PersistentCollection) value,
-										willBeSaved);
-
-								for (Object o : ((Map) value).values()) {
-									saveAndCascadeIfObjeto(o,
-											willBeSaved);
-								}
-							}
-						} else if (value instanceof PersistentCollection) {
-							PersistentCollection col = (PersistentCollection) value;
-							if (((PersistentCollection) value).wasInitialized()) {
-
-								cascadeOrphans(this,
-										(PersistentCollection) value,
-										willBeSaved);
-
-								for (Object o : (Collection) value) {
-									saveAndCascadeIfObjeto(o,
-											willBeSaved);
-								}
-							} else {
-								cascadeOrphans(this, col, willBeSaved);
-
-								for (Object o : (Collection) value) {
-									saveAndCascadeIfObjeto(o,
-											willBeSaved);
-								}
-							}
-						} else if (value instanceof Collection) {
-							for (Object o : (Collection) value) {
-								saveAndCascadeIfObjeto(o,
-										willBeSaved);
-							}
-						} else if (value instanceof HibernateProxy
-								&& value instanceof Objeto) {
-							if (!((HibernateProxy) value)
-									.getHibernateLazyInitializer()
-									.isUninitialized()) {
-								((Objeto) ((HibernateProxy) value)
-										.getHibernateLazyInitializer()
-										.getImplementation())
-										.saveAndCascade(willBeSaved);
-							}
-						} else if (value instanceof Objeto) {
-							((Objeto) value)
-									.saveAndCascade(willBeSaved);
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			throw new UnexpectedException("During cascading save()", e);
-		}
-	}
-
-	private static void cascadeOrphans(Objeto base,
-			PersistentCollection persistentCollection, boolean willBeSaved)
-			throws UnexpectedException {
-		SessionImpl session = ((SessionImpl) em().getDelegate());
-		PersistenceContext pc = session.getPersistenceContext();
-		CollectionEntry ce = pc.getCollectionEntry(persistentCollection);
-
-		if (ce != null) {
-			CollectionPersister cp = ce.getLoadedPersister();
-			if (cp != null) {
-				Type ct = cp.getElementType();
-				if (ct instanceof EntityType) {
-					EntityEntry entry = pc.getEntry(base);
-					String entityName = entry.getEntityName();
-					entityName = ((EntityType) ct)
-							.getAssociatedEntityName(session.getFactory());
-					if (ce.getSnapshot() != null) {
-						Collection orphans = ce.getOrphans(entityName,
-								persistentCollection);
-						for (Object o : orphans) {
-							saveAndCascadeIfObjeto(o, willBeSaved);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private static void saveAndCascadeIfObjeto(Object o,
-			boolean willBeSaved) throws UnexpectedException {
-		if (o instanceof Objeto) {
-			((Objeto) o).saveAndCascade(willBeSaved);
-		}
-	}
+//	private static void cascadeOrphans(Objeto base,
+//			PersistentCollection persistentCollection, boolean willBeSaved)
+//			throws UnexpectedException {
+//		SessionImpl session = ((SessionImpl) em().getDelegate());
+//		PersistenceContext pc = session.getPersistenceContext();
+//		CollectionEntry ce = pc.getCollectionEntry(persistentCollection);
+//
+//		if (ce != null) {
+//			CollectionPersister cp = ce.getLoadedPersister();
+//			if (cp != null) {
+//				Type ct = cp.getElementType();
+//				if (ct instanceof EntityType) {
+//					EntityEntry entry = pc.getEntry(base);
+//					String entityName = entry.getEntityName();
+//					entityName = ((EntityType) ct)
+//							.getAssociatedEntityName(session.getFactory());
+//					if (ce.getSnapshot() != null) {
+//						Collection orphans = ce.getOrphans(entityName,
+//								persistentCollection);
+//						for (Object o : orphans) {
+//							saveAndCascadeIfObjeto(o, willBeSaved);
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//	private static void saveAndCascadeIfObjeto(Object o,
+//			boolean willBeSaved) throws UnexpectedException {
+//		if (o instanceof Objeto) {
+//			((Objeto) o).saveAndCascade(willBeSaved);
+//		}
+//	}
 
 	private static boolean cascadeAll(CascadeType[] types) {
 		for (CascadeType cascadeType : types) {
@@ -335,9 +332,9 @@ public class Objeto extends ObjetoBase{
 		return false;
 	}
 
-	public boolean isPersistent() {
-		return em().contains(this);
-	}
+	//public boolean isPersistent() {
+//		return em().contains(this);
+//	}
 
 	/**
 	 * JPASupport instances a and b are equals if either <strong>a == b</strong>
@@ -346,61 +343,61 @@ public class Objeto extends ObjetoBase{
 	 * @param other
 	 * @return true if equality condition above is verified
 	 */
-	@Override
-	public boolean equals(Object other) {
-		final Object key = this._key();
+//	@Override
+//	public boolean equals(Object other) {
+//		final Object key = this._key();
+//
+//		if (other == null) {
+//			return false;
+//		}
+//		if (this == other) {
+//			return true;
+//		}
+//		if (key == null) {
+//			return false;
+//		}
+//		if (Objeto.class.isAssignableFrom(other.getClass())
+//				&& key.getClass().isArray()) {
+//			Object otherKey = ((Objeto) other)._key();
+//			if (otherKey.getClass().isArray()) {
+//				return Arrays.deepEquals((Object[]) key, (Object[]) otherKey);
+//			}
+//			return false;
+//		}
+//
+//		if (!this.getClass().isAssignableFrom(other.getClass())) {
+//			return false;
+//		}
+//
+//		return key.equals(((Objeto) other)._key());
+//	}
 
-		if (other == null) {
-			return false;
-		}
-		if (this == other) {
-			return true;
-		}
-		if (key == null) {
-			return false;
-		}
-		if (Objeto.class.isAssignableFrom(other.getClass())
-				&& key.getClass().isArray()) {
-			Object otherKey = ((Objeto) other)._key();
-			if (otherKey.getClass().isArray()) {
-				return Arrays.deepEquals((Object[]) key, (Object[]) otherKey);
-			}
-			return false;
-		}
-
-		if (!this.getClass().isAssignableFrom(other.getClass())) {
-			return false;
-		}
-
-		return key.equals(((Objeto) other)._key());
-	}
-
-	@Override
-	public int hashCode() {
-		final Object key = this._key();
-		if (key == null) {
-			return 0;
-		}
-		if (key.getClass().isArray()) {
-			return Arrays.deepHashCode((Object[]) key);
-		}
-		return key.hashCode();
-	}
-
-	@Override
-	public String toString() {
-		final Object key = this._key();
-		String keyStr = "";
-		if (key != null && key.getClass().isArray()) {
-			for (Object object : (Object[]) key) {
-				keyStr += object.toString() + ", ";
-			}
-			keyStr = keyStr.substring(0, keyStr.length() - 2);
-		} else if (key != null) {
-			keyStr = key.toString();
-		}
-		return getClass().getSimpleName() + "[" + keyStr + "]";
-	}
+//	@Override
+//	public int hashCode() {
+//		final Object key = this._key();
+//		if (key == null) {
+//			return 0;
+//		}
+//		if (key.getClass().isArray()) {
+//			return Arrays.deepHashCode((Object[]) key);
+//		}
+//		return key.hashCode();
+//	}
+//
+//	@Override
+//	public String toString() {
+//		final Object key = this._key();
+//		String keyStr = "";
+//		if (key != null && key.getClass().isArray()) {
+//			for (Object object : (Object[]) key) {
+//				keyStr += object.toString() + ", ";
+//			}
+//			keyStr = keyStr.substring(0, keyStr.length() - 2);
+//		} else if (key != null) {
+//			keyStr = key.toString();
+//		}
+//		return getClass().getSimpleName() + "[" + keyStr + "]";
+//	}
 
 	public static class JPAQueryException extends RuntimeException {
 

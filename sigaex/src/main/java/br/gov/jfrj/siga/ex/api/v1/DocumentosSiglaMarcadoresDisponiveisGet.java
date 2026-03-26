@@ -10,7 +10,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaMarcadoresDisponiveisGet;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.Marcador;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.ex.logic.ExPodeMarcarComMarcador;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -29,7 +28,7 @@ public class DocumentosSiglaMarcadoresDisponiveisGet implements IDocumentosSigla
     public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
         final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
         filter.setSigla(req.sigla);
-        ExMobil mob = (ExMobil) ExDao.getInstance().consultarPorSigla(filter);
+        ExMobil mob = (ExMobil) dao.consultarPorSigla(filter);
         if (mob == null)
             throw new PresentableUnloggedException(
                     "Não foi possível encontrar um documento a partir da sigla fornecida");
@@ -43,7 +42,7 @@ public class DocumentosSiglaMarcadoresDisponiveisGet implements IDocumentosSigla
                     "Acesso ao documento " + mob.getSigla() + " permitido somente a usuários autorizados. ("
                             + titular.getSigla() + "/" + lotaTitular.getSiglaCompleta() + ")");
 
-        List<CpMarcador> marcadores = ExDao.getInstance().listarCpMarcadoresDisponiveis(ctx.getLotaTitular());
+        List<CpMarcador> marcadores = dao.listarCpMarcadoresDisponiveis(ctx.getLotaTitular());
 
         if (marcadores != null) {
             boolean atendente = mob.isAtendente(titular, lotaTitular);

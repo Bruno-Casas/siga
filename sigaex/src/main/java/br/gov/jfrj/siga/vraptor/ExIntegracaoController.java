@@ -6,7 +6,6 @@ import br.com.caelum.vraptor.Post;
 import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.validator.Validator;
 import br.gov.jfrj.siga.ex.ExDocumento;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.builder.BuscaDocumentoBuilder;
 import org.jboss.logging.Logger;
@@ -25,7 +24,7 @@ public class ExIntegracaoController extends ExController {
                                   HttpServletResponse response, ServletContext context,
                                   Result result, SigaObjects so, EntityManager em, Validator validator) {
 
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     private final static Logger log = Logger.getLogger(ExIntegracaoController.class);
@@ -53,7 +52,7 @@ public class ExIntegracaoController extends ExController {
     public void integrarGravar(final String usuario, final String senha, final String sigla) {
         ExDocumento doc = buscarDocumento(sigla);
 
-        Ex.getInstance().getBL().gravarSiafem(usuario, senha, doc, getCadastrante(), getLotaTitular());
+        this.cpBl.gravarSiafem(usuario, senha, doc, getCadastrante(), getLotaTitular());
 
         result.include("origemRedirectIntegrarGravar", true);
         ExDocumentoController.redirecionarParaExibir(result, sigla);

@@ -6,7 +6,6 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaTramitarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeTransferir;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -54,7 +53,7 @@ public class DocumentosSiglaTramitarPost implements IDocumentosSiglaTramitarPost
             return null;
         }
 
-        CpOrgao orgaoExternoDestino = ExDao.getInstance().getOrgaoFromSiglaExata(req.orgao);
+        CpOrgao orgaoExternoDestino = dao.getOrgaoFromSiglaExata(req.orgao);
         if (Objects.isNull(orgaoExternoDestino)) {
             throw new SwaggerException("Não foi encontrado Órgão Externo com o código " + req.orgao, 404, null, req,
                     resp, null);
@@ -67,7 +66,7 @@ public class DocumentosSiglaTramitarPost implements IDocumentosSiglaTramitarPost
         if (Objects.isNull(orgaoExterno) && StringUtils.isNotEmpty(req.matricula)) {
             pes = new DpPessoa();
             pes.setSigla(req.matricula);
-            pes = ExDao.getInstance().consultarPorSigla(pes);
+            pes = dao.consultarPorSigla(pes);
         }
         return pes;
     }
@@ -77,7 +76,7 @@ public class DocumentosSiglaTramitarPost implements IDocumentosSiglaTramitarPost
         if (Objects.isNull(orgaoExterno) && StringUtils.isNotEmpty(req.lotacao)) {
             lot = new DpLotacao();
             lot.setSigla(req.lotacao);
-            lot = ExDao.getInstance().consultarPorSigla(lot);
+            lot = dao.consultarPorSigla(lot);
         }
         return lot;
     }
@@ -116,9 +115,9 @@ public class DocumentosSiglaTramitarPost implements IDocumentosSiglaTramitarPost
         DpPessoa pes = getResponsavel(req, orgaoExterno);
         String observacao = Objects.isNull(orgaoExterno) ? null : req.observacao;
         Date dtDevolucao = this.getDataDevolucao(req, resp);
-        Date dt = ExDao.getInstance().consultarDataEHoraDoServidor();
+        Date dt = dao.consultarDataEHoraDoServidor();
 
-        Ex.getInstance().getBL().transferir(//
+        this.bl.transferir(//
                 orgaoExterno, // CpOrgao orgaoExterno
                 observacao, // String obsOrgao
                 cadastrante, // DpPessoa cadastrante

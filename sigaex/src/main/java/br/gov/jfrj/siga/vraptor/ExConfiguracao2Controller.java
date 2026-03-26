@@ -8,7 +8,6 @@ import br.gov.jfrj.siga.base.SigaModal;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.*;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.builder.ExConfiguracaoBuilder;
@@ -38,7 +37,7 @@ public class ExConfiguracao2Controller extends ExController {
     @Inject
     public ExConfiguracao2Controller(HttpServletRequest request, HttpServletResponse response, ServletContext context,
                                      Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     @Get("/nova")
@@ -105,35 +104,35 @@ public class ExConfiguracao2Controller extends ExController {
     @Consumes("application/json")
     @Path("/orgaos")
     public void listarOrgaos() {
-        List<CpOrgaoUsuario> orgaos = dao().listarOrgaosUsuarios();
+        List<CpOrgaoUsuario> orgaos = cpDao.listarOrgaosUsuarios();
         result.use(Results.json()).from(orgaos).serialize();
     }
 
     @Consumes("application/json")
     @Path("/unidades")
     public void listarUnidades(DpUnidadeDTO dados) {
-        List<DpUnidadeDTO> unidades = dao().lotacaoPorOrgaos(dados.getIdOrgaoSelecao());
+        List<DpUnidadeDTO> unidades = cpDao.lotacaoPorOrgaos(dados.getIdOrgaoSelecao());
         result.use(Results.json()).from(unidades).serialize();
     }
 
     @Consumes("application/json")
     @Path("/cargos")
     public void listarCargos(DpCargoDTO dados) {
-        List<DpCargoDTO> cargos = dao().cargoPorOrgaos(dados.getIdOrgaoSelecao());
+        List<DpCargoDTO> cargos = cpDao.cargoPorOrgaos(dados.getIdOrgaoSelecao());
         result.use(Results.json()).from(cargos).serialize();
     }
 
     @Consumes("application/json")
     @Path("/funcoes")
     public void listarFuncoes(DpFuncaoDTO dados) {
-        List<DpFuncaoDTO> funcoes = dao().funcaoPorOrgaos(dados.getIdOrgaoSelecao());
+        List<DpFuncaoDTO> funcoes = cpDao.funcaoPorOrgaos(dados.getIdOrgaoSelecao());
         result.use(Results.json()).from(funcoes).serialize();
     }
 
     @Consumes("application/json")
     @Path("/pessoas")
     public void listarPessoas(DpPessoaDTO dados) {
-        List<DpPessoaDTO> pessoas = dao().pessoaPorOrgaos(dados.getIdOrgaoSelecao());
+        List<DpPessoaDTO> pessoas = cpDao.pessoaPorOrgaos(dados.getIdOrgaoSelecao());
         result.use(Results.json()).from(pessoas).serialize();
     }
 
@@ -145,7 +144,7 @@ public class ExConfiguracao2Controller extends ExController {
     private List<ExModelo> getModelos(final Long idFormaDoc) {
         ExFormaDocumento forma = null;
         if (idFormaDoc != null && idFormaDoc != 0) {
-            forma = dao().consultar(idFormaDoc, ExFormaDocumento.class, false);
+            forma = cpDao.consultar(idFormaDoc, ExFormaDocumento.class, false);
         }
 
         return Ex
@@ -165,7 +164,7 @@ public class ExConfiguracao2Controller extends ExController {
             }
         });
 
-        s.addAll(dao().listarTiposConfiguracao());
+        s.addAll(cpDao.listarTiposConfiguracao());
 
         return s;
     }
@@ -351,12 +350,10 @@ public class ExConfiguracao2Controller extends ExController {
             throw new RegraNegocioException("Situação de Configuracao não informada");
 
         try {
-            dao().iniciarTransacao();
-            config.setHisDtIni(dao().consultarDataEHoraDoServidor());
-            dao().gravarComHistorico(config, getIdentidadeCadastrante());
-            dao().commitTransacao();
+            config.setHisDtIni(cpDao.consultarDataEHoraDoServidor());
+            cpDao.gravarComHistorico(config, getIdentidadeCadastrante());
         } catch (final Exception e) {
-            dao().em().getTransaction().rollback();
+            cpDao.em().getTransaction().rollback();
             throw new AplicacaoException("Erro na gravação", 0, e);
         }
     }

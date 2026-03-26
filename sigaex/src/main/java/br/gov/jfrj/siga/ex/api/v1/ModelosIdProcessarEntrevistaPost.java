@@ -16,21 +16,20 @@ import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExModelo;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IModelosIdProcessarEntrevistaPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
 public class ModelosIdProcessarEntrevistaPost implements IModelosIdProcessarEntrevistaPost {
 
 	@Override
 	public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
-		ExModelo mod = ExDao.getInstance().consultar(Long.parseLong(req.id), ExModelo.class, false);
+		ExModelo mod = dao.consultar(Long.parseLong(req.id), ExModelo.class, false);
 		ExDocumento doc = new ExDocumento();
 		doc.setExModelo(mod);
 
 		Map<String, String> formParams = obterFormParams(req.entrevista);
 
 		CpOrgaoUsuario orgaoUsuario = ctx.getCadastrante().getOrgaoUsuario();
-		String html = Ex.getInstance().getBL().processarModelo(doc, "entrevista", formParams, orgaoUsuario);
+		String html = this.bl.processarModelo(doc, "entrevista", formParams, orgaoUsuario);
 		resp.setContenttype("text/html");
 		byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
 		resp.setContentlength((long) bytes.length);

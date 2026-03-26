@@ -3,7 +3,6 @@ package br.gov.jfrj.siga.wf.model.enm;
 import java.util.Date;
 
 import br.gov.jfrj.siga.cp.CpPerfil;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpParamCfg;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
@@ -61,44 +60,6 @@ public enum WfTipoDeConfiguracao implements ITipoDeConfiguracao {
 
 	public String getExplicacao() {
 		return this.explicacao;
-	}
-
-	public static boolean acessoPermitido(WfDefinicaoDeProcedimento pd, DpPessoa titular, DpLotacao lotaTitular) {
-		switch (pd.getAcessoDeEdicao()) {
-		case ACESSO_PUBLICO:
-			return true;
-		case ACESSO_ORGAO_USU:
-			return pd.getOrgaoUsuario().getIdOrgaoUsu().equals(titular.getOrgaoUsuario().getIdOrgaoUsu())
-					|| pd.getOrgaoUsuario().getIdOrgaoUsu().equals(lotaTitular.getOrgaoUsuario().getIdOrgaoUsu());
-		case ACESSO_LOTACAO_E_SUPERIORES:
-			for (DpLotacao lot = pd.getLotaResponsavel(); lot != null; lot = lot.getLotacaoPai())
-				if (lotaTitular.equivale(lot))
-					return true;
-			return false;
-		case ACESSO_LOTACAO_E_INFERIORES:
-			for (DpLotacao lot = lotaTitular; lot != null; lot = lot.getLotacaoPai())
-				if (pd.getLotaResponsavel().equivale(lot))
-					return true;
-			return false;
-		case ACESSO_LOTACAO:
-			return pd.getLotaResponsavel().equivale(lotaTitular);
-		case ACESSO_PESSOAL:
-			return pd.getResponsavel().equivale(titular);
-		case ACESSO_LOTACAO_E_GRUPO:
-			if (pd.getLotaResponsavel().equivale(lotaTitular))
-				return true;
-			try {
-				for (CpPerfil perfil : Cp.getInstance().getConf().consultarPerfisPorPessoaELotacao(titular, lotaTitular,
-						new Date())) {
-					if (perfil.equivale(pd.getGrupo()))
-						return true;
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return false;
-		}
-		return false;
 	}
 
 	public static ITipoDeConfiguracao getById(Integer id) {

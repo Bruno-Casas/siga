@@ -35,13 +35,20 @@ import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import org.mvel2.MVEL;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.logging.Logger;
 
 /**
  * @author eeh
  */
+
+@ApplicationScoped
 public class CpConfiguracaoBL {
+
+    @Inject
+    protected CpDao dao;
 
     public static final long ID_USUARIO_ROOT = 1L;
     public static final long MATRICULA_USUARIO_ROOT = 99999L;
@@ -98,10 +105,6 @@ public class CpConfiguracaoBL {
         this.comparator = comparator;
     }
 
-    public CpDao dao() {
-        return CpDao.getInstance();
-    }
-
     public CpConfiguracao createNewConfiguracao() {
         return new CpConfiguracao();
     }
@@ -117,7 +120,7 @@ public class CpConfiguracaoBL {
         if (cacheInicializado)
             return;
         long inicio = System.currentTimeMillis();
-        List<CpConfiguracaoCache> results = dao().consultarCacheDeConfiguracoesAtivas();
+        List<CpConfiguracaoCache> results = dao.consultarCacheDeConfiguracoesAtivas();
 
         long inicioLazy = System.currentTimeMillis();
 //		evitarLazy(results);
@@ -167,7 +170,7 @@ public class CpConfiguracaoBL {
             inicializarCacheSeNecessario();
             return;
         }
-        Date dt = CpDao.getInstance().consultarDataUltimaAtualizacao();
+        Date dt = dao.consultarDataUltimaAtualizacao();
 
         if (dt != null && (dtUltimaAtualizacaoCache == null || dt.after(dtUltimaAtualizacaoCache))) {
             procederAtualizacaoDeCache(dt);
@@ -180,7 +183,7 @@ public class CpConfiguracaoBL {
 
         // sfCpDao.evict(CpConfiguracao.class);
 
-        List<CpConfiguracaoCache> alteracoes = dao().consultarConfiguracoesDesde(dtUltimaAtualizacaoCache);
+        List<CpConfiguracaoCache> alteracoes = dao.consultarConfiguracoesDesde(dtUltimaAtualizacaoCache);
 
         Logger.getLogger("siga.conf.cache").fine("Numero de alteracoes no cache: " + alteracoes.size());
         if (alteracoes.size() > 0) {
@@ -261,7 +264,7 @@ public class CpConfiguracaoBL {
             if (cfg.getDpPessoa() != null) {
                 cfg.getDpPessoa().getDescricao();
                 cfg.getDpPessoa().getOrgaoUsuario().getSigla();
-                // cfg.getDpPessoa().getPessoaAtual().getDescricao();
+                // cfg.getDpPessoa().getHistoricoAtual().getDescricao();
             }
             if (cfg.getCpTipoConfiguracao() != null)
                 cfg.getCpTipoConfiguracao().getDescr();
@@ -294,7 +297,7 @@ public class CpConfiguracaoBL {
             if (cfg.getPessoaObjeto() != null) {
                 cfg.getPessoaObjeto().getDescricao();
                 cfg.getPessoaObjeto().getOrgaoUsuario().getSigla();
-                // cfg.getDpPessoa().getPessoaAtual().getDescricao();
+                // cfg.getDpPessoa().getHistoricoAtual().getDescricao();
             }
         }
     }
@@ -427,7 +430,7 @@ public class CpConfiguracaoBL {
                 if (cfg.orgaoUsuario != 0 && cfg.lotacao != lotacao.getIdInicial())
                     continue;
 
-                Object g = dao().consultar(cfg.cpGrupo, CpPerfil.class, false);
+                Object g = dao.consultar(cfg.cpGrupo, CpPerfil.class, false);
                 if (g instanceof CpPerfil && cfg.dscFormula != null) {
                     Map<String, DpPessoa> pessoaMap = new HashMap<String, DpPessoa>();
                     pessoaMap.put("pessoa", pessoa);
@@ -718,7 +721,7 @@ public class CpConfiguracaoBL {
             CpServico srvPai = null;
             CpServico srvRecuperado = null;
 
-            srvRecuperado = dao().consultarCpServicoPorChave(servicoPath);
+            srvRecuperado = dao.consultarCpServicoPorChave(servicoPath);
             if (srvRecuperado == null) {
                 // Constroi uma linha completa, tipo full path
                 for (String s : servicoPath.split(";")) {
@@ -728,22 +731,22 @@ public class CpConfiguracaoBL {
                     srv = new CpServico();
                     srv.setSiglaServico(srvPai != null ? srvPai.getSigla() + "-" + sSigla : sSigla);
                     srv.setCpServicoPai(srvPai);
-                    srvRecuperado = dao().consultarPorSigla(srv);
+                    srvRecuperado = dao.consultarPorSigla(srv);
                     if (srvRecuperado == null) {
-                        CpTipoServico tpsrv = dao().consultar(CpTipoServico.TIPO_CONFIG_SISTEMA, CpTipoServico.class,
+                        CpTipoServico tpsrv = dao.consultar(CpTipoServico.TIPO_CONFIG_SISTEMA, CpTipoServico.class,
                                 false);
                         String sDesc = (asParts.length > 1 ? asParts[1] : "");
                         srv.setDscServico(sDesc);
                         srv.setCpServicoPai(srvPai);
                         srv.setCpTipoServico(tpsrv);
                         ContextoPersistencia.begin();
-                        dao().acrescentarServico(srv);
+                        dao.acrescentarServico(srv);
                         ContextoPersistencia.commit();
                     }
                     srvPai = srvRecuperado;
                 }
             }
-            return Cp.getInstance().getConf().podePorConfiguracao(titular, lotaTitular, srvRecuperado,
+            return this.podePorConfiguracao(titular, lotaTitular, srvRecuperado,
                     CpTipoDeConfiguracao.UTILIZAR_SERVICO);
         } catch (Exception e) {
             throw new RuntimeException("Não foi possível calcular acesso ao serviço " + servicoPath, e);
@@ -760,13 +763,12 @@ public class CpConfiguracaoBL {
         ArrayList<ConfiguracaoGrupo> aCfgGrp = new ArrayList<ConfiguracaoGrupo>();
         ConfiguracaoGrupoFabrica fabrica = new ConfiguracaoGrupoFabrica();
         try {
-            TreeSet<CpConfiguracaoCache> l = Cp.getInstance().getConf()
-                    .getListaPorTipo(CpTipoDeConfiguracao.PERTENCER);
+            TreeSet<CpConfiguracaoCache> l = this.getListaPorTipo(CpTipoDeConfiguracao.PERTENCER);
             if (l != null) {
                 for (CpConfiguracaoCache cfg : l) {
                     if (cfg.cpGrupo == 0 || cfg.cpGrupo != grp.getIdInicial() || cfg.hisDtFim != null)
                         continue;
-                    CpConfiguracao c = dao().consultar(cfg.idConfiguracao, CpConfiguracao.class, false);
+                    CpConfiguracao c = dao.consultar(cfg.idConfiguracao, CpConfiguracao.class, false);
                     ConfiguracaoGrupo cfgGrp = fabrica.getInstance(c);
                     aCfgGrp.add(cfgGrp);
                 }
@@ -788,11 +790,10 @@ public class CpConfiguracaoBL {
         Set<DpPessoa> resultado = new HashSet<DpPessoa>();
         try {
             limparCacheSeNecessario();
-            Set<CpConfiguracaoCache> configs = Cp.getInstance().getConf()
-                    .getListaPorTipo(CpTipoDeConfiguracao.UTILIZAR_SERVICO_OUTRA_LOTACAO);
+            Set<CpConfiguracaoCache> configs = this.getListaPorTipo(CpTipoDeConfiguracao.UTILIZAR_SERVICO_OUTRA_LOTACAO);
             if (configs != null) {
                 for (CpConfiguracaoCache c : configs) {
-                    DpPessoa pesAtual = CpDao.getInstance().consultarPorIdInicial(c.dpPessoa);
+                    DpPessoa pesAtual = dao.consultarPorIdInicial(c.dpPessoa);
                     if (pesAtual != null) {
                         if (c.dpPessoa == pesAtual.getIdInicial()) {
                             if (c.hisDtFim == null && pesAtual.getDataFim() == null && c.lotacao == lot.getIdInicial()) {
@@ -815,12 +816,11 @@ public class CpConfiguracaoBL {
         Set<DpLotacao> resultado = new HashSet<DpLotacao>();
         try {
             limparCacheSeNecessario();
-            Set<CpConfiguracaoCache> configs = Cp.getInstance().getConf()
-                    .getListaPorTipo(CpTipoDeConfiguracao.UTILIZAR_SERVICO_OUTRA_LOTACAO);
+            Set<CpConfiguracaoCache> configs = this.getListaPorTipo(CpTipoDeConfiguracao.UTILIZAR_SERVICO_OUTRA_LOTACAO);
             for (CpConfiguracaoCache c : configs) {
-                DpLotacao lotacaoAtual = CpDao.getInstance().consultarPorIdInicial(DpLotacao.class, c.lotacao);
+                DpLotacao lotacaoAtual = dao.consultarPorIdInicial(DpLotacao.class, c.lotacao);
                 System.out.println("Lotação atual : " + lotacaoAtual);
-                if (c.hisDtFim == null && lotacaoAtual.getDataFim() == null && c.dpPessoa == pes.getIdInicial()) {
+                if (c.hisDtFim == null && lotacaoAtual.getHisDtFim() == null && c.dpPessoa == pes.getIdInicial()) {
                     resultado.add(lotacaoAtual);
                 }
             }
@@ -834,17 +834,15 @@ public class CpConfiguracaoBL {
 
     public void excluirPessoaExtra(DpPessoa pes, DpLotacao lot, ITipoDeConfiguracao tpConf,
                                    CpIdentidade identidadeCadastrante) {
-        ModeloDao.iniciarTransacao();
         try {
             Set<CpConfiguracaoCache> configs = getListaPorTipo(tpConf);
             for (CpConfiguracaoCache c : configs) {
                 if (c.hisDtFim == null && c.dpPessoa == pes.getIdInicial() && c.lotacao == lot.getIdInicial()) {
-                    CpConfiguracao cfg = dao().consultar(c.idConfiguracao, CpConfiguracao.class, false);
-                    cfg.setHisDtFim(dao().consultarDataEHoraDoServidor());
-                    dao().gravarComHistorico(cfg, identidadeCadastrante);
+                    CpConfiguracao cfg = dao.consultar(c.idConfiguracao, CpConfiguracao.class, false);
+                    cfg.setHisDtFim(dao.consultarDataEHoraDoServidor());
+                    dao.gravarComHistorico(cfg, identidadeCadastrante);
                 }
             }
-            ModeloDao.commitTransacao();
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -853,18 +851,30 @@ public class CpConfiguracaoBL {
     }
 
     public boolean podeGerirAlgumGrupo(DpPessoa titular, DpLotacao lotaTitular, Long idCpTipoGrupo) throws Exception {
-        return dao().getGruposGeridos(titular, lotaTitular, idCpTipoGrupo).size() > 0;
+        CpGrupoDaoFiltro flt = new CpGrupoDaoFiltro();
+        flt.setIdTpGrupo(idCpTipoGrupo.intValue());
+        List<CpGrupo> itgGrupos = dao.consultarPorFiltro(flt, 0, 0);
+
+        Iterator<CpGrupo> it = itgGrupos.iterator();
+
+        while (it.hasNext()) {
+            CpGrupo cpGrp = it.next();
+            if (!podePorConfiguracao(titular, lotaTitular, cpGrp, CpTipoDeConfiguracao.GERENCIAR_GRUPO)) {
+                it.remove();
+            }
+
+        }
+        return !itgGrupos.isEmpty();
     }
 
     public boolean podeGerirGrupo(DpPessoa titular, DpLotacao lotaTitular, Long idCpGrupo, Long idCpTipoGrupo) {
 
         try {
             CpGrupoDaoFiltro flt = new CpGrupoDaoFiltro();
-            CpGrupo cpGrp = CpDao.getInstance().consultar(idCpGrupo, CpGrupo.class, false);
+            CpGrupo cpGrp = dao.consultar(idCpGrupo, CpGrupo.class, false);
             flt.setIdTpGrupo(idCpTipoGrupo.intValue());
-            CpConfiguracaoBL bl = Cp.getInstance().getConf();
 
-            return bl.podePorConfiguracao(titular, lotaTitular, cpGrp, CpTipoDeConfiguracao.GERENCIAR_GRUPO);
+            return this.podePorConfiguracao(titular, lotaTitular, cpGrp, CpTipoDeConfiguracao.GERENCIAR_GRUPO);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -873,12 +883,9 @@ public class CpConfiguracaoBL {
         return false;
     }
 
-    /**
-     * Retorna uma lista de (ex)configurações vigentes de acordo com um certo tipo
-     */
     public List<CpConfiguracao> buscarConfiguracoesVigentes(final CpConfiguracao exemplo) {
         Date hoje = new Date();
-        List<CpConfiguracao> todasConfig = CpDao.getInstance().consultar(exemplo);
+        List<CpConfiguracao> todasConfig = dao.consultar(exemplo);
         List<CpConfiguracao> configVigentes = new ArrayList<CpConfiguracao>();
 
         for (CpConfiguracao cfg : todasConfig) {

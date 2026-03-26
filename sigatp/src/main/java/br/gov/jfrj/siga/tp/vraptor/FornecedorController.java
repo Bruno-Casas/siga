@@ -33,18 +33,6 @@ public class FornecedorController extends TpController {
 	private static final String LABEL_EDITAR = "views.label.editar";
 	private static final String LABEL_INCLUIR = "views.label.incluir";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public FornecedorController() {
-		super();
-	}
-	
-	@Inject
-	public FornecedorController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listar")
 	public void listar() {
 		result.include("fornecedores", getFornecedores());
@@ -101,7 +89,7 @@ public class FornecedorController extends TpController {
 				validator.onErrorUse(Results.page()).of(FornecedorController.class).editar(fornecedor.getId());
 			}
 		} else {
-			fornecedor.save();
+			dao.gravar(fornecedor);
 			result.redirectTo(this).listar();
 		}
 	}
@@ -113,7 +101,7 @@ public class FornecedorController extends TpController {
 	@Path("/excluir/{id}")
 	public void excluir(Long id) throws Exception {
 		Fornecedor fornecedor = Fornecedor.AR.findById(id);
-		fornecedor.delete();
+		dao.excluir(fornecedor);
 		result.redirectTo(this).listar();
 	}
 

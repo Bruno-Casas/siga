@@ -64,18 +64,18 @@ public class ExMarcaVO {
             CpMarcadorFinalidadeEnum finalidade = marcador.getIdFinalidade();
         }
         if (m.getCpTipoMarca() != null) {
-            idTipoMarca = m.getCpTipoMarca().getIdTpMarca();
-            descrTipoMarca = m.getCpTipoMarca().getDescrTipoMarca();
+            idTipoMarca = m.getCpTipoMarca().getId();
+            descrTipoMarca = m.getCpTipoMarca().getDescricao();
         }
         if (m.getDpPessoaIni() != null) {
             idPessoaIni = m.getDpPessoaIni().getId();
-            DpPessoa pes = m.getDpPessoaIni().getPessoaAtual();
+            DpPessoa pes = m.getDpPessoaIni().getHistoricoAtual();
             siglaPessoa = pes.getSigla();
             nomePessoa = pes.getNomePessoa();
         }
         if (m.getDpLotacaoIni() != null) {
             idLotacaoIni = m.getDpLotacaoIni().getId();
-            DpLotacao pes = m.getDpLotacaoIni().getLotacaoAtual();
+            DpLotacao pes = m.getDpLotacaoIni().getHistoricoAtual();
             siglaLotacao = pes.getSigla();
             nomeLotacao = pes.getNomeLotacao();
         }

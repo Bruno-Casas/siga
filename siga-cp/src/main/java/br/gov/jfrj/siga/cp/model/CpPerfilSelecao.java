@@ -30,7 +30,7 @@ public class CpPerfilSelecao extends Selecao<CpPerfil> {
 		if (getId() == null)
 			return null;
 
-		final CpPerfil o = CpDao.getInstance().consultar(getId(),
+		final CpPerfil o = dao.consultar(getId(),
 				CpPerfil.class, false);
 
 		return o;
@@ -38,7 +38,7 @@ public class CpPerfilSelecao extends Selecao<CpPerfil> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final CpPerfil o = CpDao.getInstance().consultar(getId(),
+		final CpPerfil o = dao.consultar(getId(),
 				CpPerfil.class, false);
 		if (o == null)
 			return false;
@@ -55,7 +55,7 @@ public class CpPerfilSelecao extends Selecao<CpPerfil> {
 		final CpPerfil oExemplo = new CpPerfil();
 		oExemplo.setSigla(getSigla());
 
-		final CpPerfil o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final CpPerfil o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();
@@ -71,13 +71,13 @@ public class CpPerfilSelecao extends Selecao<CpPerfil> {
 		/*
 		 * CpOrgaoUsuario ouFiltro = new CpOrgaoUsuario();
 		 * ouFiltro.setSigla(getSigla().substring(0, 2)); CpOrgaoUsuario ou =
-		 * CpDao.getInstance().consultarPorSigla(ouFiltro);
+		 * dao.consultarPorSigla(ouFiltro);
 		 */
 		final CpPerfil oExemplo = new CpPerfil();
 		// oExemplo.setOrgaoUsuario(ou);
 		oExemplo.setSigla(getSigla().substring(2));
 
-		final CpPerfil o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final CpPerfil o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			return false;

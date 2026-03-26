@@ -15,7 +15,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -25,14 +25,10 @@ import br.gov.jfrj.siga.base.Par;
 import br.gov.jfrj.siga.cp.CpConfiguracaoCache;
 import br.gov.jfrj.siga.cp.CpGrupo;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
-import br.gov.jfrj.siga.dp.CpMarcador;
-import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.CpTipoMarca;
-import br.gov.jfrj.siga.dp.DpLotacao;
-import br.gov.jfrj.siga.dp.DpPessoa;
+import br.gov.jfrj.siga.dp.*;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.gc.model.GcAcesso;
 import br.gov.jfrj.siga.gc.model.GcArquivo;
@@ -49,12 +45,19 @@ import br.gov.jfrj.siga.model.Historico;
 import br.gov.jfrj.siga.model.Objeto;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
 
-@RequestScoped
+@ApplicationScoped
 public class GcBL {
 	private static final long TEMPO_NOVIDADE = 7 * 24 * 60 * 60 * 1000L;
 
-	private EntityManager em;
+	@Inject
 	private SigaObjects so;
+
+	@Inject
+	private CpDao dao;
+
+	@Inject
+	private CpConfiguracaoBL conf;
+
 	private Date dt;
 
 	/**
@@ -166,7 +169,7 @@ public class GcBL {
 
 	public Date dt() {
 		if (this.dt == null)
-			this.dt = so.dao().dt();
+			this.dt = dao.dt();
 		return this.dt;
 	}
 
@@ -194,7 +197,7 @@ public class GcBL {
 		if (inf.getMovs() != null) {
 			for (GcMovimentacao mov : inf.getMovs()) {
 				if (mov.getArq() != null && mov.getArq().getId() == null)
-					mov.getArq().save();
+					dao.gravar(mov.getArq());
 				if (mov.getHisIdcIni() == null)
 					mov.setHisIdcIni(idc);
 				if (mov.getHisDtIni() == null)
@@ -204,19 +207,19 @@ public class GcBL {
 				if (mov.getLotacaoTitular() == null)
 					mov.setLotacaoTitular(lotaTitular);
 				if (inf.getId() == null)
-					inf.save();
+					dao.gravar(inf);
 				mov.setInf(inf);
 				if (mov.getMovCanceladora() != null) {
 					if (mov.getMovCanceladora().getHisIdcIni() == null)
 						mov.getMovCanceladora().setHisIdcIni(idc);
-					mov.getMovCanceladora().save();
+					dao.gravar(mov.getMovCanceladora());
 				}
-				mov.save();
+				dao.gravar(mov);
 			}
 		}
 		// atualizarInformacaoPorMovimentacoes(inf);
 		atualizarTags(inf);
-		inf.save();
+		dao.gravar(inf);
 		atualizarMarcas(inf);
 		return inf;
 	}
@@ -331,7 +334,7 @@ public class GcBL {
 			// try {
 			for (GcMarca m : inf.getMarcas()) {
 				if (setA.contains(m))
-					m.delete();
+					dao.excluir(m);
 				else
 					setA.add(m);
 			}
@@ -355,8 +358,8 @@ public class GcBL {
 			}
 			// i.salvar();
 			i.setInf(inf);
-			// dao().salvar(i);
-			i.save();
+			// dao.salvar(i);
+			dao.gravar(i);
 			i.getInf().getMarcas().add(i);
 		}
 		// em().getTransaction().begin();
@@ -367,7 +370,7 @@ public class GcBL {
 				e.getInf().setMarcas(new ArrayList<GcMarca>());
 			}
 			e.getInf().getMarcas().remove(e);
-			e.delete();
+			dao.excluir(e);
 		}
 		// em().getTransaction().commit();
 
@@ -433,7 +436,7 @@ public class GcBL {
 
 	private void acrescentarMarca(SortedSet<GcMarca> set, GcInformacao inf, Long idMarcador, Date dtIni, Date dtFim,
 			DpPessoa pess, DpLotacao lota) throws Exception {
-		CpTipoMarca tipoMarca = CpTipoMarca.AR.findById(CpTipoMarca.TIPO_MARCA_SIGA_GC);
+		TipoMarca tipoMarca = TipoMarca.SIGA_GC;
 		GcMarca mar = new GcMarca();
 		mar.setCpTipoMarca(tipoMarca);
 		mar.setInf(inf);
@@ -489,16 +492,15 @@ public class GcBL {
 
 					List<Par<DpPessoa, DpLotacao>> pessoasELotasDoGrupo = new ArrayList<Par<DpPessoa, DpLotacao>>();
 					if (mov.getGrupo() != null) {
-						for (CpConfiguracaoCache cfg : Cp.getInstance().getConf()
-								.getListaPorTipo(CpTipoDeConfiguracao.PERTENCER)) {
+						for (CpConfiguracaoCache cfg : conf.getListaPorTipo(CpTipoDeConfiguracao.PERTENCER)) {
 							if (cfg.cpGrupo == mov.getGrupo().getIdInicial() && cfg.hisDtFim == null) {
 								DpPessoa pess = null;
 								// Edson: evitar LazyException:
 								if (cfg.dpPessoa != 0)
-									pess = CpDao.getInstance().consultar(cfg.dpPessoa, DpPessoa.class, false);
+									pess = dao.consultar(cfg.dpPessoa, DpPessoa.class, false);
 								DpLotacao lota = null;
 								if (cfg.lotacao != 0)
-									lota = CpDao.getInstance().consultar(cfg.lotacao, DpLotacao.class, false);
+									lota = dao.consultar(cfg.lotacao, DpLotacao.class, false);
 								else if (pess != null)
 									lota = pess.getLotacao();
 								pessoasELotasDoGrupo.add(new Par<DpPessoa, DpLotacao>(pess, lota));
@@ -731,7 +733,7 @@ public class GcBL {
 		arq.setClassificacao(null);
 		arq.setConteudoBinario(file, contentType);
 		if (arq.isImage()) {
-			arq.save();
+			dao.gravar(arq);
 			return arq.getId();
 		} else
 			return -1; // nao existe arquivo no banco com id negativo,
@@ -766,7 +768,7 @@ public class GcBL {
 
 	public void finalizar(Historico o) throws Exception {
 		o.setHisDtFim(new Date());
-		((Objeto) o).save();
+		dao.gravar((Objeto) o);
 	}
 
 	// public GcConfiguracao getConfiguracao(DpPessoa pess,

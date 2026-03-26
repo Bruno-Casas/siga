@@ -48,19 +48,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Controller
 public class CorporativoController extends SrController {
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public CorporativoController() {
-		super();
-	}
-	
-	@Inject
-	public CorporativoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em,
-			SrValidator srValidator, Validator validator) {
-		super(request, result, dao, so, em, srValidator);
-	}
-
 	@Get
 	@Path("public/app/corporativo/dadosrh")
 	public Download dadosrh() throws ParserConfigurationException, IOException {

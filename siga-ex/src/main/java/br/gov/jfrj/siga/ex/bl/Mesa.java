@@ -26,9 +26,19 @@ import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+@ApplicationScoped
 public class Mesa {
 
-	public static class MesaItem implements ISwaggerModel {
+	@Inject
+	private ExCompetenciaBL comp;
+
+	@Inject
+	private ExDao dao;
+
+	public class MesaItem implements ISwaggerModel {
 		public String tipo;
 		public Date datahora;
 		public String tempoRelativo;
@@ -44,7 +54,7 @@ public class Mesa {
 		public List<Marca> list;
 	}
 
-	public static class Marca implements ISwaggerModel {
+	public class Marca implements ISwaggerModel {
 		public String pessoa;
 		public String lotacao;
 		public String nome;
@@ -57,12 +67,12 @@ public class Mesa {
 		public Boolean daLotacao;
 	}
 
-	public static class MeM {
+	public class MeM {
 		ExMarca marca;;
 		CpMarcador marcador;
 	}
 
-	public static List<MesaItem> listarReferencias(TipoDePainelEnum tipo,
+	public List<MesaItem> listarReferencias(TipoDePainelEnum tipo,
 												   Map<ExMobil, List<MeM>> references, DpPessoa pessoa,
 												   DpLotacao unidade, Date currentDate) {
 		List<MesaItem> l = new ArrayList<>();
@@ -157,12 +167,12 @@ public class Mesa {
 						.calcularTempoRelativo(tag.marca.getDtIniMarca());
 
 				if (tag.marca.getDpPessoaIni() != null) {
-					DpPessoa pes = tag.marca.getDpPessoaIni().getPessoaAtual();
+					DpPessoa pes = tag.marca.getDpPessoaIni().getHistoricoAtual();
 					if (pes.getNomeExibicao() != null)
 						t.pessoa = pes.getNomeExibicao();
 				}
 				if (tag.marca.getDpLotacaoIni() != null)
-					t.lotacao = tag.marca.getDpLotacaoIni().getLotacaoAtual()
+					t.lotacao = tag.marca.getDpLotacaoIni().getHistoricoAtual()
 							.getSigla();
 				t.inicio = tag.marca.getDtIniMarca();
 				t.termino = tag.marca.getDtFimMarca();
@@ -217,7 +227,7 @@ public class Mesa {
 		return l;
 	}
 
-	public static List<MesaItem> getMesa(ExDao dao, DpPessoa titular,
+	public List<MesaItem> getMesa(DpPessoa titular,
 										 DpLotacao lotaTitular) {
 		List<Object[]> l = dao.listarDocumentosPorPessoaOuLotacao(titular,
 				lotaTitular);
@@ -238,7 +248,7 @@ public class Mesa {
 		}
 
 		if (Prop.getBool("/siga.mesa.carrega.lotacao")
-				&& !Ex.getInstance().getComp().ehPublicoExterno(titular)) {
+				&& !comp.ehPublicoExterno(titular)) {
 			List<Object[]> lLota = dao.listarDocumentosCxEntradaPorPessoaOuLotacao(null,
 					lotaTitular);
 
@@ -258,7 +268,7 @@ public class Mesa {
 			}
 		}
 
-		return Mesa.listarReferencias(TipoDePainelEnum.UNIDADE, map, titular,
+		return listarReferencias(TipoDePainelEnum.UNIDADE, map, titular,
 				titular.getLotacao(), dao.consultarDataEHoraDoServidor());
 	}
 

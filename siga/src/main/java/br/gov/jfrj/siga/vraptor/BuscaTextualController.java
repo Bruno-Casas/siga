@@ -18,29 +18,14 @@ import br.com.caelum.vraptor.view.HttpResult;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaHTTP;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
 @Controller
-public class BuscaTextualController extends SigaController {
+public class BuscaTextualController extends VraptorController {
 
 	private static final String IDP_DOMAIN = "IDP-DOMAIN";
 	private static final String IDP_JSESSIONID = "IDP-JSESSIONID";
 	private static final String GSA_SESSION_ID = "GSA_SESSION_ID";
-
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public BuscaTextualController() {
-		super();
-	}
-
-	@Inject
-	public BuscaTextualController(HttpServletRequest request, Result result,
-			CpDao dao, SigaObjects so, EntityManager em) {
-		super(request, result, dao, so, em);
-	}
 
 	@Get("app/busca")
 	public void buscaTextual(String q) throws Exception {

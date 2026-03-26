@@ -22,9 +22,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.sr.model.SrTipoAcao.SrTipoAcaoVO;
 
@@ -34,7 +33,7 @@ import com.google.gson.GsonBuilder;
 @Entity
 @Table(name = "sr_acao", schema = "sigasr")
 @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
-public class SrAcao extends HistoricoSuporte implements SrSelecionavel, Comparable<SrAcao>,  Selecionavel {
+public class SrAcao extends HistoricoSuporte<SrAcao> implements SrSelecionavel, Comparable<SrAcao>,  Selecionavel {
 	private static final long serialVersionUID = 8387408543308440033L;
 
 	public static final ActiveRecord<SrAcao> AR = new ActiveRecord<>(SrAcao.class);
@@ -126,11 +125,6 @@ public class SrAcao extends HistoricoSuporte implements SrSelecionavel, Comparab
 		if (sols == null)
 			return null;
 		return sols.get(0);
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
 	}
 
 	public SrAcao selecionar(String sigla) throws Exception {
@@ -286,17 +280,6 @@ public class SrAcao extends HistoricoSuporte implements SrSelecionavel, Comparab
 
 	public String getTituloSlugify() {
 		return Texto.slugify(tituloAcao, true, false);
-	}
-
-	@Override
-	public void salvarComHistorico() throws Exception {
-		if (getNivel() > 1) {
-			SrAcao pai = getPaiPorSigla();
-			if (pai == null)
-				throw new AplicacaoException("Ainda não há categoria para a ação a ser criada.");
-			setPai(pai);
-		}
-		super.salvarComHistorico();
 	}
 
 	public List<SrAcao> getAcaoETodasDescendentes() {

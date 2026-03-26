@@ -193,6 +193,8 @@ public abstract class RelatorioTemplate extends RelatorioRapido {
      */
     public RelatorioTemplate(Map parametros) throws DJBuilderException {
         super(parametros);
+
+
     }
 
     public void gerar() throws Exception {

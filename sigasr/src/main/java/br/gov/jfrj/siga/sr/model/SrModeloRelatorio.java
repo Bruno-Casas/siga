@@ -3,8 +3,7 @@ package br.gov.jfrj.siga.sr.model;
 import java.util.Set;
 import java.util.TreeSet;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
-import br.gov.jfrj.siga.model.Assemelhavel;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 
 public class SrModeloRelatorio  extends HistoricoSuporte{
 
@@ -76,12 +75,6 @@ public class SrModeloRelatorio  extends HistoricoSuporte{
 	public void setId(Long id) {
 		// TODO Auto-generated method stub
 		
-	}
-
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 }

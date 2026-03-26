@@ -24,7 +24,15 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
 
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+
+@RequestScoped
 public class PessoasGet implements IPessoasGet {
+
+	@Inject
+	CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (((req.cpf != null ? 1 : 0) + (req.texto != null ? 1 : 0) + (req.idPessoaIni != null ? 1 : 0)) > 1) {
@@ -54,9 +62,9 @@ public class PessoasGet implements IPessoasGet {
 			// TODO: ver se precisa de outros parametros listarPessoa
 			List<Pessoa> resultado = new ArrayList<>();
 			DpPessoa pessoa = new DpPessoa();
-			pessoa.setIdPessoaIni(Long.valueOf(req.idPessoaIni));
+			pessoa.setHisIdIni(Long.valueOf(req.idPessoaIni));
 
-			DpPessoa pes = CpDao.getInstance().obterPessoaAtual(pessoa);
+			DpPessoa pes = dao.obterPessoaAtual(pessoa);
 
 			resultado.add(pessoaToResultadoPesquisa(pes));
 			return resultado;
@@ -70,7 +78,7 @@ public class PessoasGet implements IPessoasGet {
 	private List<Pessoa> pesquisarPorTexto(Request req, Response resp) throws SwaggerException {
 		final DpPessoaDaoFiltro flt = new DpPessoaDaoFiltro();
 		flt.setNome(Texto.removeAcentoMaiusculas(req.texto));
-		List<DpPessoa> l = CpDao.getInstance().consultarPorFiltro(flt);
+		List<DpPessoa> l = dao.consultarPorFiltro(flt);
 		if (l.isEmpty())
 			throw new SwaggerException("Nenhuma pessoa foi encontrada contendo o texto informado.", 404, null, req,
 					resp, null);
@@ -83,7 +91,7 @@ public class PessoasGet implements IPessoasGet {
 		List<Pessoa> resultado = new ArrayList<>();
 		try {
 			if (Pattern.matches("\\d+", cpf) && cpf.length() == 11) {
-				List<CpIdentidade> lista = new CpDao().consultaIdentidadesCadastrante(cpf, Boolean.TRUE);
+				List<CpIdentidade> lista = dao.consultaIdentidadesCadastrante(cpf, Boolean.TRUE);
 				if (!lista.isEmpty()) {
 					for (CpIdentidade ident : lista) {
 						resultado.add(identidadeToResultadoPesquisa(ident));
@@ -103,7 +111,7 @@ public class PessoasGet implements IPessoasGet {
 	}
 
 	private Pessoa identidadeToResultadoPesquisa(CpIdentidade identidade) {
-		DpPessoa p = identidade.getPessoaAtual();
+		DpPessoa p = dao.obterPessoaAtual(identidade.getDpPessoa());
 		return pessoaToResultadoPesquisa(p);
 	}
 
@@ -128,7 +136,7 @@ public class PessoasGet implements IPessoasGet {
 		// Lotacao Pessoa
 		DpLotacao l = p.getLotacao();
 		lotacao.idLotacao = l.getId().toString();
-		lotacao.idLotacaoIni = l.getIdLotacaoIni().toString();
+		lotacao.hisIdIni = l.getHisIdIni().toString();
 		lotacao.nome = l.getNomeLotacao();
 		lotacao.sigla = l.getSigla();
 		lotacao.orgao = orgao;
@@ -137,7 +145,7 @@ public class PessoasGet implements IPessoasGet {
 		DpCargo c = p.getCargo();
 		if (c != null) {
 			cargo.idCargo = c.getId().toString();
-			cargo.idCargoIni = c.getIdInicial().toString();
+			cargo.hisIdIni = c.getIdInicial().toString();
 			cargo.nome = c.getNomeCargo();
 		}
 		// Função Pessoa

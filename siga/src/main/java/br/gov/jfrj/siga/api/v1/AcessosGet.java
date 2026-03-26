@@ -11,7 +11,12 @@ import br.gov.jfrj.siga.base.RequestInfo;
 import br.gov.jfrj.siga.cp.CpAcesso;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class AcessosGet implements IAcessosGet {
+
+	@Inject
+	private CpDao dao;
 
 	private AcessoItem cpAcessoToAcessoItem(CpAcesso a) {
 		AcessoItem ai = new AcessoItem();
@@ -26,7 +31,7 @@ public class AcessosGet implements IAcessosGet {
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		CurrentRequest.set(
 				new RequestInfo(null, SwaggerServlet.getHttpServletRequest(), SwaggerServlet.getHttpServletResponse()));
-		resp.list = CpDao.getInstance().consultarAcessosRecentes(ctx.getCadastrante()).stream()
+		resp.list = dao.consultarAcessosRecentes(ctx.getCadastrante()).stream()
 				.map(this::cpAcessoToAcessoItem).collect(Collectors.toList());
 	}
 

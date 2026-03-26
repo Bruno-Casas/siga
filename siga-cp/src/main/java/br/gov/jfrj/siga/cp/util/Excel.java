@@ -5,13 +5,13 @@ import br.gov.jfrj.siga.base.SigaConstraintViolationException;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.CpTipoIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.cp.bl.SituacaoFuncionalEnum;
 import br.gov.jfrj.siga.dp.*;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpPessoaDaoFiltro;
+import br.gov.jfrj.siga.storage.manager.BlobManager;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -19,11 +19,20 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Excel {
+
+    private final CpDao dao;
+    private final CpBL bl;
+
+    public Excel() {
+        dao = CDI.current().select(CpDao.class).get();
+        bl = CDI.current().select(CpBL.class).get();
+    }
 
     public InputStream uploadLotacao(File file, CpOrgaoUsuario orgaoUsuario, String extensao, CpIdentidade cadastrante) {
         InputStream retorno = null;
@@ -92,10 +101,10 @@ public class Excel {
                     }
 
                     if (lot.getLocalidade() == null || lot.getLocalidade().getIdLocalidade() == null) {
-                        lot.setLocalidade(CpDao.getInstance().consultarLocalidadesPorNomeUF(localidade));
+                        lot.setLocalidade(dao.consultarLocalidadesPorNomeUF(localidade));
                     }
 
-                    lot.setDataInicio(data);
+                    lot.setHisDtIni(data);
                     lot.setOrgaoUsuario(orgaoUsuario);
                     listaLotacaoGravar.add(lot);
 
@@ -104,18 +113,15 @@ public class Excel {
             if (problemas == null || "".equals(problemas.toString())) {
                 try {
                     for (DpLotacao dpLotacao : listaLotacaoGravar) {
-                        CpDao.getInstance().iniciarTransacao();
-                        CpDao.getInstance().gravar(dpLotacao);
+                        dao.gravar(dpLotacao);
 
-                        if (dpLotacao.getIdLotacaoIni() == null && dpLotacao.getId() != null) {
-                            dpLotacao.setIdLotacaoIni(dpLotacao.getId());
+                        if (dpLotacao.getHisIdIni() == null && dpLotacao.getId() != null) {
+                            dpLotacao.setHisIdIni(dpLotacao.getId());
                             dpLotacao.setIdeLotacao(dpLotacao.getId().toString());
-                            CpDao.getInstance().gravar(dpLotacao);
+                            dao.gravar(dpLotacao);
                         }
                     }
-                    CpDao.getInstance().commitTransacao();
                 } catch (final Exception e) {
-                    CpDao.getInstance().rollbackTransacao();
                     throw new AplicacaoException("Erro na gravação", 0, e);
                 }
             }
@@ -163,7 +169,7 @@ public class Excel {
         lotacao = new DpLotacao();
         lotacao.setOrgaoUsuario(orgaoUsuario);
         lotacao.setSigla(Texto.removeAcento(Texto.removerEspacosExtra(siglaLotacao).trim()));
-        lotacao = CpDao.getInstance().consultarPorSigla(lotacao);
+        lotacao = dao.consultarPorSigla(lotacao);
         if (lotacao != null) {
             return "Linha " + linha + ": SIGLA já cadastrada" + System.lineSeparator();
         }
@@ -221,7 +227,7 @@ public class Excel {
         }
         if (loc == null || loc.getIdLocalidade() == null) {
             loc.setNmLocalidade(Texto.removeAcento(Texto.removerEspacosExtra(loc.getNmLocalidade().replace("'", " ")).trim()));
-            CpLocalidade localidade = CpDao.getInstance().consultarLocalidadesPorNomeUF(loc);
+            CpLocalidade localidade = dao.consultarLocalidadesPorNomeUF(loc);
             if (localidade == null) {
                 return "Linha " + linha + ": UF/LOCALIDADE não cadastrada" + System.lineSeparator();
             } else {
@@ -281,7 +287,7 @@ public class Excel {
                 celula = retornaConteudo(row.getCell(2, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
 
                 if (uf == null || !uf.getSigla().equalsIgnoreCase(celula)) {
-                    uf = CpDao.getInstance().consultaSiglaUF(celula.toUpperCase());
+                    uf = dao.consultaSiglaUF(celula.toUpperCase());
                 }
 
                 if (uf == null) {
@@ -304,7 +310,7 @@ public class Excel {
                 celula = retornaConteudo(row.getCell(4, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
                 String lotacaopaisigla = celula;
                 if (!celula.equals("")) {
-                    DpLotacao lo = CpDao.getInstance().consultarLotacaoPorOrgaoEId(orgaoUsuario, lotacaopaisigla);
+                    DpLotacao lo = dao.consultarLotacaoPorOrgaoEId(orgaoUsuario, lotacaopaisigla);
                     if (lo != null) {
                         lot.setLotacaoPai(lo);
                     } else {
@@ -330,35 +336,30 @@ public class Excel {
                     }
 
                     if (lot.getLocalidade() == null || lot.getLocalidade().getIdLocalidade() == null) {
-                        lot.setLocalidade(CpDao.getInstance().consultarLocalidadesPorNomeUF(loc));
+                        lot.setLocalidade(dao.consultarLocalidadesPorNomeUF(loc));
                     }
 
-                    lot.setDataInicio(data);
+                    lot.setHisDtIni(data);
                     lot.setOrgaoUsuario(orgaoUsuario);
                     lista.add(lot);
                 }
             }
             if (problemas == null || "".equals(problemas.toString())) {
                 for (DpLotacao dpLotacao : lista) {
-                    CpDao.getInstance().iniciarTransacao();
-                    CpDao.getInstance().gravarComHistorico(dpLotacao, cadastrante);
+                    dao.gravarComHistorico(dpLotacao, cadastrante);
 
-                    if (dpLotacao.getIdLotacaoIni() == null && dpLotacao.getId() != null) {
-                        dpLotacao.setIdLotacaoIni(dpLotacao.getId());
+                    if (dpLotacao.getHisIdIni() == null && dpLotacao.getId() != null) {
+                        dpLotacao.setHisIdIni(dpLotacao.getId());
                         dpLotacao.setIdeLotacao(dpLotacao.getId().toString());
-                        CpDao.getInstance().gravar(dpLotacao);
+                        dao.gravar(dpLotacao);
                     }
                 }
-                CpDao.getInstance().em().getTransaction().commit();
             }
             if (problemas == null || "".equals(problemas.toString())) {
                 return null;
             }
             inputStream = new ByteArrayInputStream(problemas.getBytes("ISO-8859-1"));
         } catch (Exception e) {
-            if (CpDao.getInstance().em().getTransaction().isActive()) {
-                CpDao.getInstance().em().getTransaction().rollback();
-            }
             if (e.getCause() != null && e.getCause().toString().contains("ConstraintViolationException")) {
                 throw new SigaConstraintViolationException("Identificado uma violação de integridade no banco de dados."
                         + " Isso pode ocorrer ao gravar um registro que já exista.<br/>"
@@ -443,7 +444,7 @@ public class Excel {
                 }
 
                 if (problemas == null || "".equals(problemas.toString())) {
-                    func.setDataInicio(data);
+                    func.setHisDtIni(data);
                     func.setOrgaoUsuario(orgaoUsuario);
                     lista.add(func);
                 }
@@ -452,7 +453,7 @@ public class Excel {
             if (problemas == null || "".equals(problemas.toString())) {
                 try {
                     for (DpFuncaoConfianca dpFuncaoConfianca : lista) {
-                        Cp.getInstance().getBL().gravarFuncaoConfianca(identidadeCadastrante, null, dpFuncaoConfianca.getNomeFuncao(), dpFuncaoConfianca.getOrgaoUsuario().getIdOrgaoUsu(), Boolean.TRUE);
+                        bl.gravarFuncaoConfianca(identidadeCadastrante, null, dpFuncaoConfianca.getNomeFuncao(), dpFuncaoConfianca.getOrgaoUsuario().getIdOrgaoUsu(), Boolean.TRUE);
                     }
                 } catch (final Exception e) {
                     throw new AplicacaoException("Erro na gravação", 0, e);
@@ -461,7 +462,7 @@ public class Excel {
             if (problemas == null || "".equals(problemas.toString())) {
                 try {
                     for (DpFuncaoConfianca dpFuncaoConfianca : lista) {
-                        Cp.getInstance().getBL().gravarFuncaoConfianca(identidadeCadastrante, null, dpFuncaoConfianca.getNomeFuncao(), dpFuncaoConfianca.getOrgaoUsuario().getIdOrgaoUsu(), Boolean.TRUE);
+                        bl.gravarFuncaoConfianca(identidadeCadastrante, null, dpFuncaoConfianca.getNomeFuncao(), dpFuncaoConfianca.getOrgaoUsuario().getIdOrgaoUsu(), Boolean.TRUE);
                     }
                 } catch (final Exception e) {
                     throw new AplicacaoException("Erro na gravação", 0, e);
@@ -489,7 +490,7 @@ public class Excel {
         }
         funcao.setOrgaoUsuario(orgaoUsuario);
         funcao.setNomeFuncao(nomeFuncao);
-        funcao = CpDao.getInstance().consultarPorNomeOrgao(funcao);
+        funcao = dao.consultarPorNomeOrgao(funcao);
         if (funcao != null) {
             return "Linha " + linha + ": NOME já cadastrado" + System.lineSeparator();
         }
@@ -553,7 +554,7 @@ public class Excel {
             if (problemas == null || "".equals(problemas.toString())) {
                 try {
                     for (DpCargo dpCargo : lista) {
-                        Cp.getInstance().getBL().gravarCargo(identidadeCadastrante, null, dpCargo.getNomeCargo(), dpCargo.getOrgaoUsuario().getIdOrgaoUsu(), Boolean.TRUE);
+                        bl.gravarCargo(identidadeCadastrante, null, dpCargo.getNomeCargo(), dpCargo.getOrgaoUsuario().getIdOrgaoUsu(), Boolean.TRUE);
                     }
                 } catch (final Exception e) {
                     throw new AplicacaoException("Erro na gravação", 0, e);
@@ -581,7 +582,7 @@ public class Excel {
         }
         cargo.setOrgaoUsuario(orgaoUsuario);
         cargo.setNomeCargo(nomeCargo);
-        cargo = CpDao.getInstance().consultarPorNomeOrgao(cargo);
+        cargo = dao.consultarPorNomeOrgao(cargo);
         if (cargo != null) {
             return "Linha " + linha + ": NOME já cadastrado" + System.lineSeparator();
         }
@@ -604,7 +605,7 @@ public class Excel {
         InputStream inputStream = null;
         StringBuffer problemas = new StringBuffer();
 
-        orgaoUsuario = CpDao.getInstance().consultarPorId(orgaoUsuario);
+        orgaoUsuario = dao.consultarPorId(orgaoUsuario);
         try {
             FileInputStream fis = new FileInputStream(file);
             XSSFWorkbook myWorkBook = new XSSFWorkbook(fis);
@@ -690,7 +691,7 @@ public class Excel {
                     }
                     if (cargo.getDataInicio() == null) {
                         cargo.setNomeCargo(celula.trim());
-                        cargo = CpDao.getInstance().consultarPorNomeOrgao(cargo);
+                        cargo = dao.consultarPorNomeOrgao(cargo);
                     }
 
                     if (cargo == null) {
@@ -698,7 +699,7 @@ public class Excel {
                     } else {
                         listaCargo.add(cargo);
                     }
-                    if (cargo != null && cargo.getDataFimCargo() != null) {
+                    if (cargo != null && cargo.getHisDtFim() != null) {
                         problemas.append("Linha " + linha + ": CARGO inativo" + System.lineSeparator());
                     }
                 } else {
@@ -718,9 +719,9 @@ public class Excel {
                         }
                     }
 
-                    if (funcao.getDataInicio() == null) {
+                    if (funcao.getHisDtIni() == null) {
                         funcao.setNomeFuncao(celula.trim());
-                        funcao = CpDao.getInstance().consultarPorNomeOrgao(funcao);
+                        funcao = dao.consultarPorNomeOrgao(funcao);
                     }
 
                     if (funcao == null) {
@@ -729,7 +730,7 @@ public class Excel {
                         listaFuncao.add(funcao);
                     }
 
-                    if (funcao != null && funcao.getDataFimFuncao() != null) {
+                    if (funcao != null && funcao.getHisDtFim() != null) {
                         problemas.append("Linha " + linha + ": FUNÇÃO DE CONFIANÇA inativa" + System.lineSeparator());
                     }
                 } else {
@@ -749,9 +750,9 @@ public class Excel {
                         }
                     }
 
-                    if (lotacao.getDataInicio() == null) {
+                    if (lotacao.getHisDtIni() == null) {
                         lotacao.setSiglaLotacao(celula.trim());
-                        lotacao = CpDao.getInstance().consultarPorSigla(lotacao);
+                        lotacao = dao.consultarPorSigla(lotacao);
                     }
 
                     if (lotacao == null) {
@@ -760,7 +761,7 @@ public class Excel {
                         listaLotacao.add(lotacao);
                     }
 
-                    if (lotacao != null && lotacao.getDataFimLotacao() != null) {
+                    if (lotacao != null && lotacao.getHisDtFim() != null) {
                         problemas.append("Linha " + linha + ": LOTAÇÃO inativo" + System.lineSeparator());
                     }
                 } else {
@@ -778,7 +779,7 @@ public class Excel {
                 }
 
                 List<DpPessoa> listaP = new ArrayList<DpPessoa>();
-                listaP.addAll(CpDao.getInstance().listarCpfAtivoInativo(Long.valueOf(cpf.replace("-", "").replace(".", ""))));
+                listaP.addAll(dao.listarCpfAtivoInativo(Long.valueOf(cpf.replace("-", "").replace(".", ""))));
 
                 for (DpPessoa dpPessoa : listaP) {
                     if (!dpPessoa.getNomePessoa().equalsIgnoreCase(celula.trim())) {
@@ -844,7 +845,7 @@ public class Excel {
                     problemas.append("Linha " + linha + ": E-MAIL em branco" + System.lineSeparator());
                 }
 
-                i = CpDao.getInstance().consultarQtdePorEmailIgualCpfDiferente(Texto.removerEspacosExtra(celula).trim().replace(" ", ""), Long.valueOf(cpf), Long.valueOf(0));
+                i = dao.consultarQtdePorEmailIgualCpfDiferente(Texto.removerEspacosExtra(celula).trim().replace(" ", ""), Long.valueOf(cpf), Long.valueOf(0));
 
                 if (i > 0) {
                     problemas.append("Linha " + linha + ": E-MAIL informado está cadastrado para outro CPF" + System.lineSeparator());
@@ -866,7 +867,7 @@ public class Excel {
                 celula = retornaConteudo(row.getCell(10, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
                 ufexp = celula;
                 if (!"".equals(ufexp.trim())) {
-                    if (CpDao.getInstance().consultaSiglaUF(ufexp) == null)
+                    if (dao.consultaSiglaUF(ufexp) == null)
                         problemas.append("Linha " + linha + ": UF DO RG inválido" + System.lineSeparator());
                 }
                 /* ----------  END ---------- */
@@ -924,7 +925,7 @@ public class Excel {
                     dpPessoaFiltro.setNome("");
 
                     dpPessoaFiltro.setBuscarFechadas(Boolean.FALSE);
-                    tamanho = CpDao.getInstance().consultarQuantidade(dpPessoaFiltro);
+                    tamanho = dao.consultarQuantidade(dpPessoaFiltro);
 
                     if (tamanho > 0) {
                         problemas.append("Linha " + linha + ": Usuário já cadastrado com estes dados: Órgão, Cargo, Função, Unidade e CPF" + System.lineSeparator());
@@ -970,27 +971,26 @@ public class Excel {
                 }
             }
             if (problemas == null || "".equals(problemas.toString())) {
-                CpDao.getInstance().iniciarTransacao();
                 CpIdentidade usu = null;
                 CpIdentidade usuarioExiste = null;
                 List<CpIdentidade> lista1 = new ArrayList<CpIdentidade>();
                 for (DpPessoa dpPessoa : lista) {
-                    CpDao.getInstance().gravarComHistorico(dpPessoa, identidade);
+                    dao.gravarComHistorico(dpPessoa, identidade);
 
                     dpPessoa.setMatricula(String.valueOf(10000 + dpPessoa.getId()));
                     dpPessoa.setIdePessoa(dpPessoa.getMatricula());
-                    CpDao.getInstance().gravar(dpPessoa);
+                    dao.gravar(dpPessoa);
 
                     lista1.clear();
-                    lista1 = CpDao.getInstance().consultaIdentidadesPorCpf(dpPessoa.getCpfPessoa().toString());
+                    lista1 = dao.consultaIdentidadesPorCpf(dpPessoa.getCpfPessoa().toString());
 
                     if (lista1.size() > 0) {
                         usuarioExiste = lista1.get(0);
                         usu = new CpIdentidade();
-                        usu.setCpTipoIdentidade(CpDao.getInstance().consultar(1,
+                        usu.setCpTipoIdentidade(dao.consultar(1,
                                 CpTipoIdentidade.class, false));
                         usu.setDscSenhaIdentidade(usuarioExiste.getDscSenhaIdentidade());
-                        usu.setDtCriacaoIdentidade(CpDao.getInstance()
+                        usu.setDtCriacaoIdentidade(dao
                                 .consultarDataEHoraDoServidor());
                         usu.setCpOrgaoUsuario(dpPessoa.getOrgaoUsuario());
                         usu.setHisDtIni(usu.getDtCriacaoIdentidade());
@@ -999,16 +999,12 @@ public class Excel {
                         if (usu != null) {
                             usu.setNmLoginIdentidade(dpPessoa.getSesbPessoa() + dpPessoa.getMatricula());
                             usu.setDpPessoa(dpPessoa);
-                            CpDao.getInstance().gravarComHistorico(usu, identidade);
+                            dao.gravarComHistorico(usu, identidade);
                         }
                     }
                 }
-                CpDao.getInstance().em().getTransaction().commit();
             }
         } catch (Exception e) {
-            if (CpDao.getInstance().em().getTransaction().isActive()) {
-                CpDao.getInstance().em().getTransaction().rollback();
-            }
             if (e.getCause() != null && e.getCause().toString().contains("ConstraintViolationException")) {
                 throw new SigaConstraintViolationException("Identificado uma violação de integridade no banco de dados."
                         + " Isso pode ocorrer ao gravar um registro que já exista.<br/>"

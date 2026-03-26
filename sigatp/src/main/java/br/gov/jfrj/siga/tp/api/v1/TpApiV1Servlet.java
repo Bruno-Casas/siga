@@ -1,31 +1,27 @@
 package br.gov.jfrj.siga.tp.api.v1;
 
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-
+import br.gov.jfrj.siga.base.Prop;
+import br.gov.jfrj.siga.base.Prop.IPropertyProvider;
+import br.gov.jfrj.siga.idp.jwt.AuthJwtFormFilter;
+import br.gov.jfrj.siga.model.ContextoPersistencia;
+import br.gov.jfrj.siga.tp.model.TpDao;
 import com.crivano.swaggerservlet.SwaggerContext;
 import com.crivano.swaggerservlet.SwaggerServlet;
 import com.crivano.swaggerservlet.dependency.TestableDependency;
 
-import br.gov.jfrj.siga.base.Prop;
-import br.gov.jfrj.siga.base.Prop.IPropertyProvider;
-import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.idp.jwt.AuthJwtFormFilter;
-import br.gov.jfrj.siga.model.ContextoPersistencia;
+import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Map;
 
 public class TpApiV1Servlet extends SwaggerServlet implements IPropertyProvider {
 	private static final long serialVersionUID = 1756711359239182178L;
 
-//	public static ExecutorService executor = null;
+	@Inject
+	private TpDao dao;
 
 	@Override
 	public void initialize(ServletConfig config) throws ServletException {
@@ -36,11 +32,6 @@ public class TpApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
 		Prop.setProvider(this);
 		Prop.defineGlobalProperties();
 		defineProperties();
-
-		// Threadpool
-//		if (SwaggerServlet.getProperty("redis.password") != null)
-//			SwaggerUtils.setCache(new MemCacheRedis());
-//		executor = Executors.newFixedThreadPool(new Integer(SwaggerServlet.getProperty("threadpool.size")));
 
 		class HttpGetDependency extends TestableDependency {
 			String testsite;
@@ -65,32 +56,6 @@ public class TpApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
 			}
 		}
 
-//		class FileSystemWriteDependency extends TestableDependency {
-//			private static final String TESTING = "testing...";
-//			String path;
-//
-//			FileSystemWriteDependency(String service, String path, boolean partial, long msMin, long msMax) {
-//				super("filesystem", service, partial, msMin, msMax);
-//				this.path = path;
-//			}
-//
-//			@Override
-//			public String getUrl() {
-//				return path;
-//			}
-//
-//			@Override
-//			public boolean test() throws Exception {
-//				Path file = Paths.get(path + "/test.temp");
-//				Files.write(file, TESTING.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
-//				String s = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
-//				return s != null;
-//			}
-//		}
-//
-//		addDependency(
-//				new FileSystemWriteDependency("upload.dir.temp", getProperty("upload.dir.temp"), false, 0, 10000));
-
 		addDependency(new HttpGetDependency("rest", "www.google.com/recaptcha",
 				"https://www.google.com/recaptcha/api/siteverify", false, 0, 10000));
 
@@ -104,7 +69,7 @@ public class TpApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
 			@Override
 			public boolean test() throws Exception {
 				try (ApiContext ctx = new ApiContext(true)) {
-					return CpDao.getInstance().dt() != null;
+					return dao.dt() != null;
 				}
 			}
 

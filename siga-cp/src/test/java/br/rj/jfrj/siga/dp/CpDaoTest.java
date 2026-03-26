@@ -19,21 +19,16 @@
 package br.rj.jfrj.siga.dp;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.base.Criptografia;
 import br.gov.jfrj.siga.cp.CpGrupo;
 import br.gov.jfrj.siga.cp.CpGrupoDeEmail;
-import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.CpServico;
 import br.gov.jfrj.siga.cp.CpTipoGrupo;
 import br.gov.jfrj.siga.cp.CpTipoServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpAmbienteEnumBL;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpPessoa;
@@ -56,7 +51,7 @@ public class CpDaoTest extends TestCase {
 //			Cp.getInstance().getProp().setPrefixo(ambiente.getSigla());
 			// HibernateUtil.configurarHibernate(cfg);
 
-			dao = CpDao.getInstance();
+			dao = dao;
 		}
 	}
 
@@ -69,7 +64,6 @@ public class CpDaoTest extends TestCase {
 		CpTipoGrupo tpGrp = dao.consultar(
 				CpTipoGrupo.TIPO_GRUPO_GRUPO_DE_DISTRIBUICAO,
 				CpTipoGrupo.class, false);
-		dao.iniciarTransacao();
 
 		CpGrupo grpNovo = new CpGrupoDeEmail();
 		grpNovo.setCpTipoGrupo(tpGrp);
@@ -81,7 +75,7 @@ public class CpDaoTest extends TestCase {
 		grpNovo = (CpGrupo) dao.gravarComHistorico(grpNovo, null);
 		Long idCpGrupo = grpNovo.getIdGrupo();
 
-		// CpGrupo grpTest = CpDao.getInstance().consultar(idCpGrupo,
+		// CpGrupo grpTest = dao.consultar(idCpGrupo,
 		// CpGrupo.class, false);
 
 		Date dt1 = dao.consultarDataUltimaAtualizacao();
@@ -95,7 +89,6 @@ public class CpDaoTest extends TestCase {
 		CpTipoGrupo tpGrp = dao.consultar(
 				CpTipoGrupo.TIPO_GRUPO_GRUPO_DE_DISTRIBUICAO,
 				CpTipoGrupo.class, false);
-		dao.iniciarTransacao();
 
 		CpGrupo grpNovo = new CpGrupoDeEmail();
 		grpNovo.setCpTipoGrupo(tpGrp);
@@ -106,8 +99,6 @@ public class CpDaoTest extends TestCase {
 		grpNovo = (CpGrupo) dao.gravarComHistorico(grpNovo, null, null, null);
 		Long idCpGrupo = grpNovo.getIdGrupo();
 
-		// dao.commitTransacao();
-
 		CpGrupo grp = grpNovo;
 		grpNovo = grp.getClass().newInstance();
 		PropertyUtils.copyProperties(grpNovo, grp);
@@ -116,7 +107,6 @@ public class CpDaoTest extends TestCase {
 		grpNovo.setDscGrupo("Teste");
 		grpNovo.setSiglaGrupo("TESTE");
 
-		// dao.iniciarTransacao();
 		grp = (CpGrupo) dao.gravarComHistorico(grpNovo, grp, null, null);
 
 	}
@@ -126,7 +116,6 @@ public class CpDaoTest extends TestCase {
 		if (true)
 			return;
 
-		dao.iniciarTransacao();
 
 		CpGrupo grpIni = dao.listarGruposDeEmail().get(0);
 
@@ -147,7 +136,6 @@ public class CpDaoTest extends TestCase {
 		if (true)
 			return;
 
-		dao.iniciarTransacao();
 
 		CpGrupo grpIni = dao.listarGruposDeEmail().get(0);
 
@@ -181,14 +169,11 @@ public class CpDaoTest extends TestCase {
 		CpAmbienteEnumBL ambiente = CpAmbienteEnumBL.DESENVOLVIMENTO;
 //		Cp.getInstance().getProp().setPrefixo(ambiente.getSigla());
 
-		CpDao dao = CpDao.getInstance();
+		CpDao dao = null;
 
 		System.out.println("Data e hora da ultima atualização - "
 				+ dao.consultarDataUltimaAtualizacao());
 
-		dao.iniciarTransacao();
-		// dao.importarAcessoTomcat();
-		dao.commitTransacao();
 
 		if (true)
 			return;
@@ -211,8 +196,6 @@ public class CpDaoTest extends TestCase {
 		flt.setSigla(LOGIN);
 		System.out.print("consultarQuantidade: ");
 		System.out.println(dao.consultarQuantidade((DaoFiltro) flt));
-
-		CpDao.freeInstance();
 	}
 
 //	public static void printSchema(SessionFactory fact, Configuration cfg) {

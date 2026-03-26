@@ -54,6 +54,6 @@ public abstract class WfSelecionavelController<T extends Selecionavel, DaoFiltro
 	}
 
 	protected WfDao dao() {
-		return WfDao.getInstance();
+		return dao;
 	}
 }

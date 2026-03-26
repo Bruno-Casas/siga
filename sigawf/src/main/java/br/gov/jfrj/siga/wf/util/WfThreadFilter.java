@@ -30,7 +30,6 @@ import javax.servlet.ServletResponse;
 
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 
 public class WfThreadFilter implements Filter {
@@ -53,7 +52,7 @@ public class WfThreadFilter implements Filter {
 //				(HttpServletResponse) response));
 
 		ModeloDao.freeInstance();
-		WfDao.getInstance();
+		dao;
 		try {
 			Wf.getInstance().getConf().limparCacheSeNecessario();
 		} catch (Exception e1) {

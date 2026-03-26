@@ -7,8 +7,14 @@ import br.gov.jfrj.siga.ex.ExArquivoNumerado;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.DossieItem;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaDossieGet;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
+
+import javax.inject.Inject;
 
 public class DocumentosSiglaDossieGet implements IDocumentosSiglaDossieGet {
+
+	@Inject
+	private ExMobilBL mobBl;
 
 	@Override
 	public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
@@ -16,7 +22,7 @@ public class DocumentosSiglaDossieGet implements IDocumentosSiglaDossieGet {
 
 		ctx.assertAcesso(mob, ctx.getCadastrante(), ctx.getLotaTitular());
 
-		List<ExArquivoNumerado> ans = mob.getArquivosNumerados();
+		List<ExArquivoNumerado> ans = mobBl.getArquivosNumerados(mob);
 		resp.list = new ArrayList<>();
 		for (ExArquivoNumerado an : ans) {
 			DossieItem di = new DossieItem();

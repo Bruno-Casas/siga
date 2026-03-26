@@ -5,7 +5,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaIncluirCossignatarioPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeIncluirCossignatario;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -22,7 +21,7 @@ public class DocumentosSiglaIncluirCossignatarioPost implements IDocumentosSigla
         if (StringUtils.isNotEmpty(req.matricula)) {
             pes = new DpPessoa();
             pes.setSigla(req.matricula);
-            pes = dao().consultarPorSigla(pes);
+            pes = dao.consultarPorSigla(pes);
         }
         return pes;
     }
@@ -34,7 +33,7 @@ public class DocumentosSiglaIncluirCossignatarioPost implements IDocumentosSigla
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
         DpPessoa pes = getPessoa(req);
-        Date dt = dao().consultarDataEHoraDoServidor();
+        Date dt = dao.consultarDataEHoraDoServidor();
 
         if (pes == null)
             throw new AplicacaoException("Pessoa deve ser informada.");
@@ -58,14 +57,10 @@ public class DocumentosSiglaIncluirCossignatarioPost implements IDocumentosSigla
         final ExMovimentacao mov = movimentacaoBuilder.construir(dao());
         mov.setSubscritor(pes);
 
-        Ex.getInstance().getBL().incluirCosignatario(ctx.getCadastrante(), ctx.getLotaTitular(), mob.doc(),
+        this.bl.incluirCosignatario(ctx.getCadastrante(), ctx.getLotaTitular(), mob.doc(),
                 mov.getDtMov(), mov.getSubscritor(), mov.getDescrMov());
 
         resp.status = "OK";
-    }
-
-    public ExDao dao() {
-        return ExDao.getInstance();
     }
 
     @Override

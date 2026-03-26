@@ -1,31 +1,19 @@
 package br.gov.jfrj.siga.ex;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
 import br.gov.jfrj.siga.ex.logic.ExPodeIncluirEmEditalDeEliminacao;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
+import javax.enterprise.inject.spi.CDI;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ExEditalEliminacao {
-
-    private static ExDao dao() {
-        return ExDao.getInstance();
-    }
-
-    private static ExBL bl() {
-        return Ex.getInstance().getBL();
-    }
-
-    private static ExCompetenciaBL comp() {
-        return Ex.getInstance().getComp();
-    }
 
     private ExEditalComparator editalComparator;
 
@@ -34,6 +22,18 @@ public class ExEditalEliminacao {
     private String msgErro;
 
     private int quantidadeDisponiveisEntrevista = -1;
+
+    private ExDao dao;
+    private ExCompetenciaBL comp;
+    private ExBL bl;
+
+    public ExEditalEliminacao() {
+        this(null);
+
+        dao = CDI.current().select(ExDao.class).get();
+        comp = CDI.current().select(ExCompetenciaBL.class).get();
+        bl = CDI.current().select(ExBL.class).get();
+    }
 
     public ExDocumento getDoc() {
         return doc;
@@ -71,15 +71,11 @@ public class ExEditalEliminacao {
 
     public int getQuantidadeDisponiveis() {
         if (quantidadeDisponiveisEntrevista == -1) {
-            quantidadeDisponiveisEntrevista = dao()
+            quantidadeDisponiveisEntrevista = dao
                     .consultarQuantidadeAEliminar(getDoc().getSubscritor().getOrgaoUsuario(),
                             getDtIniEntrevista(), getDtFimEntrevista());
         }
         return quantidadeDisponiveisEntrevista;
-    }
-
-    public ExEditalEliminacao() {
-        this(null);
     }
 
     public ExEditalEliminacao(ExDocumento edital) {
@@ -90,7 +86,7 @@ public class ExEditalEliminacao {
     public List<ExItemDestinacao> getEfetivamenteInclusos() {
         List<ExItemDestinacao> listaFinal = new ArrayList<ExItemDestinacao>();
         if (getDoc() != null)
-            for (ExItemDestinacao o : dao().consultarEmEditalEliminacao(
+            for (ExItemDestinacao o : dao.consultarEmEditalEliminacao(
                     getDoc().getOrgaoUsuario(), null, null))
                 if (o.getMob()
                         .getUltimaMovimentacaoNaoCancelada(
@@ -104,7 +100,7 @@ public class ExEditalEliminacao {
     public List<ExItemDestinacao> getEfetivamenteInclusosDoPeriodo() {
         List<ExItemDestinacao> listaFinal = new ArrayList<ExItemDestinacao>();
         if (getDoc() != null)
-            for (ExItemDestinacao o : dao().consultarEmEditalEliminacao(
+            for (ExItemDestinacao o : dao.consultarEmEditalEliminacao(
                     getDoc().getOrgaoUsuario(), getDtIniEntrevista(),
                     getDtFimEntrevista()))
                 if (o.getMob()
@@ -125,7 +121,7 @@ public class ExEditalEliminacao {
             if (!m.find() || m.group(1) == null)
                 continue;
             long l = Long.valueOf(m.group(1));
-            ExMobil mob = dao().consultar(l, ExMobil.class, false);
+            ExMobil mob = dao.consultar(l, ExMobil.class, false);
             if (form.get(chave).equals("Sim"))
                 lista.add(mob);
         }
@@ -151,7 +147,7 @@ public class ExEditalEliminacao {
         }
 
         List<ExItemDestinacao> provisorio = new ArrayList<ExItemDestinacao>();
-        provisorio.addAll(dao().consultarAEliminar(
+        provisorio.addAll(dao.consultarAEliminar(
                 getDoc().getSubscritor().getOrgaoUsuario(),
                 getDtIniEntrevista(), getDtFimEntrevista()));
 
@@ -174,7 +170,7 @@ public class ExEditalEliminacao {
                 "Documentos a Eliminar Não Disponíveis", false);
 
         for (ExItemDestinacao o : provisorio) {
-            if (!comp().pode(ExPodeIncluirEmEditalDeEliminacao.class, getDoc().getCadastrante(), getDoc().getLotaCadastrante(),
+            if (!comp.pode(ExPodeIncluirEmEditalDeEliminacao.class, getDoc().getCadastrante(), getDoc().getLotaCadastrante(),
                     o.getMob()))
                 indisponiveis.adicionar(o);
             else if (o.getMob().doc().isEletronico())
@@ -202,7 +198,7 @@ public class ExEditalEliminacao {
             if (!m.find() || m.group(1) == null)
                 continue;
             long l = Long.valueOf(m.group(1));
-            ExMobil mob = dao().consultar(l, ExMobil.class, false);
+            ExMobil mob = dao.consultar(l, ExMobil.class, false);
 
             if (form.get(chave).equals("Sim")) {
                 ExMovimentacao movInclusao = mob
@@ -212,7 +208,7 @@ public class ExEditalEliminacao {
                 boolean referenciaEsteDoc = movInclusao != null
                         && movInclusao.getExMobilRef().equals(
                         getDoc().getMobilGeral());
-                if (!comp().pode(ExPodeIncluirEmEditalDeEliminacao.class, getDoc().getCadastrante(), getDoc().getLotaCadastrante(), mob))
+                if (!comp.pode(ExPodeIncluirEmEditalDeEliminacao.class, getDoc().getCadastrante(), getDoc().getLotaCadastrante(), mob))
                     throw new AplicacaoException("O documento "
                             + mob.getCodigo()
                             + "não está disponível para eliminação.");
@@ -235,7 +231,7 @@ public class ExEditalEliminacao {
         }
 
         for (ExMobil m : aIncluir) {
-            bl().incluirEmEditalEliminacao(getDoc(), m);
+            bl.incluirEmEditalEliminacao(getDoc(), m);
         }
 
         for (ExMobil m : aRetirar) {
@@ -243,7 +239,7 @@ public class ExEditalEliminacao {
                     .getUltimaMovimentacaoNaoCancelada(
                             ExTipoDeMovimentacao.INCLUSAO_EM_EDITAL_DE_ELIMINACAO,
                             ExTipoDeMovimentacao.RETIRADA_DE_EDITAL_DE_ELIMINACAO);
-            bl().excluirMovimentacao(getDoc().getCadastrante(),
+            bl.excluirMovimentacao(getDoc().getCadastrante(),
                     getDoc().getLotaCadastrante(), m, movInclusao.getIdMov());
         }
 

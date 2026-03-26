@@ -66,7 +66,7 @@ public class QuadroGet implements IQuadroGet {
             }
         }
 
-        List<Object[]> listEstados = ExDao.getInstance().consultarPaginaInicial(ctx.getTitular(), ctx.getLotaTitular(),
+        List<Object[]> listEstados = dao.consultarPaginaInicial(ctx.getTitular(), ctx.getLotaTitular(),
                 idTpFormaDoc);
 
         List<QuadroItemVO> items = new ArrayList<>();

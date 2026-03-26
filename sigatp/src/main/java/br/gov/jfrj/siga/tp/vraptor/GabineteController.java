@@ -38,18 +38,6 @@ public class GabineteController extends TpController {
     private static final String ABASTECIMENTOS = "abastecimentos";
     private static final String ABASTECIMENTO = "abastecimento";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public GabineteController() {
-		super();
-	}
-	
-	@Inject
-    public GabineteController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/listar")
     public void listar() {
         List<Abastecimento> abastecimentos = Abastecimento.listarTodos();
@@ -129,7 +117,7 @@ public class GabineteController extends TpController {
 
                 validator.onErrorUse(Results.page()).of(GabineteController.class).editar(abastecimento.getId());
             } else {
-                abastecimento.save();
+                dao.gravar(abastecimento);
                 result.redirectTo(GabineteController.class).listar();
             }
         } catch (Exception e) {
@@ -143,7 +131,7 @@ public class GabineteController extends TpController {
     public void excluir(Long id) throws GabineteControllerException {
         try {
             Abastecimento abastecimento = Abastecimento.AR.findById(id);
-            abastecimento.delete();
+            dao.excluir(abastecimento);
             result.redirectTo(GabineteController.class).listar();
         } catch (Exception e) {
             throw new GabineteControllerException(e);

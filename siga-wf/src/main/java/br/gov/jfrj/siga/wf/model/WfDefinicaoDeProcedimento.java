@@ -5,17 +5,15 @@ import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.base.util.Utils;
 import br.gov.jfrj.siga.cp.CpPerfil;
+import br.gov.jfrj.siga.cp.model.HistoricoAuditavel;
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.logic.WfPodeDuplicarDiagrama;
 import br.gov.jfrj.siga.wf.logic.WfPodeEditarDiagrama;
@@ -27,6 +25,7 @@ import br.gov.jfrj.siga.wf.util.SiglaUtils;
 import br.gov.jfrj.siga.wf.util.SiglaUtils.SiglaDecodificada;
 import com.crivano.jflow.model.ProcessDefinition;
 import com.crivano.jflow.model.TaskDefinition;
+import com.sun.xml.bind.v2.TODO;
 import org.hibernate.annotations.BatchSize;
 
 import javax.persistence.*;
@@ -37,14 +36,13 @@ import java.util.*;
 @Entity
 @BatchSize(size = 500)
 @Table(name = "sigawf.wf_def_procedimento")
-public class WfDefinicaoDeProcedimento extends HistoricoAuditavelSuporte implements Serializable,
-        ProcessDefinition<WfDefinicaoDeTarefa>, Selecionavel, Sincronizavel, Comparable<Sincronizavel> {
+public class WfDefinicaoDeProcedimento extends HistoricoAuditavelSuporte<WfDefinicaoDeProcedimento> implements Serializable,
+        ProcessDefinition<WfDefinicaoDeTarefa>, Selecionavel, Comparable<HistoricoAuditavel<WfDefinicaoDeProcedimento>>, SincronizavelSimples {
     public static ActiveRecord<WfDefinicaoDeProcedimento> AR = new ActiveRecord<>(WfDefinicaoDeProcedimento.class);
 
     @Id
     @GeneratedValue
     @Column(name = "DEFP_ID", unique = true, nullable = false)
-    @Desconsiderar
     private java.lang.Long id;
 
     @NotNull
@@ -57,7 +55,6 @@ public class WfDefinicaoDeProcedimento extends HistoricoAuditavelSuporte impleme
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "definicaoDeProcedimento")
     @OrderBy("ordem ASC")
-    @Desconsiderar
     private List<WfDefinicaoDeTarefa> definicaoDeTarefa = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -162,78 +159,25 @@ public class WfDefinicaoDeProcedimento extends HistoricoAuditavelSuporte impleme
         this.definicaoDeTarefa = definicaoDeTarefa;
     }
 
+    public String getIdExterna() {
+        return this.getHisIde();
+    }
+
+    @Override
+    public String getIdSincronizacao() {
+        String idExt = getIdExterna();
+        if (idExt == null || "null".equals(idExt) || idExt.isEmpty()) {
+            return (getHisIdIni() != null) ? "DB:" + getHisIdIni() : "NEW:" + System.identityHashCode(this);
+        }
+        return "EXT:" + idExt;
+    }
+
     public java.lang.String getHisIde() {
         return hisIde;
     }
 
     public void setHisIde(java.lang.String hisIde) {
         this.hisIde = hisIde;
-    }
-
-    @Override
-    public String getIdExterna() {
-        return getHisIde() != null ? getHisIde() : "nova definição de procedimento";
-    }
-
-    @Override
-    public void setIdExterna(String idExterna) {
-        setHisIde(idExterna);
-    }
-
-    @Override
-    public void setIdInicial(Long idInicial) {
-        this.setHisIdIni(idInicial);
-    }
-
-    @Override
-    public Date getDataInicio() {
-        return getHisDtIni();
-    }
-
-    @Override
-    public void setDataInicio(Date dataInicio) {
-        setHisDtIni(dataInicio);
-    }
-
-    @Override
-    public Date getDataFim() {
-        return getHisDtFim();
-    }
-
-    @Override
-    public void setDataFim(Date dataFim) {
-        setHisDtFim(dataFim);
-    }
-
-    @Override
-    public String getLoteDeImportacao() {
-        return null;
-    }
-
-    @Override
-    public void setLoteDeImportacao(String loteDeImportacao) {
-    }
-
-    @Override
-    public int getNivelDeDependencia() {
-        return 0;
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return SincronizavelSuporte.semelhante(this, obj, profundidade);
-    }
-
-    @Override
-    public String getDescricaoExterna() {
-        return getNome();
-    }
-
-    @Override
-    public int compareTo(Sincronizavel o) {
-        if (!this.getClass().equals(o.getClass()))
-            return this.getClass().getName().compareTo(o.getClass().getName());
-        return this.getIdExterna().compareTo(o.getIdExterna());
     }
 
     public java.lang.String getDescr() {
@@ -274,64 +218,6 @@ public class WfDefinicaoDeProcedimento extends HistoricoAuditavelSuporte impleme
 
     public String getSiglaCompacta() {
         return getSigla().replace("-", "").replace("/", "");
-    }
-
-    public static WfDefinicaoDeProcedimento findBySigla(String sigla) {
-        return findBySigla(sigla, null);
-    }
-
-    public static WfDefinicaoDeProcedimento findBySigla(String sigla, CpOrgaoUsuario ouDefault) {
-        SiglaDecodificada d = SiglaUtils.parse(sigla, "DP", null);
-
-        WfDefinicaoDeProcedimento info = null;
-
-        if (d.id != null) {
-            info = AR.findById(d.id);
-        } else if (d.numero != null) {
-            info = AR.find("ano = ?1 and numero = ?2 and ou.idOrgaoUsu = ?3", d.ano, d.numero, d.orgaoUsuario.getId())
-                    .first();
-        }
-
-        if (info == null) {
-            throw new AplicacaoException("Não foi possível encontrar uma definição de procedimento com o código "
-                    + sigla + ". Favor verificá-lo.");
-        } else
-            return info;
-    }
-
-    public WfDefinicaoDeProcedimento getAtual() {
-        if (this.getDataFim() != null)
-            return CpDao.getInstance().obterAtual(this);
-        return this;
-    }
-
-    public static WfDefinicaoDeProcedimento findByNome(String titulo) throws Exception {
-        try {
-            String[] palavras = titulo.toUpperCase().split(" ");
-            StringBuilder query = new StringBuilder("hisDtFim is null");
-            for (String palavra : palavras) {
-                query.append(" and upper(nome) like '%");
-                query.append(palavra);
-                query.append("%' ");
-            }
-            List<WfDefinicaoDeProcedimento> results = AR.find(query.toString()).fetch();
-            return results.size() == 1 ? results.get(0) : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    @PrePersist
-    private void onPersist() {
-        if (getAno() != null)
-            return;
-        setAno(WfDao.getInstance().dt().getYear() + 1900);
-        Query qry = em().createQuery(
-                "select max(numero) from WfDefinicaoDeProcedimento pi where ano = :ano and orgaoUsuario.idOrgaoUsu = :ouid");
-        qry.setParameter("ano", getAno());
-        qry.setParameter("ouid", getOrgaoUsuario().getId());
-        Integer i = (Integer) qry.getSingleResult();
-        setNumero((i == null ? 0 : i) + 1);
     }
 
     @Override
@@ -530,4 +416,11 @@ public class WfDefinicaoDeProcedimento extends HistoricoAuditavelSuporte impleme
         return tdSuper;
     }
 
+    @Override
+    public int compareTo(HistoricoAuditavel historicoAuditavel) {
+        if (this.getHisIdIni() != null && historicoAuditavel.getHisIdIni() != null) {
+            return this.getHisIdIni().compareTo(historicoAuditavel.getHisIdIni());
+        }
+        return 0;
+    }
 }

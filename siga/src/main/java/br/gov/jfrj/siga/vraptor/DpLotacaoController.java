@@ -10,22 +10,17 @@ import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaMessages;
 import br.gov.jfrj.siga.base.SigaModal;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.CpUF;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpLotacaoDaoFiltro;
 import br.gov.jfrj.siga.model.GenericoSelecao;
 import br.gov.jfrj.siga.model.Selecionavel;
 import org.apache.commons.io.FileUtils;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -36,23 +31,14 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
 
     private Long orgaoUsu;
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public DpLotacaoController() {
-        super();
-    }
-
-    @Inject
-    public DpLotacaoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-
+    @PostConstruct
+    public void init() {
         setSel(new DpPessoa());
         setItemPagina(10);
     }
 
     protected boolean temPermissaoParaExportarDados() {
-        return Boolean.valueOf(Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(),
+        return Boolean.valueOf(this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(),
                 getTitular().getLotacao(), "SIGA;GI;CAD_LOTACAO;EXP_DADOS"));
     }
 
@@ -141,7 +127,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
         // Procura por nome
         flt.setNome(Texto.removeAcentoMaiusculas(flt.getSigla()));
         flt.setSigla(null);
-        final List l = dao().consultarPorFiltro(flt);
+        final List l = cpDao.consultarPorFiltro(flt);
         if (l != null)
             if (l.size() == 1)
                 return (DpLotacao) l.get(0);
@@ -153,7 +139,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
     @Path({"/public/app/lotacao/selecionar", "app/lotacao/selecionar", "/lotacao/selecionar.action"})
     public String selecionar(String sigla, String matricula) {
         if (matricula != null && orgaoUsu == null) {
-            DpPessoa pessoa = CpDao.getInstance().getPessoaFromSigla(matricula);
+            DpPessoa pessoa = cpDao.getPessoaFromSigla(matricula);
             if (pessoa != null)
                 orgaoUsu = pessoa.getOrgaoUsuario().getId();
         }
@@ -170,7 +156,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
                  * completa.
                  */
                 DpLotacao lotacao = new DpLotacao();
-                lotacao = (DpLotacao) dao().consultar(getSel().getId(), DpLotacao.class, false);
+                lotacao = (DpLotacao) cpDao.consultar(getSel().getId(), DpLotacao.class, false);
                 GenericoSelecao gs = new GenericoSelecao();
                 gs.setId(getSel().getId());
                 gs.setSigla(lotacao.getSiglaCompletaFormatada());
@@ -195,7 +181,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
         StringBuilder sb = new StringBuilder();
         if (sigla == null)
             throw new Exception("sigla deve ser informada.");
-        DpLotacao lot = dao().getLotacaoFromSigla(sigla);
+        DpLotacao lot = cpDao.getLotacaoFromSigla(sigla);
 
         sb.append("digraph G {");
         sb.append("node [shape = rectangle];");
@@ -209,7 +195,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
 
     private void graphAcrescentarLotacao(StringBuilder sb, DpLotacao lot) {
         for (DpLotacao lotsub : lot.getDpLotacaoSubordinadosSet()) {
-            if (lotsub.getDataFimLotacao() != null)
+            if (lotsub.getHisDtFim() != null)
                 continue;
             sb.append("\"" + lot.getSigla() + "\" -> \"" + lotsub.getSigla() + "\";");
             graphAcrescentarLotacao(sb, lotsub);
@@ -220,9 +206,9 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
     public void lista(Integer paramoffset, Long idOrgaoUsu, String nome) throws Exception {
 
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-            result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+            result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
         } else {
-            CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
             list.add(ou);
             result.include("orgaosUsu", list);
@@ -235,9 +221,9 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
             dpLotacao.setIdOrgaoUsu(idOrgaoUsu);
             dpLotacao.setNome(nome);
             dpLotacao.setBuscarFechadas(Boolean.TRUE);
-            setItens(CpDao.getInstance().consultarPorFiltro(dpLotacao, paramoffset, 15));
+            setItens(cpDao.consultarPorFiltro(dpLotacao, paramoffset, 15));
             result.include("itens", getItens());
-            result.include("tamanho", dao().consultarQuantidade(dpLotacao));
+            result.include("tamanho", cpDao.consultarQuantidade(dpLotacao));
 
             result.include("idOrgaoUsu", idOrgaoUsu);
             result.include("nome", nome);
@@ -258,7 +244,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
             DpLotacaoDaoFiltro dpLotacao = new DpLotacaoDaoFiltro(nome, idOrgaoUsu);
 
             dpLotacao.setBuscarFechadas(Boolean.TRUE);
-            List<DpLotacao> lista = CpDao.getInstance().consultarPorFiltro(dpLotacao, 0, 0);
+            List<DpLotacao> lista = cpDao.consultarPorFiltro(dpLotacao, 0, 0);
 
             if (lista.size() > 0) {
                 InputStream inputStream = null;
@@ -283,7 +269,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
                     texto.append(
                             (lotacao.getIsSuspensa() == null || ((Integer) 0).equals(lotacao.getIsSuspensa()) ? "Não"
                                     : "Sim") + ";");
-                    texto.append((lotacao.getDataFim() == null ? "Ativa" : "Inativa") + ";");
+                    texto.append((lotacao.getHisDtFim() == null ? "Ativa" : "Inativa") + ";");
                     texto.append(System.lineSeparator());
                 }
 
@@ -294,9 +280,9 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
             } else {
 
                 if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-                    result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+                    result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
                 } else {
-                    CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+                    CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
                     List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
                     list.add(ou);
                     result.include("orgaosUsu", list);
@@ -316,7 +302,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
     public void listaLocalidades(Integer idUf) {
         CpUF uf = new CpUF();
         uf.setIdUF(Long.valueOf(idUf));
-        result.include("listaLocalidades", dao().consultarLocalidadesPorUF(uf));
+        result.include("listaLocalidades", cpDao.consultarLocalidadesPorUF(uf));
     }
 
     @Get("/app/lotacao/editar")
@@ -325,12 +311,12 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
 
         List<DpLotacao> listaLotacaoPai = new ArrayList<DpLotacao>();
         if (id != null) {
-            DpLotacao lotacao = dao().consultar(id, DpLotacao.class, false);
+            DpLotacao lotacao = cpDao.consultar(id, DpLotacao.class, false);
             result.include("nmLotacao", lotacao.getDescricao());
             result.include("siglaLotacao", lotacao.getSiglaLotacao());
             result.include("idOrgaoUsu", lotacao.getOrgaoUsuario().getId());
             result.include("nmOrgaousu", lotacao.getOrgaoUsuario().getNmOrgaoUsu());
-            result.include("dtFimLotacao", lotacao.getDataFimLotacao());
+            result.include("dtFimLotacao", lotacao.getHisDtFim());
             result.include("isExternaLotacao", lotacao.getIsExternaLotacao());
             if (lotacao.getLotacaoPai() != null)
                 result.include("lotacaoPai", lotacao.getLotacaoPai().getIdLotacao());
@@ -338,7 +324,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
             result.include("idLocalidade", lotacao.getLocalidade() != null ? lotacao.getLocalidade().getIdLocalidade() : Long.valueOf(0));
             idUf = lotacao.getLocalidade() != null ? lotacao.getLocalidade().getUF().getId() : Long.valueOf(0);
 
-            List<DpPessoa> list = CpDao.getInstance().pessoasPorLotacao(id, Boolean.TRUE, Boolean.FALSE);
+            List<DpPessoa> list = cpDao.pessoasPorLotacao(id, Boolean.TRUE, Boolean.FALSE);
             if (list.size() == 0) {
                 result.include("podeAlterarOrgao", Boolean.TRUE);
             }
@@ -351,19 +337,19 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
         result.include("listaLotacao", listaLotacaoPai);
 
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-            result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+            result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
         } else {
-            CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
             list.add(ou);
             result.include("orgaosUsu", list);
         }
 
-        result.include("listaUF", dao().consultarUF());
+        result.include("listaUF", cpDao.consultarUF());
         result.include("idUf", idUf);
         CpUF uf = new CpUF();
         uf.setIdUF(Long.valueOf(idUf));
-        result.include("listaLocalidades", dao().consultarLocalidadesPorUF(uf));
+        result.include("listaLocalidades", cpDao.consultarLocalidadesPorUF(uf));
 
         result.include("request", getRequest());
         result.include("id", id);
@@ -378,7 +364,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
 
         assertAcesso("GI:Módulo de Gestão de Identidade;CAD_LOTACAO: Cadastrar Lotação");
 
-        Cp.getInstance().getBL().criarLotacao(getIdentidadeCadastrante(), getTitular(), getTitular().getLotacao(), id,
+        this.cpBl.criarLotacao(getIdentidadeCadastrante(), getTitular(), getTitular().getLotacao(), id,
                 nmLotacao, idOrgaoUsu, siglaLotacao, situacao, isExternaLotacao, lotacaoPai, idLocalidade);
         this.result.redirectTo(this).lista(0, null, "");
     }
@@ -386,20 +372,20 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
     @Transacional
     @Post("/app/lotacao/ativarInativar")
     public void ativarInativar(final Long id) throws Exception {
-        DpLotacao lotacao = dao().consultar(id, DpLotacao.class, false);
+        DpLotacao lotacao = cpDao.consultar(id, DpLotacao.class, false);
 
         // ativar
-        if (lotacao.getDataFimLotacao() != null && !"".equals(lotacao.getDataFimLotacao())) {
+        if (lotacao.getHisDtFim() != null && !"".equals(lotacao.getHisDtFim())) {
             DpLotacao lotacaoNova = new DpLotacao();
-            Cp.getInstance().getBL().copiaLotacao(lotacao, lotacaoNova);
-            dao().gravarComHistorico(lotacaoNova, lotacao, null, getIdentidadeCadastrante());
+            this.cpBl.copiaLotacao(lotacao, lotacaoNova);
+            cpDao.gravarComHistorico(lotacaoNova, lotacao, null, getIdentidadeCadastrante());
         } else {// inativar
-            Integer qtdePessoa = CpDao.getInstance().pessoasPorLotacao(id, Boolean.TRUE, Boolean.FALSE).size();
+            Integer qtdePessoa = cpDao.pessoasPorLotacao(id, Boolean.TRUE, Boolean.FALSE).size();
 
             if (qtdePessoa > 0 || consultarQtdeDocumentoCriadosPosse(lotacao) > 0) {
                 throw new AplicacaoException("Inativação não permitida. Existem documentos e usuários vinculados nessa "
                         + SigaMessages.getMessage("usuario.lotacao"), 0);
-            } else if (dao().listarLotacoesPorPai(lotacao).size() > 0) {
+            } else if (cpDao.listarLotacoesPorPai(lotacao).size() > 0) {
                 throw new AplicacaoException(
                         "Inativação não permitida. Está " + SigaMessages.getMessage("usuario.lotacao")
                                 + " é pai de outra " + SigaMessages.getMessage("usuario.lotacao"),
@@ -408,10 +394,10 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
                 Calendar calendar = new GregorianCalendar();
                 Date date = new Date();
                 calendar.setTime(date);
-                lotacao.setDataFimLotacao(calendar.getTime());
+                lotacao.setHisDtFim(calendar.getTime());
 
                 try {
-                    dao().gravarComHistorico(lotacao, getIdentidadeCadastrante());
+                    cpDao.gravarComHistorico(lotacao, getIdentidadeCadastrante());
                 } catch (final Exception e) {
                     throw new AplicacaoException("Erro na gravação", 0, e);
                 }
@@ -424,15 +410,15 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
     @Post("/app/lotacao/suspender")
     public void suspender(final Long id) throws Exception {
 
-        DpLotacao lotacao = dao().consultar(id, DpLotacao.class, false);
+        DpLotacao lotacao = cpDao.consultar(id, DpLotacao.class, false);
         DpLotacao lotacaoNova = new DpLotacao();
         DpLotacao lotacaoFilhoNova = new DpLotacao();
         DpLotacao lotacaoFilhoAntiga = new DpLotacao();
         Date data = new Date(System.currentTimeMillis());
         DpPessoa pessoaNova = null;
-        List<DpPessoa> listPessoa = CpDao.getInstance().pessoasPorLotacao(id, Boolean.TRUE, Boolean.FALSE);
+        List<DpPessoa> listPessoa = cpDao.pessoasPorLotacao(id, Boolean.TRUE, Boolean.FALSE);
 
-        Cp.getInstance().getBL().copiaLotacao(lotacao, lotacaoNova);
+        this.cpBl.copiaLotacao(lotacao, lotacaoNova);
 
         // ativar
         if (lotacao.getIsSuspensa() != null && lotacao.getIsSuspensa().equals(1)) {
@@ -441,31 +427,31 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
             lotacaoNova.setIsSuspensa(1);
         }
 
-        dao().gravarComHistorico(lotacaoNova, lotacao, null, getIdentidadeCadastrante());
+        cpDao.gravarComHistorico(lotacaoNova, lotacao, null, getIdentidadeCadastrante());
 
         // movimentar as pessoas e lotacoes filhos para nova lotacao
         for (DpPessoa dpPessoa : listPessoa) {
             pessoaNova = new DpPessoa();
-            if (dpPessoa.getLotacao().getIdInicial().equals(lotacaoNova.getIdLotacaoIni())) {
+            if (dpPessoa.getLotacao().getIdInicial().equals(lotacaoNova.getHisIdIni())) {
                 pessoaNova.setLotacao(lotacaoNova);
             } else {
                 if (dpPessoa.getLotacao().getLotacaoPai() != null && lotacaoNova.getId()
-                        .equals(dpPessoa.getLotacao().getLotacaoAtual().getLotacaoPai().getId())) {
-                    pessoaNova.setLotacao(dpPessoa.getLotacao().getLotacaoAtual());
+                        .equals(cpDao.obterLotacaoAtual(dpPessoa.getLotacao()).getLotacaoPai().getId())) {
+                    pessoaNova.setLotacao(cpDao.obterLotacaoAtual(dpPessoa.getLotacao()));
                 } else {
                     // grava nova lotacao filho e setar na pessoa
                     lotacaoFilhoNova = new DpLotacao();
-                    lotacaoFilhoAntiga = dpPessoa.getLotacao().getLotacaoAtual();
+                    lotacaoFilhoAntiga = cpDao.obterLotacaoAtual(dpPessoa.getLotacao());
 
-                    lotacaoFilhoNova.setDataInicio(data);
-                    Cp.getInstance().getBL().copiaLotacao(lotacaoFilhoAntiga, lotacaoFilhoNova);
+                    lotacaoFilhoNova.setHisDtIni(data);
+                    this.cpBl.copiaLotacao(lotacaoFilhoAntiga, lotacaoFilhoNova);
 
-                    dao().gravarComHistorico(lotacaoFilhoNova, lotacaoFilhoAntiga, data, getIdentidadeCadastrante());
+                    cpDao.gravarComHistorico(lotacaoFilhoNova, lotacaoFilhoAntiga, data, getIdentidadeCadastrante());
                     pessoaNova.setLotacao(lotacaoFilhoNova);
                 }
             }
-            Cp.getInstance().getBL().copiarPessoa(dpPessoa, pessoaNova);
-            dao().gravarComHistorico(pessoaNova, dpPessoa, data, getIdentidadeCadastrante());
+            this.cpBl.copiarPessoa(dpPessoa, pessoaNova);
+            cpDao.gravarComHistorico(pessoaNova, dpPessoa, data, getIdentidadeCadastrante());
         }
         this.result.redirectTo(this).lista(0, null, "");
     }
@@ -473,7 +459,7 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
     @Get("/app/lotacao/carregarExcel")
     public void carregarExcel() {
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-            result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+            result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
         } else {
             result.include("nmOrgaousu", getTitular().getOrgaoUsuario().getNmOrgaoUsu());
         }
@@ -527,33 +513,33 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
 
         CpUF uf = new CpUF();
         uf.setIdUF(Long.valueOf(idUf));
-        result.include("listaLocalidades", dao().consultarLocalidadesPorUF(uf));
+        result.include("listaLocalidades", cpDao.consultarLocalidadesPorUF(uf));
 //		}
         result.include("idLocalidade", idLocalidade);
 
         result.include("idUf", idUf);
-        result.include("listaUF", dao().consultarUF());
+        result.include("listaUF", cpDao.consultarUF());
 
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
 
-            result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+            result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
         } else {
-            CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
             list.add(ou);
             result.include("orgaosUsu", list);
         }
         result.include("idOrgaoUsu", idOrgaoUsu);
 
-        CpOrgaoUsuario u = CpDao.getInstance().consultarOrgaoUsuarioPorId(idOrgaoUsu);
-        List<DpLotacao> lista = new ArrayList<DpLotacao>(CpDao.getInstance().consultarLotacaoPorOrgao(u));
+        CpOrgaoUsuario u = cpDao.consultarOrgaoUsuarioPorId(idOrgaoUsu);
+        List<DpLotacao> lista = new ArrayList<DpLotacao>(cpDao.consultarLotacaoPorOrgao(u));
         result.include("listaLotacao", lista);
         result.use(Results.page()).forwardTo("/WEB-INF/page/dpLotacao/edita.jsp");
     }
 
     protected List<DpLotacao> carregaLotacao(CpOrgaoUsuario orgaoUsuario) {
-        CpOrgaoUsuario u = CpDao.getInstance().consultarOrgaoUsuarioPorId(orgaoUsuario.getIdOrgaoUsu());
-        return (List<DpLotacao>) CpDao.getInstance().consultarLotacaoPorOrgao(u);
+        CpOrgaoUsuario u = cpDao.consultarOrgaoUsuarioPorId(orgaoUsuario.getIdOrgaoUsu());
+        return (List<DpLotacao>) cpDao.consultarLotacaoPorOrgao(u);
     }
 
 
@@ -565,9 +551,9 @@ public class DpLotacaoController extends SigaSelecionavelControllerSupport<DpLot
         Integer qtdeDocumentoCriadosPosse;
 
         if (Boolean.TRUE.equals(Prop.getBool("/siga.lotacao.inativacao.marcadores.permitidos")))
-            qtdeDocumentoCriadosPosse = dao().consultarQtdeDocCriadosPossePorDpLotacaoECpMarca(lotacao.getIdInicial());
+            qtdeDocumentoCriadosPosse = cpDao.consultarQtdeDocCriadosPossePorDpLotacaoECpMarca(lotacao.getIdInicial());
         else
-            qtdeDocumentoCriadosPosse = dao().consultarQtdeDocCriadosPossePorDpLotacao(lotacao.getIdInicial());
+            qtdeDocumentoCriadosPosse = cpDao.consultarQtdeDocCriadosPossePorDpLotacao(lotacao.getIdInicial());
 
         return qtdeDocumentoCriadosPosse;
     }

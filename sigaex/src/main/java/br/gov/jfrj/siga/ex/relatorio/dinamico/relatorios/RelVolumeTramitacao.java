@@ -6,7 +6,6 @@ import br.gov.jfrj.relatorio.dinamico.RelatorioRapido;
 import br.gov.jfrj.relatorio.dinamico.RelatorioTemplate;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeExibirQuemTemAcessoAoDocumento;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -63,23 +62,23 @@ public class RelVolumeTramitacao extends RelatorioTemplate {
 
         String queryLotacao = "";
         if (parametros.get("lotacao") != null && !"".equals(parametros.get("lotacao"))) {
-            queryLotacao = "and mov.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :lotacao) ";
+            queryLotacao = "and mov.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :lotacao) ";
         }
 
         String queryUsuario = "";
         if (parametros.get("usuario") != null && !"".equals(parametros.get("usuario"))) {
-            queryUsuario = "and mov.cadastrante.idPessoaIni in (select p.idPessoa from DpPessoa as p where p.idPessoaIni = :usuario) ";
+            queryUsuario = "and mov.cadastrante.hisIdIni in (select p.idPessoa from DpPessoa as p where p.idPessoaIni = :usuario) ";
         }
 
         Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-                "from DpLotacao lot " + "where lot.dataFimLotacao is null "
+                "from DpLotacao lot " + "where lot.hisDtFim is null "
                         + "and lot.orgaoUsuario = "
                         + parametros.get("orgaoUsuario")
                         + " and lot.siglaLotacao = '"
                         + parametros.get("lotacaoTitular") + "'");
         DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-        DpPessoa titular = ExDao.getInstance().consultar(
+        DpPessoa titular = dao.consultar(
                 new Long((String) parametros.get("idTit")), DpPessoa.class,
                 false);
 
@@ -125,7 +124,7 @@ public class RelVolumeTramitacao extends RelatorioTemplate {
             pessoaSet.add(pessoa);
 
             query.setParameter("usuario",
-                    pessoa.getIdPessoaIni());
+                    pessoa.getHisIdIni());
         }
 
         Date dtini = formatter.parse((String) parametros.get("dataInicial"));
@@ -139,8 +138,8 @@ public class RelVolumeTramitacao extends RelatorioTemplate {
             Object[] obj = (Object[]) it.next();
             String modeloDoc = (String) obj[0];
 
-            if (Ex.getInstance().getBL().getComp().pode(ExPodeExibirQuemTemAcessoAoDocumento.class,
-                    titular, lotaTitular, ExDao.getInstance().consultarModeloPeloNome(modeloDoc)
+            if (this.bl.getComp().pode(ExPodeExibirQuemTemAcessoAoDocumento.class,
+                    titular, lotaTitular, dao.consultarModeloPeloNome(modeloDoc)
             )) {
 
                 listColunas.add(modeloDoc);

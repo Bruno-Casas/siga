@@ -72,7 +72,7 @@ import net.sf.jasperreports.engine.JRException;
 		public Collection processarDados() throws Exception {
 
 			List<String> d = new ArrayList<String>();
-			ExDao dao = ExDao.getInstance();
+			ExDao dao = dao;
 			ExMobil mob = null;
 			String siglaDoc = "";
 			
@@ -86,7 +86,7 @@ import net.sf.jasperreports.engine.JRException;
 			String queryLotacao = "";
 			if (parametros.get("lotacao") != null
 					&& parametros.get("lotacao") != "") {
-				queryLotacao = " and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :idLotacao) ";
+				queryLotacao = " and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :idLotacao) ";
 			}
 			
 			Query query = ContextoPersistencia.em().createQuery(

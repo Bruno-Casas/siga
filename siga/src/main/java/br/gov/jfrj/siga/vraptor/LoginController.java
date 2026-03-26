@@ -6,7 +6,6 @@ import br.gov.jfrj.siga.Service;
 import br.gov.jfrj.siga.base.*;
 import br.gov.jfrj.siga.cp.AbstractCpAcesso;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.gi.integracao.IntegracaoLdapViaWebService;
 import br.gov.jfrj.siga.gi.service.GiService;
@@ -18,38 +17,20 @@ import org.jboss.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
 @Controller
-public class LoginController extends SigaController {
+public class LoginController extends VraptorController {
     HttpServletResponse response;
     private ServletContext context;
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public LoginController() {
-        super();
-    }
-
-    @Inject
-    public LoginController(HttpServletRequest request, HttpServletResponse response, ServletContext context,
-                           Result result, CpDao dao, SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-        this.response = response;
-        this.context = context;
-    }
 
     @Transacional
     @Get("public/app/login")
@@ -76,7 +57,7 @@ public class LoginController extends SigaController {
             String usuarioLogado = giService.login(username, password);
 
             if (Pattern.matches("\\d+", username) && username.length() == 11) {
-                List<CpIdentidade> lista = new CpDao().consultaIdentidadesCadastrante(username, Boolean.TRUE);
+                List<CpIdentidade> lista = cpDao.consultaIdentidadesCadastrante(username, Boolean.TRUE);
             }
             if (usuarioLogado == null || usuarioLogado.trim().length() == 0) {
                 StringBuffer mensagem = new StringBuffer();
@@ -138,12 +119,12 @@ public class LoginController extends SigaController {
 
         try {
 
-            CpIdentidade usuarioSwap = CpDao.getInstance().consultaIdentidadeCadastrante(username, true);
+            CpIdentidade usuarioSwap = cpDao.consultaIdentidadeCadastrante(username, true);
 
             if (usuarioSwap == null)
                 throw new ServletException("Usuário não permitido para acesso com a chave " + username + ".");
 
-            List<CpIdentidade> idsCpf = CpDao.getInstance().consultaIdentidadesCadastrante(so.getIdentidadeCadastrante().getDpPessoa().getPessoaAtual().getCpfPessoa().toString(), true);
+            List<CpIdentidade> idsCpf = cpDao.consultaIdentidadesCadastrante(cpDao.obterPessoaAtual(so.getIdentidadeCadastrante().getDpPessoa()).getCpfPessoa().toString(), true);
 
             boolean usuarioPermitido = false;
             for (CpIdentidade identCpf : idsCpf) {
@@ -175,7 +156,7 @@ public class LoginController extends SigaController {
         String token = jwtBL.criarToken(username, null, null, null);
 
         Map<String, Object> decodedToken = jwtBL.validarToken(token);
-        Cp.getInstance().getBL().logAcesso(AbstractCpAcesso.CpTipoAcessoEnum.AUTENTICACAO,
+        cpBl.logAcesso(AbstractCpAcesso.CpTipoAcessoEnum.AUTENTICACAO,
                 (String) decodedToken.get("sub"), (Integer) decodedToken.get("iat"),
                 (Integer) decodedToken.get("exp"), HttpRequestUtils.getIpAudit(request));
 
@@ -220,14 +201,14 @@ public class LoginController extends SigaController {
         String senhaNova = usuario.getSenhaNova();
         String senhaConfirma = usuario.getSenhaConfirma();
         String nomeUsuario = usuario.getNomeUsuario().toUpperCase();
-        CpIdentidade identidade = CpDao.getInstance().consultaIdentidadeCadastrante(nomeUsuario, true);
+        CpIdentidade identidade = cpDao.consultaIdentidadeCadastrante(nomeUsuario, true);
 
         if (identidade == null) {
             throw new RuntimeException("Usuário não encontrado");
         }
 
         if (!StringUtils.isEmpty(cpf)) {
-            if (!Long.valueOf(cpf).equals(identidade.getPessoaAtual().getCpfPessoa())) {
+            if (!Long.valueOf(cpf).equals(cpDao.consultarPorIdInicial(identidade.getDpPessoa().getIdInicial()).getCpfPessoa())) {
                 usuario.enviarErro("CPF", "Seu usuário não está vinculado a este CPF");
             }
         } else {
@@ -262,7 +243,7 @@ public class LoginController extends SigaController {
 
         if (!usuario.temErros()) {
             if (SigaMessages.isSigaSP()) {
-                Cp.getInstance().getBL().trocarSenhaDeIdentidadeGovSp(senhaAtual, senhaNova, senhaConfirma, nomeUsuario,
+                cpBl.trocarSenhaDeIdentidadeGovSp(senhaAtual, senhaNova, senhaConfirma, nomeUsuario,
                         identidade, Arrays.asList(identidade));
             } else {
                 if ("on".equals(usuario.getTrocarSenhaRede())) {
@@ -275,7 +256,7 @@ public class LoginController extends SigaController {
                 }
 
                 if (!usuario.temErros()) {
-                    Cp.getInstance().getBL().trocarSenhaDeIdentidade(senhaAtual, senhaNova, senhaConfirma,
+                    cpBl.trocarSenhaDeIdentidade(senhaAtual, senhaNova, senhaConfirma,
                             nomeUsuario, identidade);
                 }
             }
@@ -302,13 +283,13 @@ public class LoginController extends SigaController {
                 result.redirectTo(Contexto.urlBase(request) + "/siga/openIdServlet");
             } else {
 
-                List<CpIdentidade> idsCpf = CpDao.getInstance().consultaIdentidadesCadastrante(cpf, true);
+                List<CpIdentidade> idsCpf = cpDao.consultaIdentidadesCadastrante(cpf, true);
 
                 boolean usuarioPermitido = false;
                 for (CpIdentidade identCpf : idsCpf) {
 
                     usuarioPermitido = true;
-                    if (identCpf.isBloqueada() || !identCpf.isAtivo()) {
+                    if (cpComp.isIdentidadeBloqueada(identCpf) || !identCpf.isAtivo()) {
                         usuarioPermitido = false;
                         break;
                     }

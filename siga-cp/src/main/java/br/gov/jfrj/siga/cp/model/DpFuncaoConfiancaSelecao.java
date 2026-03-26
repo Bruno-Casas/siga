@@ -30,7 +30,7 @@ public class DpFuncaoConfiancaSelecao extends Selecao<DpFuncaoConfianca> {
 		final DpFuncaoConfianca oExemplo = new DpFuncaoConfianca();
 		oExemplo.setSigla(getSigla());
 
-		final DpFuncaoConfianca o = CpDao.getInstance().consultarPorSigla(
+		final DpFuncaoConfianca o = dao.consultarPorSigla(
 				oExemplo);
 
 		if (o == null) {
@@ -44,7 +44,7 @@ public class DpFuncaoConfiancaSelecao extends Selecao<DpFuncaoConfianca> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final DpFuncaoConfianca o = CpDao.getInstance().consultar(
+		final DpFuncaoConfianca o = dao.consultar(
 				getId(), DpFuncaoConfianca.class, false);
 		if (o == null)
 			return false;
@@ -63,7 +63,7 @@ public class DpFuncaoConfiancaSelecao extends Selecao<DpFuncaoConfianca> {
 		if (getId() == null)
 			return null;
 
-		final DpFuncaoConfianca o = CpDao.getInstance().consultar(
+		final DpFuncaoConfianca o = dao.consultar(
 				getId(), DpFuncaoConfianca.class, false);
 
 		return o;

@@ -22,7 +22,6 @@ import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.vraptor.CpConfiguracaoHelper;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.bl.WfConfiguracaoComparator;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.model.WfConfiguracao;
@@ -78,7 +77,7 @@ public class WfConfiguracaoController extends WfController {
 		config.setCpTipoConfiguracao(CpTipoDeConfiguracao.getById(idTpConfiguracao));
 
 		if (idOrgaoUsu != null && idOrgaoUsu != 0) {
-			config.setOrgaoUsuario(dao().consultar(idOrgaoUsu, CpOrgaoUsuario.class, false));
+			config.setOrgaoUsuario(cpDao.consultar(idOrgaoUsu, CpOrgaoUsuario.class, false));
 		} else
 			config.setOrgaoUsuario(null);
 
@@ -117,7 +116,7 @@ public class WfConfiguracaoController extends WfController {
 		WfConfiguracao config = new WfConfiguracao();
 
 		if (id != null) {
-			config = dao().consultar(id, WfConfiguracao.class, false);
+			config = cpDao.consultar(id, WfConfiguracao.class, false);
 		} else if (campoFixo) {
 			config = new WfConfiguracaoBuilder().setIdSituacao(idSituacao).setIdTpConfiguracao(idTpConfiguracao)
 					.setPessoaSel(pessoaSel).setLotacaoSel(lotacaoSel).setCargoSel(cargoSel).setFuncaoSel(funcaoSel)
@@ -137,7 +136,7 @@ public class WfConfiguracaoController extends WfController {
 		result.include("id", id);
 		result.include("listaTiposConfiguracao", getListaTiposConfiguracao());
 		result.include("orgaosUsu", getOrgaosUsu());
-		result.include("listaTiposLotacao", CpConfiguracaoHelper.getListaTiposLotacao(dao));
+		result.include("listaTiposLotacao", CpConfiguracaoHelper.getListaTiposLotacao(cpDao));
 		result.include("nmTipoRetorno", nmTipoRetorno);
 		result.include("campoFixo", campoFixo);
 		result.include("definicoesDeProcedimentos", getDefinicoesDeProcedimentos());
@@ -150,9 +149,9 @@ public class WfConfiguracaoController extends WfController {
 		assertAcesso(VERIFICADOR_ACESSO);
 
 		if (id != null) {
-			WfConfiguracao config = dao().consultar(id, WfConfiguracao.class, false);
-			config.setHisDtFim(dao().consultarDataEHoraDoServidor());
-			dao().gravarComHistorico(config, getIdentidadeCadastrante());
+			WfConfiguracao config = cpDao.consultar(id, WfConfiguracao.class, false);
+			config.setHisDtFim(cpDao.consultarDataEHoraDoServidor());
+			cpDao.gravarComHistorico(config, getIdentidadeCadastrante());
 			result.redirectTo(this).lista(config.getCpTipoConfiguracao().getId(), null);
 		} else
 			throw new AplicacaoException("ID não informada");
@@ -179,7 +178,7 @@ public class WfConfiguracaoController extends WfController {
 				.setIdOrgaoUsu(idOrgaoUsu).setIdTpLotacao(idTpLotacao)
 				.setIdDefinicaoDeProcedimento(idDefinicaoDeProcedimento).construir();
 
-		CpConfiguracaoHelper.gravarConfiguracao(idTpConfiguracao, idSituacao, config, dao, getIdentidadeCadastrante());
+		CpConfiguracaoHelper.gravarConfiguracao(idTpConfiguracao, idSituacao, config, cpDao, getIdentidadeCadastrante());
 		result.redirectTo(this).lista(idTpConfiguracao, null);
 	}
 
@@ -195,7 +194,7 @@ public class WfConfiguracaoController extends WfController {
 	}
 
 	private List<WfDefinicaoDeProcedimento> getDefinicoesDeProcedimentos() {
-		return dao().listarDefinicoesDeProcedimentos();
+		return cpDao.listarDefinicoesDeProcedimentos();
 	}
 
 }

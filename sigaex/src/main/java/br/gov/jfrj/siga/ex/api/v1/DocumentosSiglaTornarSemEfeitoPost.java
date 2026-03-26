@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaTornarSemEfeitoPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeTornarDocumentoSemEfeito;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import com.crivano.swaggerservlet.PresentableUnloggedException;
@@ -24,7 +23,7 @@ public class DocumentosSiglaTornarSemEfeitoPost implements IDocumentosSiglaTorna
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        Ex.getInstance().getBL().tornarDocumentoSemEfeito(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc(),
+        this.bl.tornarDocumentoSemEfeito(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob.doc(),
                 req.motivo);
 
         resp.sigla = mob.doc().getCodigo();

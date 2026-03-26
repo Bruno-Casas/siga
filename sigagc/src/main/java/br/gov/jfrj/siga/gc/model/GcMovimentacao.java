@@ -20,7 +20,7 @@ import br.gov.jfrj.siga.model.Objeto;
 						+ "join mov.inf info "
 						+ "where mov.tipo.id = :idTipoMovAnexarArquivo "
 						+ "and mov.movCanceladora is null and mov.arq.id = :idArqMov and info.id = :idInformacao"),
-	@NamedQuery(name = "numeroEquipeLotacao", query = "select count(distinct p.idPessoaIni) from DpPessoa p join p.lotacao l where l.idLotacao = :idLotacao"),
+	@NamedQuery(name = "numeroEquipeLotacao", query = "select count(distinct p.hisIdIni) from DpPessoa p join p.lotacao l where l.idLotacao = :idLotacao"),
 	@NamedQuery(name = "numeroEquipeCiente", query = "select count(*) from GcMovimentacao m where m.tipo.id= 7 and m.inf.id = :idInfo and m.lotacaoAtendente.idLotacao = :idLotacao and m.movRef = :movRef") 
 })
 public class GcMovimentacao extends Objeto implements

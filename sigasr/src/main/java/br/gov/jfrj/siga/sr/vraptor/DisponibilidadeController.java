@@ -24,18 +24,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Path("app/disponibilidade")
 public class DisponibilidadeController extends SrController {
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public DisponibilidadeController() {
-		super();
-	}
-	
-	@Inject
-	public DisponibilidadeController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em, SrValidator srValidator) {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-	}
-
 	@Path("/listar")
 	public void listar() {
 		@SuppressWarnings("unchecked")

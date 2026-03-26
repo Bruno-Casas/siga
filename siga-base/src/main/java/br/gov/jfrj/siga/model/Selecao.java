@@ -19,6 +19,9 @@
 package br.gov.jfrj.siga.model;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
+import br.gov.jfrj.siga.model.dao.ModeloDao;
+
+import javax.enterprise.inject.spi.CDI;
 
 /**
  * Classe abstrata que provê suporte à caixa de seleção da interface do usuário
@@ -68,6 +71,8 @@ public abstract class Selecao<T extends Selecionavel> {
 
 	private String sigla;
 
+	protected ModeloDao dao;
+
 	final static public String TAMANHO_MEDIO = "medio";
 
 	final static public String TAMANHO_GRANDE = "grande";
@@ -77,9 +82,11 @@ public abstract class Selecao<T extends Selecionavel> {
 	public abstract boolean buscarPorId() throws AplicacaoException;
 
 	public abstract T buscarObjeto() throws AplicacaoException;
-	
+
 	public Selecao() {
 		super();
+
+		this.dao = CDI.current().select(ModeloDao.class).get();
 	}
 
 	public Selecao(T o) {
@@ -170,5 +177,9 @@ public abstract class Selecao<T extends Selecionavel> {
 
 	public boolean empty() {
 		return id == null;
+	}
+
+	protected ModeloDao getDao() {
+		return CDI.current().select(ModeloDao.class).get();
 	}
 }

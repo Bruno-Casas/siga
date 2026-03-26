@@ -1,7 +1,7 @@
 package br.gov.jfrj.siga.wf.model.task;
 
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.wf.bl.Wf;
+import br.gov.jfrj.siga.wf.bl.WfBL;
 import br.gov.jfrj.siga.wf.model.*;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeResponsavel;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeTarefa;
@@ -11,6 +11,7 @@ import com.crivano.jflow.TaskResult;
 import com.crivano.jflow.model.enm.TaskResultKind;
 import com.crivano.jflow.task.TaskForm;
 
+import javax.enterprise.inject.spi.CDI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,14 +27,16 @@ public class WfTarefaSubprocedimento extends
     @Override
     public TaskResult execute(WfDefinicaoDeTarefa td, WfProcedimento pi, Engine engine) throws Exception {
         long pdId = td.getRefId();
-        pdId = WfDefinicaoDeProcedimento.AR.findById(pdId).getAtual().getId();
+        pdId = WfDefinicaoDeProcedimento.AR.findById(pdId).getHistoricoAtual().getId();
         List<String> keys = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         pi.getVariable().keySet().stream().forEach(t -> {
             keys.add(t);
             values.add(pi.getVariable().get(t));
         });
-        WfProcedimento subpi = Wf.getInstance().getBL().criarProcedimento(pdId, null, pi.getTitular(),
+
+        WfBL bl = CDI.current().select(WfBL.class).get();
+        WfProcedimento subpi = bl.criarProcedimento(pdId, null, pi.getTitular(),
                 pi.getLotaTitular(), null, pi.getTipoDePrincipal(), pi.getPrincipal(), keys, values, false);
         pi.getVariable().put(getIdentificadorDaVariavel(pi.getDefinicaoDeTarefaCorrente()), subpi.getSigla());
         return resume(td, pi, null, null, engine);

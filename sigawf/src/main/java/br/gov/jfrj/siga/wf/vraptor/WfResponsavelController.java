@@ -43,8 +43,8 @@ import br.gov.jfrj.siga.cp.model.HistoricoAuditavel;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.sinc.lib.Sincronizador;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
+import br.gov.jfrj.siga.model.SincronizadorSimples;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import br.gov.jfrj.siga.wf.dao.WfDao;
@@ -97,27 +97,11 @@ public class WfResponsavelController extends WfController {
 		}
 	}
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public WfResponsavelController() {
-		super();
-	}
-
-	/**
-	 * Inicializa os tipos de responsáveis e suas respectivas expressões, quando
-	 * houver.
-	 */
-	@Inject
-	public WfResponsavelController(HttpServletRequest request, Result result, WfDao dao, SigaObjects so, WfUtil util) {
-		super(request, result, dao, so, util);
-	}
-
 	@Get("listar")
 	public void lista() throws Exception {
 		try {
 			assertAcesso(VERIFICADOR_ACESSO);
-			List<WfDefinicaoDeResponsavel> modelos = dao().listarAtivos(WfDefinicaoDeResponsavel.class, "nome");
+			List<WfDefinicaoDeResponsavel> modelos = dao.listarAtivos(WfDefinicaoDeResponsavel.class, "nome");
 			result.include("itens", modelos);
 		} catch (AplicacaoException e) {
 			throw new AplicacaoException(e.getMessage(), 0, e);
@@ -131,7 +115,7 @@ public class WfResponsavelController extends WfController {
 	public void carregar() throws Exception {
 		try {
 			assertAcesso(VERIFICADOR_ACESSO);
-			List<WfDefinicaoDeResponsavel> list = dao().listarAtivos(WfDefinicaoDeResponsavel.class, "nome");
+			List<WfDefinicaoDeResponsavel> list = dao.listarAtivos(WfDefinicaoDeResponsavel.class, "nome");
 			result.use(Results.json()).from(list, "list").serialize();
 		} catch (AplicacaoException e) {
 			throw new AplicacaoException(e.getMessage(), 0, e);
@@ -154,12 +138,12 @@ public class WfResponsavelController extends WfController {
 			return;
 		}
 
-		dr = dao().consultar(id, WfDefinicaoDeResponsavel.class, false);
+		dr = dao.consultar(id, WfDefinicaoDeResponsavel.class, false);
 		result.include("dr", dr);
 
 		Map<Long, WfResponsavel> map = mapaDeResponsaveis(dr);
 
-		for (CpOrgaoUsuario o : dao().consultaCpOrgaoUsuario()) {
+		for (CpOrgaoUsuario o : dao.consultaCpOrgaoUsuario()) {
 			Item i = new Item();
 			i.orgaoId = o.getId();
 			i.orgaoSigla = o.getSigla();
@@ -181,7 +165,7 @@ public class WfResponsavelController extends WfController {
 
 	private Map<Long, WfResponsavel> mapaDeResponsaveis(WfDefinicaoDeResponsavel dr) {
 		Map<Long, WfResponsavel> map = new HashMap<>();
-		List<WfResponsavel> resps = dao().consultarResponsaveisPorDefinicaoDeResponsavel(dr);
+		List<WfResponsavel> resps = dao.consultarResponsaveisPorDefinicaoDeResponsavel(dr);
 		if (resps != null)
 			for (WfResponsavel r : resps)
 				map.put(r.getOrgaoUsuario().getId(), r);
@@ -193,33 +177,30 @@ public class WfResponsavelController extends WfController {
 	public void gravar(final Long id, final String nome, final String descr, List<Item> itens)
 			throws Exception {
 		assertAcesso(VERIFICADOR_ACESSO);
-		Date dt = dao().consultarDataEHoraDoServidor();
+		Date dt = dao.consultarDataEHoraDoServidor();
 
 		if (id == null) {
 			WfDefinicaoDeResponsavel dr = new WfDefinicaoDeResponsavel();
 			dr.setNome(nome);
 			dr.setDescr(descr);
 			dr.setHisDtIni(dt);
-			dao().gravarComHistorico(dr, getIdentidadeCadastrante());
+			dao.gravarComHistorico(dr, getIdentidadeCadastrante());
 			result.redirectTo(this).edita(dr.getId());
 			return;
 		}
-		WfDefinicaoDeResponsavel dr = dao().consultar(id, WfDefinicaoDeResponsavel.class, false);
-		dr = dao().consultarAtivoPorIdInicial(WfDefinicaoDeResponsavel.class, dr.getHisIdIni());
+		WfDefinicaoDeResponsavel dr = dao.consultar(id, WfDefinicaoDeResponsavel.class, false);
+		dr = dao.consultarAtivoPorIdInicial(WfDefinicaoDeResponsavel.class, dr.getHisIdIni());
 
 		WfDefinicaoDeResponsavel drNovo = new WfDefinicaoDeResponsavel();
 		drNovo.setNome(nome);
 		drNovo.setDescr(descr);
 		drNovo.setHisIdIni(dr.getHisIdIni());
-		dr = (WfDefinicaoDeResponsavel) dao().gravarComHistorico(drNovo, dr, dt, getIdentidadeCadastrante());
+		dr = (WfDefinicaoDeResponsavel) dao.gravarComHistorico(drNovo, dr, dt, getIdentidadeCadastrante());
 
-		// Utilizaremos o sincronizador para perceber apenas as diferenças entre a
-		// definição que está guardada no banco de dados e a nova versão submetida..
-		Sincronizador sinc = new Sincronizador();
-		SortedSet<Sincronizavel> setDepois = new TreeSet<>();
-		SortedSet<Sincronizavel> setAntes = new TreeSet<>();
+		List<SincronizavelSimples> setDepois = new ArrayList<>();
+		List<SincronizavelSimples> setAntes = new ArrayList<>();
 
-		List<WfResponsavel> resps = dao().consultarResponsaveisPorDefinicaoDeResponsavel(dr);
+		List<WfResponsavel> resps = dao.consultarResponsaveisPorDefinicaoDeResponsavel(dr);
 		if (resps != null)
 			setAntes.addAll(resps);
 		if (itens != null) {
@@ -227,39 +208,37 @@ public class WfResponsavelController extends WfController {
 				if (i.pessoa != null && i.pessoa.getId() == null)
 					i.pessoa = null;
 				else
-					i.pessoa = dao().carregarPorId(i.pessoa);
+					i.pessoa = dao.carregarPorId(i.pessoa);
 				if (i.lotacao != null && i.lotacao.getId() == null)
 					i.lotacao = null;
 				else
-					i.lotacao = dao().carregarPorId(i.lotacao);
+					i.lotacao = dao.carregarPorId(i.lotacao);
 				if (i.pessoa == null && i.lotacao == null)
 					continue;
 				WfResponsavel r = new WfResponsavel(i.pessoa, i.lotacao);
-				r.setOrgaoUsuario(dao().consultar(i.orgaoId, CpOrgaoUsuario.class, false));
-				r.setDefinicaoDeResponsavel(dao().consultar(dr.getIdInicial(), dr.getClass(), false));
-				r.setIdExterna(r.criarIdExterna());
+				r.setOrgaoUsuario(dao.consultar(i.orgaoId, CpOrgaoUsuario.class, false));
+				r.setDefinicaoDeResponsavel(dao.consultar(dr.getIdInicial(), dr.getClass(), false));
 				setDepois.add(r);
 			}
 		}
 
-		sinc.setSetNovo(setDepois);
-		sinc.setSetAntigo(setAntes);
-		List<br.gov.jfrj.siga.sinc.lib.Item> list = sinc.getEncaixe();
+		SincronizadorSimples<SincronizavelSimples> sinc = new SincronizadorSimples<>();
+		List<SincronizadorSimples.Item<SincronizavelSimples>> list = sinc.encaixar(setAntes, setDepois);
 
-		for (br.gov.jfrj.siga.sinc.lib.Item i : list) {
-			switch (i.getOperacao()) {
+		for (SincronizadorSimples.Item<SincronizavelSimples> i : list) {
+			switch (i.operacao) {
 			case alterar:
-				i.getNovo().setIdInicial(i.getAntigo().getIdInicial());
-				dao().gravarComHistorico((HistoricoAuditavel) i.getNovo(), (HistoricoAuditavel) i.getAntigo(), dt,
+				((WfResponsavel) i.novo).setHisIdIni(((WfResponsavel) i.antigo).getHisIdIni());
+				dao.gravarComHistorico((HistoricoAuditavel) i.novo, (HistoricoAuditavel) i.antigo, dt,
 						getIdentidadeCadastrante());
 				break;
 			case incluir:
-				i.getNovo().setDataInicio(dt);
-				dao().gravarComHistorico((HistoricoAuditavel) i.getNovo(), getIdentidadeCadastrante());
+				((WfResponsavel) i.novo).setHisDtIni(dt);
+				dao.gravarComHistorico((HistoricoAuditavel) i.novo, getIdentidadeCadastrante());
 				break;
 			case excluir:
-				((HistoricoAuditavel) i.getAntigo()).setHisDtFim(dt);
-				dao().gravarComHistorico((HistoricoAuditavel) i.getAntigo(), getIdentidadeCadastrante());
+				((HistoricoAuditavel) i.antigo).setHisDtFim(dt);
+				dao.gravarComHistorico((HistoricoAuditavel) i.antigo, getIdentidadeCadastrante());
 				break;
 			}
 		}

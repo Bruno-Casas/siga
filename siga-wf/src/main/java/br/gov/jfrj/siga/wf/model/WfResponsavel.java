@@ -4,27 +4,22 @@ import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import com.crivano.jflow.model.Responsible;
 import org.hibernate.annotations.BatchSize;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Date;
 
 @Entity
 @BatchSize(size = 500)
 @Table(name = "sigawf.wf_responsavel")
 public class WfResponsavel extends HistoricoAuditavelSuporte
-        implements Responsible, Serializable, Sincronizavel, Comparable<Sincronizavel> {
+        implements Responsible, Serializable, SincronizavelSimples {
 
     @Id
     @GeneratedValue
     @Column(name = "RESP_ID", unique = true, nullable = false)
-    @Desconsiderar
     private java.lang.Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -50,7 +45,6 @@ public class WfResponsavel extends HistoricoAuditavelSuporte
     // de HistoricoSuporte.
     //
     @Column(name = "HIS_ATIVO")
-    @Desconsiderar
     private Integer hisAtivo;
 
     @Override
@@ -140,69 +134,8 @@ public class WfResponsavel extends HistoricoAuditavelSuporte
     }
 
     @Override
-    public String getIdExterna() {
-        return getHisIde() != null ? getHisIde() : "novo responsável";
-    }
-
-    @Override
-    public void setIdExterna(String idExterna) {
-        setHisIde(idExterna);
-    }
-
-    @Override
-    public void setIdInicial(Long idInicial) {
-        this.setHisIdIni(idInicial);
-    }
-
-    @Override
-    public Date getDataInicio() {
-        return getHisDtIni();
-    }
-
-    @Override
-    public void setDataInicio(Date dataInicio) {
-        setHisDtIni(dataInicio);
-    }
-
-    @Override
-    public Date getDataFim() {
-        return getHisDtFim();
-    }
-
-    @Override
-    public void setDataFim(Date dataFim) {
-        setHisDtFim(dataFim);
-    }
-
-    @Override
-    public String getLoteDeImportacao() {
-        return null;
-    }
-
-    @Override
-    public void setLoteDeImportacao(String loteDeImportacao) {
-    }
-
-    @Override
-    public int getNivelDeDependencia() {
-        return 0;
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return SincronizavelSuporte.semelhante(this, obj, profundidade);
-    }
-
-    @Override
-    public String getDescricaoExterna() {
-        return getCodigo();
-    }
-
-    @Override
-    public int compareTo(Sincronizavel o) {
-        if (!this.getClass().equals(o.getClass()))
-            return this.getClass().getName().compareTo(o.getClass().getName());
-        return this.getIdExterna().compareTo(o.getIdExterna());
+    public String getIdSincronizacao() {
+        return criarIdExterna();
     }
 
     @PostLoad

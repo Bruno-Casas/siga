@@ -18,7 +18,6 @@ import com.auth0.jwt.JWTVerifyException;
 
 import br.gov.jfrj.siga.Service;
 import br.gov.jfrj.siga.base.Prop;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.gi.service.GiService;
 
 /**

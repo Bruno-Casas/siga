@@ -14,7 +14,14 @@ import br.gov.jfrj.siga.dp.DpFuncaoConfianca;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpFuncaoConfiancaDaoFiltro;
 
+import javax.inject.Inject;
+
 public class FuncoesGet implements IFuncoesGet {
+
+	@Inject
+	private CpDao dao;
+
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (StringUtils.isEmpty(req.idOrgao))
@@ -35,7 +42,7 @@ public class FuncoesGet implements IFuncoesGet {
 		if (!(req.nomeFuncaoConfianca == null || req.nomeFuncaoConfianca.isEmpty() || req.nomeFuncaoConfianca == ""))
 			flt.setNome(Texto.removeAcentoMaiusculas(req.nomeFuncaoConfianca));
 		flt.setIdOrgaoUsu(Long.valueOf(req.idOrgao));
-		List<DpFuncaoConfianca> l = CpDao.getInstance().consultarPorFiltro(flt);
+		List<DpFuncaoConfianca> l = dao.consultarPorFiltro(flt);
 		return l.stream().map(this::cargoToResultadoPesquisa).collect(Collectors.toList());
 	}
 
@@ -49,7 +56,7 @@ public class FuncoesGet implements IFuncoesGet {
 
 		func.sigla = cargo.getSigla();
 		func.idFuncaoConfianca = cargo.getId().toString();
-		func.idFuncaoConfiancaIni = cargo.getIdFuncaoIni().toString();
+		func.idFuncaoConfiancaIni = cargo.getHisIdIni().toString();
 		func.idExterna = cargo.getIdExterna().toString();
 		func.nome = cargo.getNomeFuncao();
 		return func;

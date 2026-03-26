@@ -12,9 +12,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 
 @Entity
 @Table(name = "sr_pergunta", schema = "sigasr")
@@ -61,11 +60,6 @@ public class SrPergunta extends HistoricoSuporte {
     @Override
     public void setId(Long id) {
         this.setIdPergunta(id);
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return false;
     }
 
     public List<SrPergunta> getHistoricoPergunta() {

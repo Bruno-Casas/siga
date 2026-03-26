@@ -3,12 +3,12 @@ package br.gov.jfrj.siga.api.v1;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import com.crivano.swaggerservlet.SwaggerException;
 
 import br.gov.jfrj.siga.api.v1.ISigaApiV1.IPessoasPost;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.RegraNegocioException;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpCargo;
@@ -18,8 +18,17 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
+import javax.inject.Inject;
+
 @Transacional
 public class PessoasPost implements IPessoasPost {
+
+	@Inject
+	private CpDao dao;
+
+	@Inject
+	private CpConfiguracaoBL conf;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		try {
@@ -28,7 +37,7 @@ public class PessoasPost implements IPessoasPost {
 			if (req.siglaOrgao == null || "".equals(req.siglaOrgao))
 				throw new AplicacaoException("Sigla do órgão é obrigatória");
 
-			if (req.idCargoIni != null && !req.idCargoIni.matches("\\d+"))
+			if (req.hisIdIni != null && !req.hisIdIni.matches("\\d+"))
 				throw new AplicacaoException("Id do Cargo deve ser numérico.");
 
 			if (req.idFuncaoConfiancaIni != null && !req.idFuncaoConfiancaIni.matches("\\d+"))
@@ -39,11 +48,11 @@ public class PessoasPost implements IPessoasPost {
 
 			CpOrgaoUsuario orgaoFiltro = new CpOrgaoUsuario();
 			orgaoFiltro.setSigla(req.siglaOrgao);
-			CpOrgaoUsuario orgaoUsu = CpDao.getInstance().consultarPorSigla(orgaoFiltro);
+			CpOrgaoUsuario orgaoUsu = dao.consultarPorSigla(orgaoFiltro);
 			if (orgaoUsu == null)
 				throw new AplicacaoException("Órgão não existente.");
 			if (orgaoUsu.getId() != ctx.getTitular().getOrgaoUsuario().getId()
-					&& !Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(ctx.getTitular(),
+					&& !conf.podeUtilizarServicoPorConfiguracao(ctx.getTitular(),
 							ctx.getLotaTitular(),
 							"SIGA:Sistema Integrado de Gestão Administrativa;WS_REST: Acesso aos webservices REST;"
 									+ "CAD_PES_TODOS_ORGAOS: Cadatrar pessoas em todos órgãos")) {
@@ -53,10 +62,10 @@ public class PessoasPost implements IPessoasPost {
 			Long idOrgaoUsu = orgaoUsu.getIdOrgaoUsu();
 
 			Long idCargo = null;
-			if (req.idCargoIni != null) {
-				idCargo = Long.valueOf(req.idCargoIni);
-				List<DpCargo> cargo = (ArrayList<DpCargo>) CpDao.getInstance().consultarPorIdOuIdInicial(DpCargo.class,
-						"idCargoIni", "dataFimCargo", Long.valueOf(req.idCargoIni));
+			if (req.hisIdIni != null) {
+				idCargo = Long.valueOf(req.hisIdIni);
+				List<DpCargo> cargo = (ArrayList<DpCargo>) dao.consultarPorIdOuIdInicial(DpCargo.class,
+						"hisIdIni", "hisDtFim", Long.valueOf(req.hisIdIni));
 				if (cargo == null || cargo.isEmpty())
 					throw new AplicacaoException("Cargo não existente.");
 				if (cargo.get(0).getOrgaoUsuario().getIdOrgaoUsu() != idOrgaoUsu)
@@ -66,8 +75,8 @@ public class PessoasPost implements IPessoasPost {
 			Long idFuncao = null;
 			if (req.idFuncaoConfiancaIni != null) {
 				idFuncao = Long.valueOf(req.idFuncaoConfiancaIni);
-				List<DpFuncaoConfianca> funcaoConfianca = (ArrayList<DpFuncaoConfianca>) CpDao.getInstance()
-						.consultarPorIdOuIdInicial(DpFuncaoConfianca.class, "idFuncao", "dataFimFuncao",
+				List<DpFuncaoConfianca> funcaoConfianca = (ArrayList<DpFuncaoConfianca>) dao
+						.consultarPorIdOuIdInicial(DpFuncaoConfianca.class, "idFuncao", "hisDtFim",
 								Long.valueOf(req.idFuncaoConfiancaIni));
 				if (funcaoConfianca == null || funcaoConfianca.isEmpty())
 					throw new AplicacaoException("Função de confiança não existente.");
@@ -83,7 +92,7 @@ public class PessoasPost implements IPessoasPost {
 
 			DpLotacao lotacaoFiltro = new DpLotacao();
 			lotacaoFiltro.setSigla(req.lotacao);
-			DpLotacao lota = CpDao.getInstance().consultarPorSigla(lotacaoFiltro);
+			DpLotacao lota = dao.consultarPorSigla(lotacaoFiltro);
 			if (lota == null)
 				throw new AplicacaoException("Lotação não existente.");
 			if (lota.getOrgaoUsuario().getIdOrgaoUsu() != idOrgaoUsu)
@@ -119,10 +128,6 @@ public class PessoasPost implements IPessoasPost {
 	@Override
 	public String getContext() {
 		return "selecionar pessoas";
-	}
-
-	protected CpDao dao() {
-		return CpDao.getInstance();
 	}
 
 }

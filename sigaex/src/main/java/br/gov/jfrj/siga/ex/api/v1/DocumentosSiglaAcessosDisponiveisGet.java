@@ -10,14 +10,19 @@ import br.gov.jfrj.siga.ex.api.v1.IExApiV1.AcessoItem;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaAcessosDisponiveisGet;
 import br.gov.jfrj.siga.ex.util.NivelDeAcessoUtil;
 
+import javax.inject.Inject;
+
 public class DocumentosSiglaAcessosDisponiveisGet implements IDocumentosSiglaAcessosDisponiveisGet {
+
+	@Inject
+	private NivelDeAcessoUtil nivelDeAcessoUtil;
 
 	@Override
 	public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
 		ExMobil mob = ctx.buscarEValidarMobil(req.sigla, req, resp, "Documento a Redefinir Acesso");
 
 		ExDocumento doc = mob.doc();
-		List<ExNivelAcesso> acessos = NivelDeAcessoUtil.getListaNivelAcesso(doc.getExTipoDocumento(),
+		List<ExNivelAcesso> acessos = nivelDeAcessoUtil.getListaNivelAcesso(doc.getExTipoDocumento(),
 				doc.getExFormaDocumento(), doc.getExModelo(), doc.getExClassificacaoAtual(), ctx.getTitular(),
 				ctx.getLotaTitular());
 

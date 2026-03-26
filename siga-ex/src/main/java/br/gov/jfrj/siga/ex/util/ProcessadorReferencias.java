@@ -28,6 +28,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -122,7 +123,8 @@ public class ProcessadorReferencias {
                 else {
                     String s = parser.getText();
 
-                    s = CpProcessadorReferencias.marcarReferenciasParaDocumentos(s, htIgnorar);
+                    CpProcessadorReferencias pr = CDI.current().select(CpProcessadorReferencias.class).get();
+                    s = pr.marcarReferenciasParaDocumentos(s, htIgnorar);
                     serializer.flush();
                     os.write(s.getBytes(StandardCharsets.UTF_8));
                 }

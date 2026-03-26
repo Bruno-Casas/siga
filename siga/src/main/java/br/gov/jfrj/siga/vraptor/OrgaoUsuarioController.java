@@ -11,7 +11,6 @@ import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.dp.CpContrato;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.CpOrgaoUsuarioDaoFiltro;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
@@ -37,19 +36,6 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
 
     private static WeakHashMap<Long, ByteBuffer> brasaoCache = new WeakHashMap<>();
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public OrgaoUsuarioController() {
-        super();
-    }
-
-    @Inject
-    public OrgaoUsuarioController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-        super(request, result, CpDao.getInstance(), so, em);
-        // TODO Auto-generated constructor stub
-    }
-
     @Override
     protected DaoFiltroSelecionavel createDaoFiltro() {
         final CpOrgaoUsuarioDaoFiltro flt = new CpOrgaoUsuarioDaoFiltro();
@@ -64,9 +50,9 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
         }
         CpOrgaoUsuarioDaoFiltro orgaoUsuario = new CpOrgaoUsuarioDaoFiltro();
         orgaoUsuario.setNome(nome);
-        setItens(CpDao.getInstance().consultarPorFiltroComContrato(orgaoUsuario, paramoffset, 15));
+        setItens(cpDao.consultarPorFiltroComContrato(orgaoUsuario, paramoffset, 15));
         result.include("itens", getItens());
-        result.include("tamanho", dao().consultarQuantidade(orgaoUsuario));
+        result.include("tamanho", cpDao.consultarQuantidade(orgaoUsuario));
         result.include("nome", nome);
         if (!"ZZ".equalsIgnoreCase(getTitular().getOrgaoUsuario().getSigla())) {
             result.include("orgaoUsuarioSiglaLogado", getTitular().getOrgaoUsuario().getSigla());
@@ -92,7 +78,7 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
             }
         }
 
-        List<DpPessoa> listaPessoa = CpDao.getInstance().consultarPorMatriculaEOrgao(null, id, Boolean.FALSE, Boolean.FALSE);
+        List<DpPessoa> listaPessoa = cpDao.consultarPorMatriculaEOrgao(null, id, Boolean.FALSE, Boolean.FALSE);
 
         if (listaPessoa.isEmpty()) {
             result.include("podeAlterarSigla", Boolean.TRUE);
@@ -112,13 +98,13 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
             contrato = new CpContrato();
             contrato.setIdOrgaoUsu(id);
             contrato.setDtContrato(dataContrato);
-            dao().gravar(contrato);
+            cpDao.gravar(contrato);
         } else if ((contrato != null) && (dataContrato == null)) {
-            dao.excluir(contrato);
+            cpDao.excluir(contrato);
         } else if (contrato.getDtContrato().compareTo(dataContrato) != 0) {
             // Atualiza se a data foi alterada.
             contrato.setDtContrato(dataContrato);
-            dao().gravar(contrato);
+            cpDao.gravar(contrato);
         }
     }
 
@@ -159,7 +145,7 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
 
         CpOrgaoUsuario orgaoUsuario = new CpOrgaoUsuario();
         orgaoUsuario.setIdOrgaoUsu(id);
-        orgaoUsuario = dao().consultarPorId(orgaoUsuario);
+        orgaoUsuario = cpDao.consultarPorId(orgaoUsuario);
 
         boolean checkSigla = true;
         boolean checkNm = true;
@@ -176,7 +162,7 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
             try {
                 auxOrgaoUsuario = new CpOrgaoUsuario();
                 auxOrgaoUsuario.setSiglaOrgaoUsu(Texto.removerEspacosExtra(siglaOrgaoUsuario.toUpperCase().trim()));
-                auxOrgaoUsuario = dao().consultarPorSigla(auxOrgaoUsuario);
+                auxOrgaoUsuario = cpDao.consultarPorSigla(auxOrgaoUsuario);
             } catch (final Exception ignored) {
             }
 
@@ -187,7 +173,7 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
         if (checkNm) {
             auxOrgaoUsuario = new CpOrgaoUsuario();
             auxOrgaoUsuario.setNmOrgaoUsu(Texto.removeAcento(Texto.removerEspacosExtra(nmOrgaoUsuario).trim()));
-            auxOrgaoUsuario = dao().consultarPorNome(auxOrgaoUsuario);
+            auxOrgaoUsuario = cpDao.consultarPorNome(auxOrgaoUsuario);
 
             if (auxOrgaoUsuario != null) {
                 throw new AplicacaoException("Nome já cadastrado para outro órgão");
@@ -218,7 +204,7 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
 
         try {
             ContextoPersistencia.begin();
-            dao().gravar(orgaoUsuario);
+            cpDao.gravar(orgaoUsuario);
             ContextoPersistencia.commit();
 
             brasaoCache.remove(orgaoUsuario.getId());
@@ -241,7 +227,7 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
         } else {
             CpOrgaoUsuario orgaoUsuario = new CpOrgaoUsuario();
             orgaoUsuario.setIdOrgaoUsu(orgaoId);
-            orgaoUsuario = dao().consultarPorId(orgaoUsuario);
+            orgaoUsuario = cpDao.consultarPorId(orgaoUsuario);
 
 
             byte[] content = orgaoUsuario.getBrasaoBytes();
@@ -303,10 +289,10 @@ public class OrgaoUsuarioController extends SigaSelecionavelControllerSupport<Cp
     }
 
     private CpOrgaoUsuario daoOrgaoUsuario(long id) {
-        return dao().consultar(id, CpOrgaoUsuario.class, false);
+        return cpDao.consultar(id, CpOrgaoUsuario.class, false);
     }
 
     private CpContrato daoContrato(long idOrgaoUsu) {
-        return dao().consultar(idOrgaoUsu, CpContrato.class, false);
+        return cpDao.consultar(idOrgaoUsu, CpContrato.class, false);
     }
 }

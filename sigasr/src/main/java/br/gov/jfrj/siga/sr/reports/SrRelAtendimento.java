@@ -22,7 +22,6 @@ import ar.com.fdvs.dj.domain.builders.DJBuilderException;
 import br.gov.jfrj.relatorio.dinamico.AbstractRelatorioBaseBuilder;
 import br.gov.jfrj.relatorio.dinamico.RelatorioRapido;
 import br.gov.jfrj.relatorio.dinamico.RelatorioTemplate;
-import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.sr.model.SrEtapaSolicitacao;
 import br.gov.jfrj.siga.sr.model.SrEtapaSolicitacaoComparator;
@@ -81,7 +80,7 @@ public class SrRelAtendimento extends RelatorioTemplate {
 		
 		try {
 			if (tipo.equals("lotacao")) 
-				idsIniciais.add(lotaAtendente.getIdLotacaoIni());
+				idsIniciais.add(lotaAtendente.getHisIdIni());
 			else if (tipo.equals("lista_lotacao")) 
 				idsIniciais = listarLotacoesPorSigla();
 			else if (tipo.equals("expressao"))
@@ -103,8 +102,8 @@ public class SrRelAtendimento extends RelatorioTemplate {
 				registros.add(etapa.getSolicitacao().getCodigo());
 				registros.add(etapa.getSolicitacao().getHisDtIniDDMMYYYYHHMM());
 				registros.add(etapa.getSolicitacao().getDescricaoSemQuebraDeLinha());
-				registros.add(etapa.getLotaResponsavel().getLotacaoAtual().getSiglaCompleta()); 
-				registros.add(etapa.getPessoaResponsavel() != null ?  etapa.getPessoaResponsavel().getPessoaAtual().getPrimeiroNomeEIniciais() : "");
+				registros.add(etapa.getLotaResponsavel().getHistoricoAtual().getSiglaCompleta()); 
+				registros.add(etapa.getPessoaResponsavel() != null ?  etapa.getPessoaResponsavel().getHistoricoAtual().getPrimeiroNomeEIniciais() : "");
 				registros.add(etapa.getInicioString());
 				registros.add(etapa.getFimString());
 				registros.add(etapa.getTipoMov() != null ? etapa.getTipoMov().getNome() : "");
@@ -169,7 +168,7 @@ public class SrRelAtendimento extends RelatorioTemplate {
 				+ "inner join sol.meuMovimentacaoSet mov inner join sol.meuMarcaSet marca "
 				+ "where marca.cpMarcador.idMarcador <> 45 and sol.hisDtIni between :dataIni and :dataFim "
 					+ "and (mov.tipoMov = 1 or mov.tipoMov = 7 or mov.tipoMov = 24) "
-					+ "and mov.lotaAtendente.idLotacaoIni in (:idsLotaAtendenteIni))");
+					+ "and mov.lotaAtendente.hisIdIni in (:idsLotaAtendenteIni))");
 
 		Date dtIni = formatter.parse((String) parametros.get("dtIni") + " 00:00:00");
 		query.setParameter("dataIni", dtIni, TemporalType.TIMESTAMP);
@@ -185,8 +184,8 @@ public class SrRelAtendimento extends RelatorioTemplate {
 		String listaLotacoes = (String) parametros.get("listaLotacoes");
 		String[] siglas = listaLotacoes.trim().toUpperCase().split(";");
 		
-		Query query = DpLotacao.AR.em().createQuery("select idLotacaoIni from DpLotacao where "
-				+ "dataFimLotacao = null and siglaLotacao in :siglasLotacao and orgaoUsuario.idOrgaoUsu = :idOrgao");
+		Query query = DpLotacao.AR.em().createQuery("select hisIdIni from DpLotacao where "
+				+ "hisDtFim = null and siglaLotacao in :siglasLotacao and orgaoUsuario.idOrgaoUsu = :idOrgao");
 		query.setParameter("siglasLotacao", Arrays.asList(siglas));
 		query.setParameter("idOrgao", (Long) parametros.get("idOrgao"));
 		return query.getResultList();
@@ -199,8 +198,8 @@ public class SrRelAtendimento extends RelatorioTemplate {
 		if(sigla.indexOf('*') >= 0)
 			siglaModificada = sigla.trim().toUpperCase().replace('*', '%');
 		
-		Query query = DpLotacao.AR.em().createQuery("select idLotacaoIni from DpLotacao where "
-				+ "dataFimLotacao = null and siglaLotacao like :sigla and orgaoUsuario.idOrgaoUsu = :idOrgao");
+		Query query = DpLotacao.AR.em().createQuery("select hisIdIni from DpLotacao where "
+				+ "hisDtFim = null and siglaLotacao like :sigla and orgaoUsuario.idOrgaoUsu = :idOrgao");
 		query.setParameter("sigla", siglaModificada);
 		query.setParameter("idOrgao", (Long) parametros.get("idOrgao"));
 		return query.getResultList();

@@ -22,6 +22,8 @@ import br.gov.jfrj.siga.ex.ExNivelAcesso;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class ExAcesso {
 	public static final String ACESSO_PUBLICO = "PUBLICO";
 
@@ -32,6 +34,14 @@ public class ExAcesso {
 	private Map<ExDocumento, Set<Object>> cache = new HashMap<ExDocumento, Set<Object>>();
 
 	private Set<Object> acessos = null;
+
+	private final ExDao dao;
+	private final ExDocumentoBL docBl;
+
+	public ExAcesso(ExDao dao, ExDocumentoBL docBl) {
+		this.dao = dao;
+		this.docBl = docBl;
+	}
 
 	private void add(Object o) {
 		if (acessos.contains(ACESSO_PUBLICO)) {
@@ -143,13 +153,13 @@ public class ExAcesso {
 					String as[] = parte.getResponsavel().split(";");
 					for (String s : as) {
 						s = s.trim();
-						DpPessoa pes = ExDao.getInstance()
+						DpPessoa pes = dao
 								.getPessoaFromSigla(s);
 						if (pes != null) {
 							add(pes);
 							continue;
 						}
-						DpLotacao lot = ExDao.getInstance()
+						DpLotacao lot = dao
 								.getLotacaoFromSigla(s);
 						if (lot != null) {
 							add(lot);
@@ -204,7 +214,9 @@ public class ExAcesso {
 	}
 
 	private void incluirSubsecretaria(DpLotacao lot) {
-		DpLotacao subLotaDoc = Ex.getInstance().getComp().getSubsecretaria(lot);
+		ExCompetenciaBL bl = CDI.current().select(ExCompetenciaBL.class).get();
+
+		DpLotacao subLotaDoc = bl.getSubsecretaria(lot);
 		if (subLotaDoc == null) {
 			add(lot);
 			return;
@@ -309,7 +321,7 @@ public class ExAcesso {
 
 					Date dtDeRedefinicaoDoNivelDeAcesso = d.getDataDeRedefinicaoDoNivelDeAcesso();
 
-					switch (d.getExNivelAcessoAtual().getGrauNivelAcesso().intValue()) {
+					switch (docBl.getNivelAcessoAtualDoc(d).getGrauNivelAcesso().intValue()) {
 						case (int) ExNivelAcesso.NIVEL_ACESSO_PUBLICO:
 							add(ACESSO_PUBLICO);
 							break;

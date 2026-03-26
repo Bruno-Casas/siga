@@ -1,21 +1,3 @@
-/*******************************************************************************
- * Copyright (c) 2006 - 2011 SJRJ.
- *
- *     This file is part of SIGA.
- *
- *     SIGA is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     SIGA is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with SIGA.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
 package br.gov.jfrj.siga.ex.bl;
 
 import br.gov.jfrj.siga.cp.*;
@@ -27,11 +9,11 @@ import br.gov.jfrj.siga.dp.*;
 import br.gov.jfrj.siga.ex.*;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
+import javax.enterprise.inject.Specializes;
+import javax.inject.Inject;
 import java.util.*;
 
-/**
- * @author eeh
- */
+@Specializes
 public class ExConfiguracaoBL extends CpConfiguracaoBL {
 
     public static int NIVEL_ACESSO = 1;
@@ -100,8 +82,7 @@ public class ExConfiguracaoBL extends CpConfiguracaoBL {
 
     public CpSituacaoDeConfiguracaoEnum buscaSituacao(final ExConfiguracao exConfiguracao) {
         final CpConfiguracaoCache cpConfiguracaoResult = buscaConfiguracao(exConfiguracao,
-                new int[]{0}, ExDao.getInstance()
-                        .consultarDataEHoraDoServidor());
+                new int[]{0}, dao.consultarDataEHoraDoServidor());
         if (cpConfiguracaoResult != null) {
             return cpConfiguracaoResult.situacao;
         } else {
@@ -523,52 +504,6 @@ public class ExConfiguracaoBL extends CpConfiguracaoBL {
     public void destroy() {
         // TODO Auto-generated method stub
 
-    }
-
-    // public void doFilter(ServletRequest request, ServletResponse response,
-    // FilterChain chain) throws IOException, ServletException {
-    //
-    // hashListas.set(null);
-    // chain.doFilter(request, response);
-    // hashListas.set(null);
-    // }
-
-    // public void init(FilterConfig arg0) throws ServletException {
-    // // TODO Auto-generated method stub
-    //
-    // }
-
-//	public DpPessoa getDiretorForo() throws Exception {
-//		ExConfiguracao c = new ExConfiguracao();
-//		c.setCpTipoConfiguracao(ExDao.getInstance().consultar(
-//				CpTipoDeConfiguracao.DIRETORFORO,
-//				CpTipoConfiguracao.class, false));
-//		c = ExDao.getInstance().consultar(c).get(0);
-//		return c.getDpPessoa();
-//	}
-//
-//	public boolean isDiretorForo(DpPessoa quem) throws Exception {
-//		return (quem.equivale(getDiretorForo()));
-//	}
-
-
-    /**
-     * Retorna uma lista de (ex)configurações vigentes de acordo com um certo tipo
-     *
-     * @param ExConfiguracao
-     */
-
-    public List<ExConfiguracao> buscarConfiguracoesVigentes(final ExConfiguracao exemplo) {
-        Date hoje = new Date();
-        List<ExConfiguracao> todasConfig = ExDao.getInstance().consultar(exemplo);
-        List<ExConfiguracao> configVigentes = new ArrayList<ExConfiguracao>();
-
-        for (ExConfiguracao cfg : todasConfig) {
-            if (!cfg.ativaNaData(hoje))
-                continue;
-            configVigentes.add(cfg);
-        }
-        return (configVigentes);
     }
 
     /**

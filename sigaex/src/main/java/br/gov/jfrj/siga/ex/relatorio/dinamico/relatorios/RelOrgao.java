@@ -53,7 +53,7 @@ public class RelOrgao extends RelatorioTemplate {
  	}
  
 	private String buscarLotacaoPor(Long id) {
-		CpDao dao = CpDao.getInstance();
+		CpDao dao = dao;
 		DpLotacao lotacao = dao.consultar(id, DpLotacao.class, false);
 		return lotacao.getNomeLotacao();
 	}
@@ -151,7 +151,7 @@ public class RelOrgao extends RelatorioTemplate {
 							+ "mov.exTipoMovimentacao, count(distinct mob.idMobil.exDocumento.idDoc) "
 							+ "from ExMovimentacao mov inner join mov.exMobil mob "
 							+ "where mov.lotaCadastrante.orgaoUsuario.idOrgaoUsu = :orgaoUsu " 
-							+ "and mov.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :lotacaodest) "
+							+ "and mov.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :lotacaodest) "
 							+ "and mov.exTipoMovimentacao in (3,6,4,9,21) "
 							+ "and mov.exMovimentacaoCanceladora is null "
 							+ "and mob.idMobil.exDocumento.exFormaDocumento.exTipoFormaDoc.idTipoFormaDoc in (1,2) "

@@ -1,7 +1,9 @@
 package br.gov.jfrj.siga.ex;
 
 import br.gov.jfrj.siga.base.util.Texto;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 
+import javax.enterprise.inject.spi.CDI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,18 +38,21 @@ public class ExRef {
     }
 
     private void loadAns() {
+        // TDDO: Buscar algum modo mais alinhado com o CDI
+        ExMobilBL mobBl = CDI.current().select(ExMobilBL.class).get();
+
         if (ans == null && doc != null) {
             ExMobil pai = doc.getExMobilPai();
             if (pai != null) {
                 if (pai.isGeral())
                     pai = pai.doc().getMobilDefaultParaReceberJuntada();
-                ans = pai.getArquivosNumerados();
+                ans = mobBl.getArquivosNumerados(pai);
             } else if (mob != null)
-                ans = mob.getArquivosNumerados();
+                ans = mobBl.getArquivosNumerados(mob);
             else {
                 ExMobil mobil = doc.getMobilDefaultParaReceberJuntada();
                 if (mobil != null)
-                    ans = mobil.getArquivosNumerados();
+                    ans = mobBl.getArquivosNumerados(mobil);
             }
         }
     }

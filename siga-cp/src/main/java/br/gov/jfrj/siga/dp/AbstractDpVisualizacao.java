@@ -45,11 +45,11 @@ import br.gov.jfrj.siga.model.Objeto;
 		@NamedQuery(name = "consultarVisualizacoesPermitidas", query = "from DpVisualizacao as dps "
 				+ " where (dps.dtIniDeleg < :dbDatetime or dps.dtIniDeleg is null) "
 				+ " and (dps.dtFimDeleg > :dbDatetime or dps.dtFimDeleg is null) "
-				+ " and dps.delegado.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.idPessoaIni = :idDelegadoIni) "
+				+ " and dps.delegado.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.hisIdIni = :idDelegadoIni) "
 				+ " and dps.dtFimRegistro is null "),
 		@NamedQuery(name = "consultarOrdem", query = "from DpVisualizacao as dps "
 				+ " where "
-				+ " dps.titular.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.idPessoaIni = :idTitularIni) "
+				+ " dps.titular.idPessoa in (select pes.idPessoa from DpPessoa as pes where pes.hisIdIni = :idTitularIni) "
 				+ " and dps.dtFimRegistro is null "
 				+ " order by dps.dtIniDeleg, dps.dtFimDeleg ")
 		})

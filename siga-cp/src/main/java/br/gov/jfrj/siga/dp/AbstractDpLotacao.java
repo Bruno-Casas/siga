@@ -24,7 +24,6 @@ package br.gov.jfrj.siga.dp;
 
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
@@ -38,39 +37,39 @@ import java.util.TreeSet;
         @NamedQuery(
                 name = "consultarLotacaoAtualPelaLotacaoInicial",
                 query = "from DpLotacao lot "
-                        + "      where dataInicioLotacao = "
-                        + "      (select max(l.dataInicioLotacao) from DpLotacao l where l.idLotacaoIni = :idLotacaoIni) "
-                        + "      and lot.idLotacaoIni = :idLotacaoIni"
+                        + "      where hisDtIni = "
+                        + "      (select max(l.dataInicioLotacao) from DpLotacao l where l.hisIdIni= :hisIdIni) "
+                        + "      and lot.hisIdIni= :hisIdIni"
         ),
         @NamedQuery(name = "consultarPorIdDpLotacao", query = "select lot from DpLotacao lot where lot.idLotacao = :idLotacao"),
         @NamedQuery(name = "consultarPorSiglaDpLotacao", query = "select lot from DpLotacao lot where"
                 + "      ((lot.siglaLotacao = upper(:siglaLotacao)"
                 + "      and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lot.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu))"
                 + "      or (:siglaOrgaoLotacao is not null and lot.siglaLotacao = upper(:siglaOrgaoLotacao)))"
-                + "	     and lot.dataFimLotacao = null"),
+                + "	     and lot.hisDtFim = null"),
         @NamedQuery(
                 name = "consultarPorSiglaInclusiveFechadasDpLotacao",
                 query = "select lotacao from DpLotacao lotacao where"
                         + "      ((lotacao.siglaLotacao = upper(:siglaLotacao)"
                         + "      and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lotacao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu))"
                         + "      or (:siglaOrgaoLotacao is not null and lotacao.siglaLotacao = upper(:siglaOrgaoLotacao)))"
-                        + "		 and exists (select 1 from DpLotacao lAux where lAux.idLotacaoIni = lotacao.idLotacaoIni"
-                        + "			group by lAux.idLotacaoIni having max(lAux.dataInicioLotacao) = lotacao.dataInicioLotacao)"
+                        + "		 and exists (select 1 from DpLotacao lAux where lAux.hisIdIni= lotacao.hisIdIni"
+                        + "			group by lAux.hisIdInihaving max(lAux.dataInicioLotacao) = lotacao.dataInicioLotacao)"
         ),
         @NamedQuery(
                 name = "consultarPorSiglaDpLotacaoComLike",
                 query = "select lot from DpLotacao lot where"
                         + "        upper(lot.siglaLotacao) like upper('%' || :siglaLotacao || '%') "
                         + "        and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lot.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
-                        + "        and lot.dataFimLotacao = null"
+                        + "        and lot.hisDtFim = null"
         ),
         @NamedQuery(
                 name = "consultarPorIdInicialDpLotacao",
-                query = "select lot from DpLotacao lot where lot.idLotacaoIni = :idLotacaoIni and lot.dataFimLotacao = null"
+                query = "select lot from DpLotacao lot where lot.hisIdIni= :hisIdIni and lot.hisDtFim = null"
         ),
         @NamedQuery(
                 name = "listarPorIdInicialDpLotacao",
-                query = "select lot from DpLotacao lot where lot.idLotacaoIni = :idLotacaoIni"
+                query = "select lot from DpLotacao lot where lot.hisIdIni= :hisIdIni"
         ),
         // Encontra a lotação se like a sigla, o nome e o órgão é o mesmo do usuário atual, ou se like a sigla prefixada pelo acrônimo ou pela sigla do órgão. Ou seja,
         // se sou do TRF2 e buscar "SG", deve retornar apenas T2-SG. Sem a especificação do órgão, retornaria as SGs de todos os órgãos. Se eu sou do TRF2 e
@@ -82,7 +81,7 @@ import java.util.TreeSet;
                         + " and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lot.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
                         + " or ( :nome != null and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lot.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu) and (upper(concat(lot.orgaoUsuario.acronimoOrgaoUsu, lot.siglaLotacao)) like upper(:nome || '%')"
                         + " or upper(concat(lot.orgaoUsuario.siglaOrgaoUsu, lot.siglaLotacao)) like upper(:nome || '%'))))"
-                        + "	and lot.dataFimLotacao = null"
+                        + "	and lot.hisDtFim = null"
                         + "	 order by lot.nomeLotacao"
         ),
         @NamedQuery(
@@ -92,7 +91,7 @@ import java.util.TreeSet;
                         + "	 and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lot.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
                         + "  or ( :nome != null and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lot.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu) and (upper(concat(lot.orgaoUsuario.acronimoOrgaoUsu, lot.siglaLotacao)) like upper(:nome || '%')"
                         + "  or upper(concat(lot.orgaoUsuario.siglaOrgaoUsu, lot.siglaLotacao)) like upper(:nome || '%'))))"
-                        + "	 and lot.dataFimLotacao = null"
+                        + "	 and lot.hisDtFim = null"
         ),
         @NamedQuery(
                 name = "consultarPorFiltroDpLotacaoInclusiveFechadas",
@@ -101,19 +100,19 @@ import java.util.TreeSet;
                         + "	 and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lotacao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
                         + "  or ( :nome != null and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lotacao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu) and (upper(concat(lotacao.orgaoUsuario.acronimoOrgaoUsu, lotacao.siglaLotacao)) like upper(:nome || '%')"
                         + "  or upper(concat(lotacao.orgaoUsuario.siglaOrgaoUsu, lotacao.siglaLotacao)) like upper(:nome || '%'))))"
-                        + "	 and exists (select 1 from DpLotacao lAux where lAux.idLotacaoIni = lotacao.idLotacaoIni"
-                        + "	 group by lAux.idLotacaoIni having max(lAux.dataInicioLotacao) = lotacao.dataInicioLotacao)"
+                        + "	 and exists (select 1 from DpLotacao lAux where lAux.hisIdIni= lotacao.hisIdIni"
+                        + "	 group by lAux.hisIdInihaving max(lAux.dataInicioLotacao) = lotacao.dataInicioLotacao)"
                         + "  order by upper(nomeLotacaoAI)"
         ),
         @NamedQuery(
                 name = "consultarQuantidadeDpLotacaoInclusiveFechadas",
-                query = "select count(distinct lotacao.idLotacaoIni) from DpLotacao lotacao"
+                query = "select count(distinct lotacao.hisIdIni) from DpLotacao lotacao"
                         + "  where ((upper(lotacao.nomeLotacaoAI) like upper('%' || :nome || '%') or upper(lotacao.siglaLotacao) like upper('%' || :sigla || '%')) "
                         + "	and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lotacao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
                         + " or ( :nome != null and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or lotacao.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu) and (upper(concat(lotacao.orgaoUsuario.acronimoOrgaoUsu, lotacao.siglaLotacao)) like upper(:nome || '%')"
                         + " or upper(concat(lotacao.orgaoUsuario.siglaOrgaoUsu, lotacao.siglaLotacao)) like upper(:nome || '%'))))"
-                        + "	and exists (select 1 from DpLotacao lAux where lAux.idLotacaoIni = lotacao.idLotacaoIni"
-                        + "	 group by lAux.idLotacaoIni having max(lAux.dataInicioLotacao) = lotacao.dataInicioLotacao)"
+                        + "	and exists (select 1 from DpLotacao lAux where lAux.hisIdIni= lotacao.hisIdIni"
+                        + "	 group by lAux.hisIdInihaving max(lAux.hisDtIni) = lotacao.hisDtIni)"
         ),
         @NamedQuery(
                 name = "consultarPorNomeOrgaoDpLotacao",
@@ -121,14 +120,6 @@ import java.util.TreeSet;
         )
 })
 @NamedNativeQueries({
-        @NamedNativeQuery(
-                name = "consultarQuantidadeDocumentosPorDpLotacao",
-                query = "SELECT count(1) FROM corporativo.cp_marca marca "
-                        + " left join corporativo.dp_lotacao lotacao on lotacao.ID_LOTACAO = marca.ID_LOTACAO_INI"
-                        + " WHERE id_marcador not in (1,10,32)"
-                        + " AND lotacao.id_lotacao_ini = :idLotacao"
-                        + " AND id_tp_marca = :idTipoMarca "
-        ),
         @NamedNativeQuery(
                 name = "consultarQtdeDocCriadosPossePorDpLotacao",
                 query = "SELECT count(1) FROM siga.ex_documento doc "
@@ -147,43 +138,24 @@ import java.util.TreeSet;
                         + " and marca.ID_MARCADOR not in (:listMarcadores))"
         )
 })
-public abstract class AbstractDpLotacao extends DpResponsavel implements
-        Serializable, HistoricoAuditavel {
+public abstract class AbstractDpLotacao extends DpResponsavel<DpLotacao> implements Serializable {
 
     @Id
-    @SequenceGenerator(name = "DP_LOTACAO_SEQ", sequenceName = "CORPORATIVO.DP_LOTACAO_SEQ")
-    @GeneratedValue(generator = "DP_LOTACAO_SEQ")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "ID_LOTACAO", unique = true, nullable = false)
-    @Desconsiderar
     private Long idLotacao;
-
-    @Column(name = "ID_LOTACAO_INI")
-    @Desconsiderar
-    private Long idLotacaoIni;
 
     @Column(name = "NOME_LOTACAO", nullable = false, length = 120)
     private String nomeLotacao;
 
     @Column(name = "SIGLA_LOTACAO", length = 30)
-    private String siglaLotacao;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "DATA_FIM_LOT", length = 19)
-    @Desconsiderar
-    private Date dataFimLotacao;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "DATA_INI_LOT", nullable = false, length = 19)
-    @Desconsiderar
-    private Date dataInicioLotacao;
+    protected String siglaLotacao;
 
     @Column(name = "IDE_LOTACAO")
-    @Desconsiderar
     private String ideLotacao;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_LOTACAO_INI", insertable = false, updatable = false)
-    @Desconsiderar
     private DpLotacao lotacaoInicial;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -191,21 +163,17 @@ public abstract class AbstractDpLotacao extends DpResponsavel implements
     private DpLotacao lotacaoPai;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "lotacaoInicial")
-    @Desconsiderar
     private Set<DpLotacao> lotacoesPosteriores = new TreeSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ORGAO_USU", nullable = false)
-    @Desconsiderar
-    private CpOrgaoUsuario orgaoUsuario;
+    protected CpOrgaoUsuario orgaoUsuario;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "lotacaoPai")
-    @Desconsiderar
     private Set<DpLotacao> dpLotacaoSubordinadosSet = new TreeSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "lotacao")
     @Where(clause = "DATA_FIM_PESSOA is null")
-    @Desconsiderar
     private Set<DpPessoa> dpPessoaLotadosSet = new TreeSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -218,14 +186,6 @@ public abstract class AbstractDpLotacao extends DpResponsavel implements
 
     @Column(name = "IS_EXTERNA_LOTACAO")
     private Integer isExternaLotacao;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "HIS_IDC_INI")
-    private CpIdentidade hisIdcIni;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "HIS_IDC_FIM")
-    private CpIdentidade hisIdcFim;
 
     @Column(name = "IS_SUSPENSA")
     private Integer isSuspensa;
@@ -280,28 +240,10 @@ public abstract class AbstractDpLotacao extends DpResponsavel implements
     }
 
     /**
-     * @return Retorna o atributo dataFimLotacao.
-     */
-    public Date getDataFimLotacao() {
-        return dataFimLotacao;
-    }
-
-    /**
-     * @return Retorna o atributo dataInicioLotacao.
-     */
-    public Date getDataInicioLotacao() {
-        return dataInicioLotacao;
-    }
-
-    /**
      * @return Retorna o atributo idLotacao.
      */
     public Long getIdLotacao() {
         return idLotacao;
-    }
-
-    public Long getIdLotacaoIni() {
-        return idLotacaoIni;
     }
 
     /**
@@ -341,28 +283,10 @@ public abstract class AbstractDpLotacao extends DpResponsavel implements
     }
 
     /**
-     * @param dataFimLotacao Atribui a dataFimLotacao o valor.
-     */
-    public void setDataFimLotacao(final Date dataFimLotacao) {
-        this.dataFimLotacao = dataFimLotacao;
-    }
-
-    /**
-     * @param dataInicioLotacao Atribui a dataInicioLotacao o valor.
-     */
-    public void setDataInicioLotacao(final Date dataInicioLotacao) {
-        this.dataInicioLotacao = dataInicioLotacao;
-    }
-
-    /**
      * @param idLotacao Atribui a idLotacao o valor.
      */
     public void setIdLotacao(final Long idLotacao) {
         this.idLotacao = idLotacao;
-    }
-
-    public void setIdLotacaoIni(Long idLotacaoIni) {
-        this.idLotacaoIni = idLotacaoIni;
     }
 
     /**
@@ -420,32 +344,12 @@ public abstract class AbstractDpLotacao extends DpResponsavel implements
         return dpPessoaLotadosSet;
     }
 
-    public void setDpPessoaLotadosSet(Set<DpPessoa> dpPessoaLotadosSet) {
-        this.dpPessoaLotadosSet = dpPessoaLotadosSet;
-    }
-
     public CpLocalidade getLocalidade() {
         return localidade;
     }
 
     public void setLocalidade(CpLocalidade localidade) {
         this.localidade = localidade;
-    }
-
-    public CpIdentidade getHisIdcIni() {
-        return hisIdcIni;
-    }
-
-    public void setHisIdcIni(CpIdentidade hisIdcIni) {
-        this.hisIdcIni = hisIdcIni;
-    }
-
-    public CpIdentidade getHisIdcFim() {
-        return hisIdcFim;
-    }
-
-    public void setHisIdcFim(CpIdentidade hisIdcFim) {
-        this.hisIdcFim = hisIdcFim;
     }
 
     public Integer getIsSuspensa() {

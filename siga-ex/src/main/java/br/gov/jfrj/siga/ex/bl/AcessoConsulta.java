@@ -121,7 +121,7 @@ public class AcessoConsulta {
             return true;
 
         DpLotacao lot = titular.getLotacao();
-        return (lot != null) && (lot.getLotacaoAtual().getIsExternaLotacao() == 1);
+        return (lot != null) && (lot.getHistoricoAtual().getIsExternaLotacao() == 1);
     }
 
 }

@@ -78,10 +78,6 @@
 		</dependency>
 		<dependency>
 			<groupId>siga</groupId>
-			<artifactId>siga-sinc-lib</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>siga</groupId>
 			<artifactId>siga-rel</artifactId>
 		</dependency>
 		<dependency>
@@ -106,5 +102,33 @@
 			<artifactId>jsr181-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
+
+		<!-- Test dependencies -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.11.0-M2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>5.11.0-M2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>4.11.0</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Permite mock de métodos estáticos em testes -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>4.11.0</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 </project>

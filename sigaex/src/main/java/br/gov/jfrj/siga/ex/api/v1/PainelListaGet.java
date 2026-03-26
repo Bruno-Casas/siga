@@ -20,7 +20,7 @@ public class PainelListaGet implements IPainelListaGet {
         List<Long> lMarcas = new ArrayList<>();
         for (String s : aMarcas)
             lMarcas.add(Long.parseLong(s));
-        List<Object[]> l = ExDao.getInstance().consultarPainelLista(lMarcas);
+        List<Object[]> l = dao.consultarPainelLista(lMarcas);
 
         for (Object[] o : l) {
             ExDocumento doc = (ExDocumento) o[0];

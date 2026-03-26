@@ -9,6 +9,8 @@ import java.util.regex.Pattern;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class ManipuladorEntrevista {
 	
 	private ExDocumento docBIE;
@@ -31,12 +33,15 @@ public class ManipuladorEntrevista {
 		long l;
 		List<ExDocumento> list = new ArrayList<ExDocumento>();
 		ExDocumento doqueRef = new ExDocumento();
+
+		// TODO: Adequar ao CDI
+		ExDao dao = CDI.current().select(ExDao.class).get();
 		for (String chave : form.keySet()) {
 			final Matcher m = p.matcher(chave);
 			if (m.find()) {
 				if (m.group(1) != null && form.get(chave).equals(marcadoSimOuNao)) {
 					l = new Long(m.group(1));
-					doqueRef = ExDao.getInstance().consultar(l, ExDocumento.class, false);
+					doqueRef = dao.consultar(l, ExDocumento.class, false);
 					list.add(doqueRef);
 				}
 			}

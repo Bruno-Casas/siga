@@ -1,57 +1,33 @@
-/*******************************************************************************
- * Copyright (c) 2006 - 2011 SJRJ.
- * 
- *     This file is part of SIGA.
- * 
- *     SIGA is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- * 
- *     SIGA is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- * 
- *     You should have received a copy of the GNU General Public License
- *     along with SIGA.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
 package br.gov.jfrj.siga.model;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+public interface Historico<T extends Historico<T>> {
+    Long getIdInicial();
 
-public interface Historico extends Assemelhavel {
-	public Long getIdInicial();
+    boolean equivale(Object other);
 
-	public boolean equivale(Object other);
+    Long getId();
 
-	public Long getId();
+    void setId(Long id);
 
-	public void setId(Long id);
+    Long getHisIdIni();
 
-	@Column(name = "HIS_ID_INI")
-	public Long getHisIdIni();
+    void setHisIdIni(Long hisIdIni);
 
-	public void setHisIdIni(Long hisIdIni);
+    Date getHisDtIni();
 
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "his_dt_ini", length = 19)
-	public Date getHisDtIni();
+    void setHisDtIni(Date hisDtIni);
 
-	public void setHisDtIni(Date hisDtIni);
+    Date getHisDtFim();
 
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "his_dt_fim", length = 19)
-	public Date getHisDtFim();
+    void setHisDtFim(Date hisDtFim);
 
-	public void setHisDtFim(Date hisDtFim);
+    Integer getHisAtivo();
 
-	@Column(name = "his_ativo", nullable = false)
-	public Integer getHisAtivo();
+    void setHisAtivo(Integer hisAtivo);
 
-	public void setHisAtivo(Integer hisAtivo);
+    T getHistoricoInicial();
+
+    T getHistoricoAtual();
 }

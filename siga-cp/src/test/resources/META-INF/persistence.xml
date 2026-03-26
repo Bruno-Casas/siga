@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+	version="2.0">
+	<persistence-unit name="default"
+		transaction-type="RESOURCE_LOCAL">
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+		<class>br.gov.jfrj.siga.dp.DpCargo</class>
+		<class>br.gov.jfrj.siga.dp.DpFuncaoConfianca</class>
+		<class>br.gov.jfrj.siga.dp.DpLotacao</class>
+		<class>br.gov.jfrj.siga.dp.DpPessoa</class>
+		<class>br.gov.jfrj.siga.dp.CpOrgao</class>
+		<class>br.gov.jfrj.siga.dp.CpOrgaoUsuario</class>
+		<class>br.gov.jfrj.siga.dp.DpSubstituicao</class>
+		<class>br.gov.jfrj.siga.dp.CpFeriado</class>
+		<class>br.gov.jfrj.siga.dp.CpOcorrenciaFeriado</class>
+		<class>br.gov.jfrj.siga.dp.CpAplicacaoFeriado</class>
+		<class>br.gov.jfrj.siga.dp.CpLocalidade</class>
+		<class>br.gov.jfrj.siga.dp.CpUF</class>
+		<class>br.gov.jfrj.siga.dp.CpPersonalizacao</class>
+		<class>br.gov.jfrj.siga.dp.CpTipoPessoa</class>
+		<class>br.gov.jfrj.siga.cp.CpConfiguracao</class>
+		<class>br.gov.jfrj.siga.cp.CpConfiguracaoCache</class>
+		<class>br.gov.jfrj.siga.cp.CpServico</class>
+		<class>br.gov.jfrj.siga.cp.CpTipoGrupo</class>
+		<class>br.gov.jfrj.siga.cp.CpGrupo</class>
+		<class>br.gov.jfrj.siga.cp.CpGrupoDeEmail</class>
+		<class>br.gov.jfrj.siga.cp.CpPerfil</class>
+		<class>br.gov.jfrj.siga.cp.CpPerfilJEE</class>
+		<class>br.gov.jfrj.siga.dp.CpTipoLotacao</class>
+		<class>br.gov.jfrj.siga.cp.CpTipoPapel</class>
+		<class>br.gov.jfrj.siga.cp.CpPapel</class>
+		<class>br.gov.jfrj.siga.cp.CpTipoServico</class>
+		<class>br.gov.jfrj.siga.cp.CpTipoIdentidade</class>
+		<class>br.gov.jfrj.siga.cp.CpIdentidade</class>
+		<class>br.gov.jfrj.siga.cp.CpModelo</class>
+		<class>br.gov.jfrj.siga.cp.CpUnidadeMedida</class>
+		<class>br.gov.jfrj.siga.cp.CpComplexo</class>
+		<class>br.gov.jfrj.siga.dp.CpMarcador</class>
+		<class>br.gov.jfrj.siga.dp.CpMarca</class>
+		<class>br.gov.jfrj.siga.dp.CpTipoMarca</class>
+		<class>br.gov.jfrj.siga.cp.CpAcesso</class>
+		<class>br.gov.jfrj.siga.dp.DpVisualizacao</class>
+		<class>br.gov.jfrj.siga.dp.DpVisualizacaoAcesso</class>
+		<class>br.gov.jfrj.siga.dp.CpContrato</class>
+		<class>br.gov.jfrj.siga.cp.CpToken</class>
+		<class>br.gov.jfrj.siga.storage.SigaBlob</class>
+
+		<properties>
+			<property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;" />
+			<property name="javax.persistence.jdbc.user" value="sa" />
+			<property name="javax.persistence.jdbc.password" value="" />
+
+			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+			<property name="hibernate.hbm2ddl.auto" value="create-drop" />
+			<property name="hibernate.show_sql" value="false" />
+			<property name="hibernate.format_sql" value="false" />
+			
+			<property name="hibernate.id.new_generator_mappings" value="false" />
+			<property name="hibernate.jpa.compliance.global_id_generators" value="false" />
+			<property name="hibernate.query.substitutions" value="true 1, false 0" />
+		</properties>
+	</persistence-unit>
+</persistence>

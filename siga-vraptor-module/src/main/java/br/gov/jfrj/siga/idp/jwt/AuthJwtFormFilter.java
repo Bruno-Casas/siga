@@ -119,7 +119,7 @@ public class AuthJwtFormFilter implements Filter {
                     Map<String, Object> decodedNewToken = validarToken(token);
                     Cookie cookie = buildCookie(tokenNew);
                     resp.addCookie(cookie);
-//					Cp.getInstance().getBL().logAcesso(AbstractCpAcesso.CpTipoAcessoEnum.RENOVACAO_AUTOMATICA,
+//					this.bl.logAcesso(AbstractCpAcesso.CpTipoAcessoEnum.RENOVACAO_AUTOMATICA,
 //							(String) decodedNewToken.get("sub"), (Integer) decodedNewToken.get("iat"),
 //							(Integer) decodedNewToken.get("exp"), HttpRequestUtils.getIpAudit(req));
                 }

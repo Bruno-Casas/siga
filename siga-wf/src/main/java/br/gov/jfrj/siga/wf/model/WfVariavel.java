@@ -16,14 +16,11 @@ import org.hibernate.annotations.BatchSize;
 import com.crivano.jflow.support.ProcessInstanceVariable;
 
 import br.gov.jfrj.siga.base.Data;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 @Entity
 @BatchSize(size = 500)
 @Table(name = "sigawf.wf_variavel")
-public class WfVariavel implements ProcessInstanceVariable, Sincronizavel, Comparable<Sincronizavel> {
+public class WfVariavel implements ProcessInstanceVariable, Comparable<WfVariavel> {
 	@Id
 	@GeneratedValue
 	@Column(name = "VARI_ID", unique = true, nullable = false)
@@ -106,77 +103,48 @@ public class WfVariavel implements ProcessInstanceVariable, Sincronizavel, Compa
 		this.number = number;
 	}
 
-	@Override
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return SincronizavelSuporte.semelhante(this, obj, profundidade);
-	}
-
-	@Override
 	public Long getId() {
 		return this.id;
 	}
 
 	@Override
-	public String getIdExterna() {
-		return this.nome;
-	}
+	public int compareTo(WfVariavel o) {
+		if (o == null)
+			return 1;
+		if (this.nome != null && o.nome != null) {
+			int i = this.nome.compareTo(o.nome);
+			if (i != 0)
+				return i;
+		} else if (this.nome != null) {
+			return 1;
+		} else if (o.nome != null) {
+			return -1;
+		}
 
-	@Override
-	public void setIdExterna(String idExterna) {
-		this.nome = idExterna;
-	}
+		Object v1 = this.getValor();
+		Object v2 = o.getValor();
 
-	@Override
-	public Long getIdInicial() {
-		return null;
-	}
+		if (v1 != null && v2 != null) {
+			if (v1 instanceof Comparable && v2.getClass().isInstance(v1)) {
+				@SuppressWarnings("unchecked")
+				int i = ((Comparable<Object>) v1).compareTo(v2);
+				if (i != 0)
+					return i;
+			} else {
+				int i = v1.toString().compareTo(v2.toString());
+				if (i != 0)
+					return i;
+			}
+		} else if (v1 != null) {
+			return 1;
+		} else if (v2 != null) {
+			return -1;
+		}
 
-	@Override
-	public void setIdInicial(Long idInicial) {
-	}
+		if (this.id != null && o.id != null)
+			return this.id.compareTo(o.id);
 
-	@Override
-	public Date getDataInicio() {
-		return null;
-	}
-
-	@Override
-	public void setDataInicio(Date dataInicio) {
-	}
-
-	@Override
-	public Date getDataFim() {
-		return null;
-	}
-
-	@Override
-	public void setDataFim(Date dataFim) {
-	}
-
-	@Override
-	public String getLoteDeImportacao() {
-		return null;
-	}
-
-	@Override
-	public void setLoteDeImportacao(String loteDeImportacao) {
-	}
-
-	@Override
-	public int getNivelDeDependencia() {
 		return 0;
-	}
-
-	@Override
-	public String getDescricaoExterna() {
-		return this.nome;
-	}
-
-	@Override
-	public int compareTo(Sincronizavel o) {
-		if (!this.getClass().equals(o.getClass()))
-			return this.getClass().getName().compareTo(o.getClass().getName());
-		return this.getIdExterna().compareTo(o.getIdExterna());
 	}
 
 	public WfProcedimento getProcedimento() {

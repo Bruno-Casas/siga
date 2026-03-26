@@ -32,7 +32,7 @@ public class WfDefinicaoDeProcedimentoSelecao extends Selecao<WfDefinicaoDeProce
 		if (getId() == null)
 			return null;
 
-		final WfDefinicaoDeProcedimento o = WfDao.getInstance().consultar(getId(), WfDefinicaoDeProcedimento.class,
+		final WfDefinicaoDeProcedimento o = dao.consultar(getId(), WfDefinicaoDeProcedimento.class,
 				false);
 
 		return o;
@@ -53,7 +53,7 @@ public class WfDefinicaoDeProcedimentoSelecao extends Selecao<WfDefinicaoDeProce
 		final WfDefinicaoDeProcedimento oExemplo = new WfDefinicaoDeProcedimento();
 		oExemplo.setSigla(getSigla());
 
-		final WfDefinicaoDeProcedimento o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final WfDefinicaoDeProcedimento o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();

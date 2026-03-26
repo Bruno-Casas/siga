@@ -30,28 +30,14 @@ public class DocumentoController extends TpController {
     @Inject
     private AutorizacaoGI autorizacaoGI;
 
+    @Inject
     private MissaoController missaoController;
 
+    @Inject
     private RequisicaoController requisicaoController;
 
-    private ServicoVeiculoController servicoVeiculoController;
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public DocumentoController() {
-        super();
-    }
-
     @Inject
-    public DocumentoController(HttpServletRequest request, Result result, Validator validator, SigaObjects so, EntityManager em, MissaoController missaoController,
-                               RequisicaoController requisicaoController, ServicoVeiculoController servicoVeiculoController) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-        this.missaoController = missaoController;
-        this.requisicaoController = requisicaoController;
-        this.servicoVeiculoController = servicoVeiculoController;
-    }
-
+    private ServicoVeiculoController servicoVeiculoController;
 
     @Get
     @Post

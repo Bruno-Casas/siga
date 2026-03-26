@@ -17,7 +17,13 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.inject.Inject;
+
 public class PessoasSiglaGet implements IPessoasSiglaGet {
+
+	@Inject
+	private CpDao dao;
+
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
 		if (StringUtils.isEmpty(req.sigla))
@@ -25,7 +31,7 @@ public class PessoasSiglaGet implements IPessoasSiglaGet {
 
 		final DpPessoa flt = new DpPessoa();
 		flt.setSigla(req.sigla.toUpperCase());
-		DpPessoa pes = CpDao.getInstance().consultarPorSigla(flt);
+		DpPessoa pes = dao.consultarPorSigla(flt);
 		if (pes == null)
 			throw new SwaggerException("Nenhuma pessoa foi encontrada contendo a sigla informada.", 404, null, req,
 					resp, null);

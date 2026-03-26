@@ -17,7 +17,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
-import br.gov.jfrj.siga.wf.bl.Wf;
 import br.gov.jfrj.siga.wf.dao.WfDao;
 import br.gov.jfrj.siga.wf.util.WfStarter;
 import br.gov.jfrj.siga.wf.model.WfProcedimento;
@@ -38,7 +37,7 @@ public class ApiContext implements Closeable {
 		ContextoPersistencia.setEntityManager(em);
 
 		ModeloDao.freeInstance();
-		WfDao.getInstance();
+		dao;
 		try {
 			Wf.getInstance().getConf().limparCacheSeNecessario();
 		} catch (Exception e1) {

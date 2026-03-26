@@ -7,6 +7,7 @@ import br.gov.jfrj.relatorio.dinamico.RelatorioRapido;
 import br.gov.jfrj.relatorio.dinamico.RelatorioTemplate;
 import br.gov.jfrj.siga.acesso.ConfiguracaoAcesso;
 import br.gov.jfrj.siga.cp.CpServico;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
@@ -21,9 +22,14 @@ import java.util.*;
  */
 public class PermissaoUsuarioRelatorio extends RelatorioTemplate {
     private DpPessoa dpPessoa;
+    private CpDao dao;
+    private CpConfiguracaoBL conf;
 
-    public PermissaoUsuarioRelatorio(Map parametros) throws DJBuilderException {
+    public PermissaoUsuarioRelatorio(CpDao dao, CpConfiguracaoBL conf, Map parametros) throws DJBuilderException {
         super(parametros);
+        this.dao = dao;
+        this.conf = conf;
+
         if (parametros.get("idPessoa") == null) {
             throw new DJBuilderException("Parâmetro idPessoa não informado!");
         }
@@ -36,12 +42,12 @@ public class PermissaoUsuarioRelatorio extends RelatorioTemplate {
             throw new DJBuilderException("Parâmetro idPessoa inválido!");
         }
 
-        DpPessoa dpPessoa = dao().consultar(idPessoa, DpPessoa.class, false);
+        DpPessoa dpPessoa = dao.consultar(idPessoa, DpPessoa.class, false);
         setDpPessoa(dpPessoa);
 
         try {
             Long t_lngIdPessoa = Long.parseLong((String) parametros.get("idPessoa"));
-            setDpPessoa(dao().consultar(t_lngIdPessoa, DpPessoa.class, false));
+            setDpPessoa(dao.consultar(t_lngIdPessoa, DpPessoa.class, false));
         } catch (Exception e) {
             throw new DJBuilderException("Parâmetro idPessoa inválido!");
         }
@@ -80,10 +86,10 @@ public class PermissaoUsuarioRelatorio extends RelatorioTemplate {
     public Collection processarDados() {
         ArrayList<String> dados = new ArrayList<String>();
         HashMap<CpServico, ConfiguracaoAcesso> achm = new HashMap<CpServico, ConfiguracaoAcesso>();
-        List<CpServico> l = dao().listarServicos();
+        List<CpServico> l = dao.listarServicos();
         try {
             for (CpServico srv : l) {
-                ConfiguracaoAcesso ac = ConfiguracaoAcesso.gerar(null, dpPessoa,
+                ConfiguracaoAcesso ac = ConfiguracaoAcesso.gerar(dao, conf,null, dpPessoa,
                         null, null, srv, null);
 
                 achm.put(ac.getServico(), ac);
@@ -179,10 +185,6 @@ public class PermissaoUsuarioRelatorio extends RelatorioTemplate {
         return str.toString();
     }
 
-    /**
-     * @return Uma String representativa da origem
-     * @param    configuração acesso
-     */
     private String printOrigem(ConfiguracaoAcesso cfga) {
         return cfga.printOrigemCurta();
     }
@@ -199,20 +201,10 @@ public class PermissaoUsuarioRelatorio extends RelatorioTemplate {
         return getTipoConfiguracao().getDescr();
     }
 
-    private CpDao dao() {
-        return CpDao.getInstance();
-    }
-
-    /**
-     * @return the cpServico
-     */
     public DpPessoa getDpPessoa() {
         return dpPessoa;
     }
 
-    /**
-     * @param cpServico the cpServico to set
-     */
     public void setDpPessoa(DpPessoa dpPessoa) {
         this.dpPessoa = dpPessoa;
     }

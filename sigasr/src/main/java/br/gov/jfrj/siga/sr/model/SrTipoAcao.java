@@ -21,9 +21,8 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.sr.util.FieldNameExclusionEstrategy;
 
@@ -34,7 +33,7 @@ import com.google.gson.JsonObject;
 @Entity
 @Table(name = "sr_tipo_acao", schema = "sigasr")
 @Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
-public class SrTipoAcao extends HistoricoSuporte implements SrSelecionavel, Comparable<SrTipoAcao>, Selecionavel {
+public class SrTipoAcao extends HistoricoSuporte<SrTipoAcao> implements SrSelecionavel, Comparable<SrTipoAcao>, Selecionavel {
 
     public static final ActiveRecord<SrTipoAcao> AR = new ActiveRecord<>(SrTipoAcao.class);
 
@@ -186,11 +185,6 @@ public class SrTipoAcao extends HistoricoSuporte implements SrSelecionavel, Comp
         return sols.get(0);
     }
 
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return false;
-    }
-
     public SrTipoAcao selecionar(String sigla) throws Exception {
         setSigla(sigla);
         List<SrTipoAcao> itens = buscar();
@@ -309,7 +303,6 @@ public class SrTipoAcao extends HistoricoSuporte implements SrSelecionavel, Comp
         return SrTipoAcao.AR.find(sb.toString()).fetch();
     }
 
-    @Override
     public void salvarComHistorico() throws Exception {
     	if (getNivel() > 1) {
 			SrTipoAcao pai = getPaiPorSigla();

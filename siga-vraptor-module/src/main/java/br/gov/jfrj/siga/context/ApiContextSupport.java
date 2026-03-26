@@ -43,10 +43,10 @@ abstract public class ApiContextSupport extends SwaggerApiContextSupport {
         if (ctx != null && getCtx().getAction().getClass().isAnnotationPresent(Transacional.class))
             this.transacional = true;
 
+        // TODO: Controle de transacao
         em = criarEntityManager();
         ContextoPersistencia.setEntityManager(em);
 
-        ModeloDao.freeInstance();
         inicializarDao();
         try {
             if (ctx != null

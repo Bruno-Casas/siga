@@ -5,13 +5,10 @@ import static br.gov.jfrj.siga.sr.util.SrSigaPermissaoPerfil.ADM_ADMINISTRAR;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 
 import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Controller;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpComplexo;
@@ -24,33 +21,20 @@ import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpCargo;
 import br.gov.jfrj.siga.dp.DpFuncaoConfianca;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.sr.annotation.AssertAcesso;
 import br.gov.jfrj.siga.sr.model.SrAcao;
 import br.gov.jfrj.siga.sr.model.SrAtributo;
 import br.gov.jfrj.siga.sr.model.SrConfiguracao;
 import br.gov.jfrj.siga.sr.model.SrItemConfiguracao;
 import br.gov.jfrj.siga.sr.model.SrPesquisa;
-import br.gov.jfrj.siga.sr.validator.SrValidator;
-import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
 @Controller
 @Path("app/associacao")
 public class AssociacaoController extends SrController {
 
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AssociacaoController() {
-		super();
-	}
-	
-	@Inject
-	public AssociacaoController(HttpServletRequest request, Result result,  SigaObjects so, EntityManager em, SrValidator srValidator) throws Throwable {
-		super(request, result, CpDao.getInstance(), so, em, srValidator);
-
+	@PostConstruct
+	public void init() throws Throwable {
 		result.on(AplicacaoException.class).forwardTo(this).appexception();
 		result.on(Exception.class).forwardTo(this).exception();
 	}
@@ -60,7 +44,7 @@ public class AssociacaoController extends SrController {
 	@AssertAcesso(ADM_ADMINISTRAR)
 	public void desativarAssociacao(Long idAssociacao) throws Exception {
 		SrConfiguracao associacao = SrConfiguracao.AR.findById(idAssociacao);
-		associacao.finalizar();
+		dao.finalizar(associacao);
 		result.use(Results.http()).body(associacao.toJson());
 	}
 
@@ -138,9 +122,9 @@ public class AssociacaoController extends SrController {
 		associacao.setOrgaoUsuario(orgaoUsuario == null || orgaoUsuario.getIdOrgaoUsu() == null ? null : CpOrgaoUsuario.AR.findById(orgaoUsuario.getIdOrgaoUsu()));
 		associacao.setDpPessoa(pessoaSel.buscarObjeto() == null ? null : pessoaSel.buscarObjeto().getPessoaInicial());
 		associacao.setLotacao(lotacaoSel.buscarObjeto() == null ? null : lotacaoSel.buscarObjeto().getLotacaoInicial());
-		associacao.setFuncaoConfianca(funcaoSel.buscarObjeto() == null ? null : dao().consultar(funcaoSel.buscarObjeto().getIdFuncaoIni(),DpFuncaoConfianca.class,false));
-		associacao.setCargo(cargoSel.buscarObjeto() == null ? null : dao().consultar(cargoSel.buscarObjeto().getIdCargoIni(),DpCargo.class,false));
-		associacao.setCpGrupo(perfilSel.buscarObjeto() == null ? null : dao().consultar(perfilSel.buscarObjeto().getHisIdIni(),CpPerfil.class,false));
+		associacao.setFuncaoConfianca(funcaoSel.buscarObjeto() == null ? null : cpDao.consultar(funcaoSel.buscarObjeto().getHisIdIni(),DpFuncaoConfianca.class,false));
+		associacao.setCargo(cargoSel.buscarObjeto() == null ? null : cpDao.consultar(cargoSel.buscarObjeto().getHisIdIni(),DpCargo.class,false));
+		associacao.setCpGrupo(perfilSel.buscarObjeto() == null ? null : cpDao.consultar(perfilSel.buscarObjeto().getHisIdIni(),CpPerfil.class,false));
 	}
 	
 	

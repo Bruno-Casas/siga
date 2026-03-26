@@ -5,22 +5,29 @@ import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class MatriculaUtils {
+@ApplicationScoped
+public class MatriculaUtils {
 
-    private static class Separado {
+    @Inject
+    private Provider<CpDao> daoProvider;
+
+    private class Separado {
         String sigla;
         String complemento;
     }
 
-    private static Separado separar(String junto) {
+    private Separado separar(String junto) {
         Separado separado = new Separado();
 
         Map<String, CpOrgaoUsuario> mapAcronimo = new TreeMap<String, CpOrgaoUsuario>();
-        for (CpOrgaoUsuario ou : CpDao.getInstance().listarOrgaosUsuarios()) {
+        for (CpOrgaoUsuario ou : daoProvider.get().listarOrgaosUsuarios()) {
             mapAcronimo.put(ou.getAcronimoOrgaoUsu(), ou);
             mapAcronimo.put(ou.getSiglaOrgaoUsu(), ou);
         }
@@ -57,7 +64,7 @@ public abstract class MatriculaUtils {
                         CpOrgaoUsuario orgaoUsuario = new CpOrgaoUsuario();
                         orgaoUsuario.setSiglaOrgaoUsu(orgao);
 
-                        orgaoUsuario = CpDao.getInstance().consultarPorSigla(
+                        orgaoUsuario = daoProvider.get().consultarPorSigla(
                                 orgaoUsuario);
 
                         separado.sigla = orgao;
@@ -81,7 +88,7 @@ public abstract class MatriculaUtils {
      * @return a parte numérica da matrícula ou null se não existir
      * @throws AplicacaoException caso a matrícula não seja válida
      */
-    public static String getParteNumericaDaMatricula(String matricula)
+    public String getParteNumericaDaMatricula(String matricula)
             throws AplicacaoException {
         validaPreenchimentoMatricula(matricula);
         Separado separado = separar(matricula);
@@ -90,7 +97,7 @@ public abstract class MatriculaUtils {
         return strParteNumerica;
     }
 
-    public static String getSiglaDoOrgaoDaMatricula(String matricula)
+    public String getSiglaDoOrgaoDaMatricula(String matricula)
             throws AplicacaoException {
         validaPreenchimentoMatricula(matricula);
         Separado separado = separar(matricula);
@@ -104,19 +111,19 @@ public abstract class MatriculaUtils {
         return sigla;
     }
 
-    public static String getSiglaDoOrgaoDaLotacao(String matricula)
+    public String getSiglaDoOrgaoDaLotacao(String matricula)
             throws AplicacaoException {
         Separado separado = separar(matricula);
         return separado.sigla;
     }
 
-    public static String getSiglaDaLotacao(String matricula)
+    public String getSiglaDaLotacao(String matricula)
             throws AplicacaoException {
         Separado separado = separar(matricula);
         return separado.complemento;
     }
 
-    protected static void validaPreenchimentoMatricula(String matricula)
+    protected void validaPreenchimentoMatricula(String matricula)
             throws AplicacaoException {
         if (StringUtils.isBlank(matricula) || matricula.length() <= 2) {
             throw new AplicacaoException(

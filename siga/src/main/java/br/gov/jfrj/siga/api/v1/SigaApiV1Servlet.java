@@ -7,6 +7,7 @@ import br.gov.jfrj.siga.model.ContextoPersistencia;
 import com.crivano.swaggerservlet.SwaggerServlet;
 import com.crivano.swaggerservlet.dependency.TestableDependency;
 
+import javax.inject.Inject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import java.net.URL;
@@ -16,7 +17,8 @@ public class SigaApiV1Servlet extends SwaggerServlet implements IPropertyProvide
     private static final long serialVersionUID = 1756711359239182178L;
     public static boolean migrationComplete = false;
 
-//	public static ExecutorService executor = null;
+    @Inject
+    private CpDao dao;
 
     @Override
     public void initialize(ServletConfig config) throws ServletException {
@@ -65,7 +67,7 @@ public class SigaApiV1Servlet extends SwaggerServlet implements IPropertyProvide
             public boolean test() throws Exception {
                 try (SigaApiV1Context ctx = new SigaApiV1Context()) {
                     ctx.init(null);
-                    return CpDao.getInstance().dt() != null;
+                    return dao.dt() != null;
                 }
             }
 

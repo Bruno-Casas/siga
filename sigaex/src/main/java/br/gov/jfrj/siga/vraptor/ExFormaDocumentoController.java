@@ -1,6 +1,5 @@
 package br.gov.jfrj.siga.vraptor;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,7 +20,6 @@ import br.gov.jfrj.siga.base.SigaModal;
 import br.gov.jfrj.siga.ex.ExFormaDocumento;
 import br.gov.jfrj.siga.ex.ExTipoDocumento;
 import br.gov.jfrj.siga.ex.ExTipoFormaDoc;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 
 @Controller
@@ -39,7 +37,7 @@ public class ExFormaDocumentoController extends ExController {
 	@Inject
 	public ExFormaDocumentoController(HttpServletRequest request, HttpServletResponse response, ServletContext context, Result result, SigaObjects so,
 			EntityManager em) {
-		super(request, response, context, result, ExDao.getInstance(), so, em);
+		super(request, response, context, result, dao, so, em);
 	}
 
 	@Get("app/forma/listar")
@@ -49,9 +47,9 @@ public class ExFormaDocumentoController extends ExController {
 		final List<ExFormaDocumento> itens;
 
 		if (ordenar != null && "sigla".equals(ordenar)) {
-			itens = dao().listarTodosOrdenarPorSigla();
+			itens = cpDao.listarTodosOrdenarPorSigla();
 		} else {
-			itens = dao().listarTodosOrdenarPorDescricao();
+			itens = cpDao.listarTodosOrdenarPorDescricao();
 		}
 
 		result.include("itens", itens);
@@ -77,7 +75,7 @@ public class ExFormaDocumentoController extends ExController {
 				idTipoFormaDoc = forma.getExTipoFormaDoc().getIdTipoFormaDoc();
 			}			
 						
-			temDocumentoVinculado = dao().isExFormaComDocumentoVinculado(forma.getId());
+			temDocumentoVinculado = cpDao.isExFormaComDocumentoVinculado(forma.getId());
 		}
 
 		if (getPostback() == null) {
@@ -114,7 +112,7 @@ public class ExFormaDocumentoController extends ExController {
 		}
 
 		result.include("id", id);
-		result.include("listaTiposFormaDoc", dao().listarExTiposFormaDoc());		
+		result.include("listaTiposFormaDoc", cpDao.listarExTiposFormaDoc());
 		result.include("temDocumentoVinculado", temDocumentoVinculado);
 	}
 
@@ -129,7 +127,7 @@ public class ExFormaDocumentoController extends ExController {
 			}
 
 			formaConsulta.setSigla(sigla);
-			formaConsulta = dao().consultarPorSigla(formaConsulta);
+			formaConsulta = cpDao.consultarPorSigla(formaConsulta);
 
 			if (formaConsulta != null) {
 				setMensagem("Esta sigla ja esta sendo utilizada");
@@ -156,7 +154,7 @@ public class ExFormaDocumentoController extends ExController {
 		
 		forma.setDescrFormaDoc(descricao);
 		forma.setSigla(sigla);
-		forma.setExTipoFormaDoc(dao().consultar(idTipoFormaDoc, ExTipoFormaDoc.class, false));
+		forma.setExTipoFormaDoc(cpDao.consultar(idTipoFormaDoc, ExTipoFormaDoc.class, false));
 
 		if (forma.getExTipoDocumentoSet() == null) {
 			forma.setExTipoDocumentoSet(new HashSet<ExTipoDocumento>());
@@ -167,25 +165,25 @@ public class ExFormaDocumentoController extends ExController {
 		forma.setIsComposto(isComposto);
 
 		if (origemInternoProduzido) {
-			forma.getExTipoDocumentoSet().add(dao().consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO, ExTipoDocumento.class, false));
+			forma.getExTipoDocumentoSet().add(cpDao.consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO, ExTipoDocumento.class, false));
 		}
 		if (origemInternoImportado) {
-			forma.getExTipoDocumentoSet().add(dao().consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO_FOLHA_DE_ROSTO, ExTipoDocumento.class, false));
+			forma.getExTipoDocumentoSet().add(cpDao.consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO_FOLHA_DE_ROSTO, ExTipoDocumento.class, false));
 		}
 		if (origemExterno) {
-			forma.getExTipoDocumentoSet().add(dao().consultar(ExTipoDocumento.TIPO_DOCUMENTO_EXTERNO_FOLHA_DE_ROSTO, ExTipoDocumento.class, false));
+			forma.getExTipoDocumentoSet().add(cpDao.consultar(ExTipoDocumento.TIPO_DOCUMENTO_EXTERNO_FOLHA_DE_ROSTO, ExTipoDocumento.class, false));
 		}
 
 		if (origemInternoCapturado) {
-			forma.getExTipoDocumentoSet().add(dao().consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO_CAPTURADO, ExTipoDocumento.class, false));
+			forma.getExTipoDocumentoSet().add(cpDao.consultar(ExTipoDocumento.TIPO_DOCUMENTO_INTERNO_CAPTURADO, ExTipoDocumento.class, false));
 		}
 
 		if (origemExternoCapturado) {
-			forma.getExTipoDocumentoSet().add(dao().consultar(ExTipoDocumento.TIPO_DOCUMENTO_EXTERNO_CAPTURADO, ExTipoDocumento.class, false));
+			forma.getExTipoDocumentoSet().add(cpDao.consultar(ExTipoDocumento.TIPO_DOCUMENTO_EXTERNO_CAPTURADO, ExTipoDocumento.class, false));
 		}
 
 		try {
-			Ex.getInstance().getBL().gravarForma(forma, formaCadastrada);
+			this.cpBl.gravarForma(forma, formaCadastrada);
 			
 			result.include("id", forma.getIdFormaDoc());
 			result.include("descricao", descricao);
@@ -208,7 +206,7 @@ public class ExFormaDocumentoController extends ExController {
 	}
 
 	private ExFormaDocumento recuperarForma(final Long id) {
-		return dao().consultar(id, ExFormaDocumento.class, false);
+		return cpDao.consultar(id, ExFormaDocumento.class, false);
 	}
 	
 	private ExFormaDocumento prepararExFormaDocumentoCadastrada(ExFormaDocumento forma) {

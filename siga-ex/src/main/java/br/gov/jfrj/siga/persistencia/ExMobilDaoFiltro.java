@@ -44,7 +44,7 @@ public class ExMobilDaoFiltro extends DaoFiltroSelecionavel implements
         final ExMobil mob = new ExMobil();
         if (idOrgaoUsu != null && idOrgaoUsu != 0) {
             final ExDocumento doc = new ExDocumento();
-            doc.setOrgaoUsuario(ExDao.getInstance().consultar(idOrgaoUsu,
+            doc.setOrgaoUsuario(dao.consultar(idOrgaoUsu,
                     CpOrgaoUsuario.class, false));
             mob.setExDocumento(doc);
         }

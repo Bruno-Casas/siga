@@ -108,9 +108,9 @@ public class CpArquivo implements Serializable, PersistentAttributeInterceptable
         long ini = System.currentTimeMillis();
         switch (getTipoArmazenamento()) {
             case TABELA:
-//			EntityTransaction transaction = CpDao.getInstance().em().getTransaction();
-//			 System.out.println("* " + (CpDao.getInstance().em().getTransaction() ==
-//					 null || !CpDao.getInstance().em().getTransaction().isActive() ? "NÃO" : "") + " TRANSACIONAL" );
+//			EntityTransaction transaction = dao.em().getTransaction();
+//			 System.out.println("* " + (dao.em().getTransaction() ==
+//					 null || !dao.em().getTransaction().isActive() ? "NÃO" : "") + " TRANSACIONAL" );
 //		
                 if (this.arquivoBlob == null) {
                     this.arquivoBlob = new CpArquivoBlob();

@@ -11,14 +11,15 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
-import br.gov.jfrj.siga.dp.dao.CpDao;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
-import br.gov.jfrj.siga.sr.model.Sr;
 
 public class SrThreadFilter implements Filter {
 	
 	private EntityManager em;
+	@Inject
+	private CpConfiguracaoBL conf;
 	
 	/**
 	 * @deprecated CDI eyes only
@@ -37,15 +38,12 @@ public class SrThreadFilter implements Filter {
 			throws IOException, ServletException {
 		try {
 			ContextoPersistencia.setEntityManager(em);
-			ModeloDao.freeInstance();
-			CpDao.getInstance();
-			Sr.getInstance().getConf().limparCacheSeNecessario();
+			conf.limparCacheSeNecessario();
 			chain.doFilter(request, response);
 		} catch (Exception e) {
 
 			throw new ServletException(e);
 		} finally {
-			ModeloDao.freeInstance();
 			ContextoPersistencia.setEntityManager(null);
 		}
 	}

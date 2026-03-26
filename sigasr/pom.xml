@@ -37,7 +37,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>siga-rel</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>siga</groupId>
@@ -160,7 +160,7 @@
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>${project.artifactId}</artifactId>
-                                    <version>${revision}</version>
+                                    <version>${project.version}</version>
                                     <type>${project.packaging}</type>
                                 </artifactItem>
                             </artifactItems>

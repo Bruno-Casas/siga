@@ -28,15 +28,14 @@ import br.com.caelum.vraptor.observer.download.InputStreamDownload;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.*;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.CpOrgaoSelecao;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import br.gov.jfrj.siga.ex.logic.ExPodePorConfiguracao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.GenericoSelecao;
@@ -44,6 +43,7 @@ import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.persistencia.ExMobilDaoFiltro;
 import br.gov.jfrj.siga.vraptor.builder.ExMobilBuilder;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
@@ -70,17 +70,11 @@ public class ExMobilController extends
     private static final String SIGA_DOC_PESQ_PESQDESCR_LIMITADA = "SIGA:Sistema Integrado de Gestão Administrativa;DOC:Módulo de Documentos;PESQ:Pesquisar;PESQDESCR:Pesquisar descrição;LIMITADA:Pesquisar descrição só se informar outros filtros";
     private static final String SIGA_DOC_PESQ_DTLIMITADA = "SIGA:Sistema Integrado de Gestão Administrativa;DOC:Módulo de Documentos;PESQ:Pesquisar;DTLIMITADA:Pesquisar somente com data limitada";
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExMobilController() {
-        super();
-    }
-
     @Inject
-    public ExMobilController(HttpServletRequest request, Result result,
-                             SigaObjects so, EntityManager em) {
-        super(request, result, ExDao.getInstance(), so, em);
+    private ExMobilBL mobBl;
+    
+    @PostConstruct
+    private void init() {
         setItemPagina(50);
     }
 
@@ -94,9 +88,9 @@ public class ExMobilController extends
         for (String s : siglasSparadas) {
             final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
             filter.setSigla(s);
-            ExMobil mob = (ExMobil) dao().consultarPorSigla(filter);
+            ExMobil mob = (ExMobil) exDao.consultarPorSigla(filter);
             ExDocumento doque = mob.getExDocumento();
-            Ex.getInstance().getBL().marcar(doque);
+            bl.marcar(doque);
         }
         result.redirectTo("/app/expediente/doc/finalizou_rotina");
     }
@@ -156,7 +150,7 @@ public class ExMobilController extends
                 result.include("msgPesqErro", e.getMessage());
             }
         } else {
-            if (Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(),
+            if (this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(),
                     SIGA_DOC_PESQ_DTLIMITADA)) {
                 result.include("msgCabecClass", "alert-warning");
                 result.include("mensagemCabec", "ATENÇÃO: Para os órgãos com grande demanda de documentos, a pesquisa deve ser limitada com uma range de datas de no máximo "
@@ -222,7 +216,7 @@ public class ExMobilController extends
     }
 
     private List<ExTipoDocumento> getTiposDocumentoParaConsulta() {
-        List<ExTipoDocumento> l = dao().listarExTiposDocumento();
+        List<ExTipoDocumento> l = exDao.listarExTiposDocumento();
         if ("inativa".equals(Prop.get("folha.de.rosto"))) {
             List<ExTipoDocumento> l2 = new ArrayList<>();
             for (ExTipoDocumento i : l) {
@@ -253,7 +247,7 @@ public class ExMobilController extends
         try {
             final ExMobilDaoFiltro flt = createDaoFiltro();
             //long tempoIni = System.currentTimeMillis();
-            setTamanho(dao().consultarQuantidadePorFiltroOtimizado(flt, getTitular(), getLotaTitular()));
+            setTamanho(exDao.consultarQuantidadePorFiltroOtimizado(flt, getTitular(), getLotaTitular()));
 
 
             LocalDate dtIni = null;
@@ -314,7 +308,7 @@ public class ExMobilController extends
                 throw new RegraNegocioException("Numero máximo (" + tamanhoMax  + ") de registros para exportação excedido. Use os filtros para restringir resultado.");
             }
 
-            List lista = dao().consultarPorFiltroOtimizado(flt,
+            List lista = exDao.consultarPorFiltroOtimizado(flt,
                     builder.getOffset(), -1, getTitular(),
                     getLotaTitular());
             Set<?> items = new HashSet<>(lista);
@@ -454,7 +448,7 @@ public class ExMobilController extends
                 result.include("msgPesqErro", e.getMessage());
             }
         } else {
-            if (Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(),
+            if (this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(),
                     SIGA_DOC_PESQ_DTLIMITADA)) {
                 result.include("msgCabecClass", "alert-warning");
                 result.include("mensagemCabec", "ATENÇÃO: Para os órgãos com grande demanda de documentos, a pesquisa deve ser limitada com uma range de datas de no máximo "
@@ -544,9 +538,9 @@ public class ExMobilController extends
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 
         String filter = flt.getDescrPesquisaXjus();
-        String acronimoOrgaoUsu = dao().consultarOrgaoUsuarioPorId(flt.getIdOrgaoUsu()).getAcronimoOrgaoUsu();
-        String descEspecie = flt.getIdFormaDoc() == null || flt.getIdFormaDoc() == 0 ? null : dao().consultarExFormaPorId(flt.getIdFormaDoc()).getDescrFormaDoc();
-        String descModelo = flt.getIdMod() == null || flt.getIdMod() == 0 ? null : dao().consultar(flt.getIdMod(), ExModelo.class, false).getDescMod();
+        String acronimoOrgaoUsu = exDao.consultarOrgaoUsuarioPorId(flt.getIdOrgaoUsu()).getAcronimoOrgaoUsu();
+        String descEspecie = flt.getIdFormaDoc() == null || flt.getIdFormaDoc() == 0 ? null : exDao.consultarExFormaPorId(flt.getIdFormaDoc()).getDescrFormaDoc();
+        String descModelo = flt.getIdMod() == null || flt.getIdMod() == 0 ? null : exDao.consultar(flt.getIdMod(), ExModelo.class, false).getDescMod();
         String dataInicial = flt.getDtDoc() == null ? null : df.format(flt.getDtDoc());
         String dataFinal = flt.getDtDocFinal() == null ? null : df.format(flt.getDtDocFinal());
         String acl = "PUBLIC;O" + getTitular().getOrgaoUsuario().getId() + ";L"
@@ -557,7 +551,7 @@ public class ExMobilController extends
             List<Long> listaIdDoc = new ArrayList<>();
             int page = 1;
             do {
-                listaIdDoc.addAll(Ex.getInstance().getBL().pesquisarXjus(
+                listaIdDoc.addAll(bl.pesquisarXjus(
                         filter,
                         acronimoOrgaoUsu,
                         descEspecie,
@@ -582,8 +576,7 @@ public class ExMobilController extends
         if (flt.getListaIdDoc() != null && flt.getListaIdDoc().isEmpty())
             return;
 
-        setItens(dao()
-                .consultarPorFiltroOtimizado(
+        setItens(exDao.consultarPorFiltroOtimizado(
                         flt,
                         builder.getOffset(),
                         getItemPagina(),
@@ -592,8 +585,7 @@ public class ExMobilController extends
                 )
         );
 
-        setTamanho(dao()
-                .consultarQuantidadePorFiltroOtimizado(
+        setTamanho(exDao.consultarQuantidadePorFiltroOtimizado(
                         flt,
                         getTitular(),
                         getLotaTitular()
@@ -604,12 +596,10 @@ public class ExMobilController extends
     private void validarFiltrosPesquisa(final ExMobilDaoFiltro flt) {
         if (Prop.isGovSP() && flt.getDescrDocumento() != null
                 && !"".equals(flt.getDescrDocumento())) {
-            if (!(Cp.getInstance().getConf()
-                    .podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(), SIGA_DOC_PESQ_PESQDESCR))) {
+            if (!(cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(), SIGA_DOC_PESQ_PESQDESCR))) {
                 throw new AplicacaoException("Usuário não autorizado a pesquisar pela descrição do documento.");
             }
-            if (Cp.getInstance().getConf()
-                    .podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(), SIGA_DOC_PESQ_PESQDESCR_LIMITADA)
+            if (cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getLotaTitular(), SIGA_DOC_PESQ_PESQDESCR_LIMITADA)
                     && !(flt.getIdOrgaoUsu() != null && flt.getIdOrgaoUsu() != 0
                     && flt.getAnoEmissao() != null && flt.getAnoEmissao() != 0
                     && flt.getIdFormaDoc() != null && flt.getIdFormaDoc() != 0)) {
@@ -626,7 +616,7 @@ public class ExMobilController extends
         // - Campos órgão/ano/espécie
         // - lotação/pessoa e situação(Pesquisa dos documentos da lotação/pessoa vinda do quadro quantitativo)
         // - Campo número de expediente
-        if (!Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(),
+        if (!this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(),
                 getLotaTitular(), SIGA_DOC_PESQ_DTLIMITADA))
             return;
 
@@ -687,7 +677,7 @@ public class ExMobilController extends
     }
 
     protected ExClassificacao daoClassificacao(long id) {
-        return dao().consultar(id, ExClassificacao.class, false);
+        return exDao.consultar(id, ExClassificacao.class, false);
     }
 
     @Override
@@ -821,7 +811,7 @@ public class ExMobilController extends
         try {
             final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
             filter.setSigla(sigla);
-            ExMobil mob = (ExMobil) dao().consultarPorSigla(filter);
+            ExMobil mob = (ExMobil) exDao.consultarPorSigla(filter);
 
             RetornoJson l = new RetornoJson();
             if (mob != null) {
@@ -897,7 +887,7 @@ public class ExMobilController extends
         final ExBL bl = Ex.getInstance().getBL();
         ExTipoFormaDoc tipoForma = null;
         if (idTipoFormaDoc != null && !idTipoFormaDoc.equals(0L)) {
-            tipoForma = dao().consultar(idTipoFormaDoc, ExTipoFormaDoc.class,
+            tipoForma = exDao.consultar(idTipoFormaDoc, ExTipoFormaDoc.class,
                     false);
         }
 
@@ -907,25 +897,22 @@ public class ExMobilController extends
                             false, false, null, null, false, getTitular(), getLotaTitular(), false),
                     null, tipoForma));
         } else {
-            formasDoc.addAll(dao().listarPorEspecieOrdenarPorSigla(tipoForma));
+            formasDoc.addAll(exDao.listarPorEspecieOrdenarPorSigla(tipoForma));
         }
         return formasDoc;
     }
 
     private List<ExTipoFormaDoc> getTiposFormaDoc() {
-        return dao().listarExTiposFormaDoc();
+        return exDao.listarExTiposFormaDoc();
     }
 
     private List<ExModelo> getModelos(final Long idFormaDoc) {
         ExFormaDocumento forma = null;
         if (idFormaDoc != null && idFormaDoc != 0) {
-            forma = dao().consultar(idFormaDoc, ExFormaDocumento.class, false);
+            forma = exDao.consultar(idFormaDoc, ExFormaDocumento.class, false);
         }
 
-        return Ex
-                .getInstance()
-                .getBL()
-                .obterListaModelos(null, forma, false, false, null, "Todos", false, getTitular(),
+        return bl.obterListaModelos(null, forma, false, false, null, "Todos", false, getTitular(),
                         getLotaTitular(), false);
     }
 
@@ -973,7 +960,7 @@ public class ExMobilController extends
             for (ExMobil m : mob.doc().getExMobilSet()) {
                 if (m.isGeral() || m.isEliminado())
                     continue;
-                if (m.isAtendente(super.getTitular(), null) || m.isNotificado(super.getTitular(), null))
+                if (mobBl.isAtendente(m, super.getTitular(), null) || mobBl.isAtendente(m, super.getTitular(), null))
                     return m;
             }
 
@@ -982,7 +969,7 @@ public class ExMobilController extends
             for (ExMobil m : mob.doc().getExMobilSet()) {
                 if (m.isGeral() || m.isEliminado())
                     continue;
-                if (m.isAtendente(null, super.getLotaTitular()) || m.isNotificado(null, super.getLotaTitular()))
+                if (mobBl.isAtendente(m, null, super.getLotaTitular()) || mobBl.isAtendente(m, null, super.getLotaTitular()))
                     return m;
             }
         }
@@ -992,7 +979,7 @@ public class ExMobilController extends
             // retornar o ultimo volume
             //
             ExMobil m = mob.doc().getUltimoVolume();
-            if (m != null && (m.isAtendente(super.getTitular(), super.getLotaTitular()) || m.isNotificado(super.getTitular(), super.getLotaTitular()))) {
+            if (m != null && (mobBl.isAtendente(m, super.getTitular(), super.getLotaTitular()) || mobBl.isNotificado(m, super.getTitular(), super.getLotaTitular()))) {
                 return m;
             }
         }
@@ -1005,7 +992,7 @@ public class ExMobilController extends
         assertAcesso(SIGA_DOC_FE_LD);
 
         final ExMobilDaoFiltro flt = createDaoFiltro();
-        List<Object[]> list = dao().consultarPorFiltroOtimizado(flt, 0, 0, getTitular(), getLotaTitular());
+        List<Object[]> list = exDao.consultarPorFiltroOtimizado(flt, 0, 0, getTitular(), getLotaTitular());
         List<ExDocumento> docs = new ArrayList<>();
         Set<ExDocumento> set = new HashSet<>();
 
@@ -1018,7 +1005,7 @@ public class ExMobilController extends
         }
 
         result.include("lista", docs);
-        List<ExNivelAcesso> listaNivelAcesso = ExDao.getInstance().listarOrdemNivel();
+        List<ExNivelAcesso> listaNivelAcesso = exDao.listarOrdemNivel();
         result.include("listaNivelAcesso", listaNivelAcesso);
     }
 

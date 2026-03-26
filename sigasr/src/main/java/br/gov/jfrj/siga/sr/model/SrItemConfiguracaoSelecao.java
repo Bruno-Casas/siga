@@ -26,7 +26,7 @@ public class SrItemConfiguracaoSelecao extends Selecao<SrItemConfiguracao> {
         if (getId() == null)
             return null;
 
-        final SrItemConfiguracao o = CpDao.getInstance().consultar(getId(), SrItemConfiguracao.class, false);
+        final SrItemConfiguracao o = dao.consultar(getId(), SrItemConfiguracao.class, false);
 
         return o;
     }
@@ -36,7 +36,7 @@ public class SrItemConfiguracaoSelecao extends Selecao<SrItemConfiguracao> {
         final SrItemConfiguracao oExemplo = new SrItemConfiguracao();
         oExemplo.setSigla(getSigla());
 
-        final SrItemConfiguracao o = CpDao.getInstance().consultarPorSigla(oExemplo);
+        final SrItemConfiguracao o = dao.consultarPorSigla(oExemplo);
 
         if (o == null) {
             apagar();

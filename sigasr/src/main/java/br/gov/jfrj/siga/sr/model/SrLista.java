@@ -19,11 +19,10 @@ import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
-import br.gov.jfrj.siga.cp.model.HistoricoSuporte;
+import br.gov.jfrj.siga.model.HistoricoSuporte;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
 import br.gov.jfrj.siga.sr.model.enm.SrTipoDeConfiguracao;
 import br.gov.jfrj.siga.sr.model.vo.SrListaVO;
 
@@ -88,7 +87,7 @@ public class SrLista extends HistoricoSuporte implements Comparable<SrLista> {
     }
 
     public static List<SrLista> getCriadasPelaLotacao(DpLotacao lota) {
-        return SrLista.AR.find("hisDtFim is null and lotaCadastrante.idLotacaoIni = " + lota.getIdLotacaoIni()).fetch();
+        return SrLista.AR.find("hisDtFim is null and lotaCadastrante.hisIdIni = " + lota.getHisIdIni()).fetch();
     }
 
     @Override
@@ -98,11 +97,6 @@ public class SrLista extends HistoricoSuporte implements Comparable<SrLista> {
 
     public void setId(Long id) {
         setIdLista(id);
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return false;
     }
 
     public List<SrLista> getHistoricoLista() {

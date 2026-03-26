@@ -46,12 +46,7 @@ public class GcInterceptor  {
 	public void intercept(SimpleInterceptorStack stack)  {
 
 		ContextoPersistencia.setEntityManager(this.manager);
-		ModeloDao.freeInstance();
-		CpDao.getInstance();
-
-
 		stack.next();
-
 	}
 
 	@Accepts

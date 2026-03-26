@@ -16,20 +16,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 @Path("/app")
 public class GadgetController extends TpController {
 
-	
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public GadgetController() {
-		super();
-	}
-	
-	@Inject
-	public GadgetController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,   EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
- 	}
-
-
     @Path("/gadget")
     public void gadget() {
          result.redirectTo("/app/application/gadget");

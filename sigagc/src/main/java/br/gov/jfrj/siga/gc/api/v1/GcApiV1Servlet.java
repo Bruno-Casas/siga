@@ -4,6 +4,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -20,6 +21,9 @@ import br.gov.jfrj.siga.model.ContextoPersistencia;
 
 public class GcApiV1Servlet extends SwaggerServlet implements IPropertyProvider {
 	private static final long serialVersionUID = 1756711359239182178L;
+
+	@Inject
+	private CpDao dao;
 
 	@Override
 	public void initialize(ServletConfig config) throws ServletException {
@@ -64,7 +68,7 @@ public class GcApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
 			@Override
 			public boolean test() throws Exception {
 				try (ApiContext ctx = new ApiContext(true)) {
-					return CpDao.getInstance().dt() != null;
+					return dao.dt() != null;
 				}
 			}
 

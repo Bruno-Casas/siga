@@ -28,6 +28,8 @@ import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaCalendar;
 import br.gov.jfrj.siga.dp.CpFeriado;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class DatasPublicacaoDJE {
 
 	private Date dataDisponibilizacao;
@@ -46,11 +48,15 @@ public class DatasPublicacaoDJE {
 	// Necessário para verificação do horário limite
 	private Calendar calHoje;
 
+	private final Feriados feriados;
+
 	public DatasPublicacaoDJE(Date dataDisponib) throws AplicacaoException {
 		if (dataDisponib == null)
 			throw new AplicacaoException(
 					"Não foi informada uma data de disponibilização para cálculos");
 		setDataDisponibilizacao(dataDisponib);
+
+		feriados = CDI.current().select(Feriados.class).get();
 	}
 
 	public String validarDataDeDisponibilizacao(boolean apenasSolicitacao)
@@ -293,7 +299,7 @@ public class DatasPublicacaoDJE {
 
 	public CpFeriado getFeriadoPublicacao() {
 		if (feriadoPublicacao == null) {
-			setFeriadoPublicacao(Feriados.verificarPorData(getDataPublicacao()));
+			setFeriadoPublicacao(feriados.verificarPorData(getDataPublicacao()));
 		}
 		return feriadoPublicacao;
 	}
@@ -333,7 +339,7 @@ public class DatasPublicacaoDJE {
 
 	public CpFeriado getFeriadoDisponibilizacao() {
 		if (feriadoDisponibilizacao == null) {
-			setFeriadoDisponibilizacao(Feriados
+			setFeriadoDisponibilizacao(feriados
 					.verificarPorData(getDataDisponibilizacao()));
 		}
 		return feriadoDisponibilizacao;
@@ -353,7 +359,7 @@ public class DatasPublicacaoDJE {
 		int diasInuteis = 0;
 		Calendar ini = new SigaCalendar(dataInicio.getTimeInMillis());
 		while (ini.compareTo(dataFim) <= 0) {
-			if (Feriados.verificarPorData(ini.getTime()) != null
+			if (feriados.verificarPorData(ini.getTime()) != null
 					|| ini.get(SigaCalendar.DAY_OF_WEEK) == SigaCalendar.SATURDAY
 					|| ini.get(SigaCalendar.DAY_OF_WEEK) == SigaCalendar.SUNDAY) {
 				diasInuteis++;

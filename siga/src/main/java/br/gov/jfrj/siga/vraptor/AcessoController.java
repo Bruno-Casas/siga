@@ -29,19 +29,15 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.acesso.ConfiguracaoAcesso;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.CpPerfilSelecao;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.cp.model.DpPessoaSelecao;
@@ -50,7 +46,6 @@ import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 
 @Controller
 public class AcessoController extends GiControllerSupport {
@@ -67,19 +62,9 @@ public class AcessoController extends GiControllerSupport {
 	private List<ConfiguracaoAcesso> itens;
 	private String itensHTML;
 	private String itemHTML;
-	
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AcessoController() {
-		super();
-	}
-
-	@Inject
-	public AcessoController(HttpServletRequest request, Result result,SigaObjects so, EntityManager em) {
-		
-		super(request, result, CpDao.getInstance(), so, em);
+	@PostConstruct
+	private void init() {
 		pessoaSel = new DpPessoaSelecao();
 		lotacaoSel = new DpLotacaoSelecao();
 		perfilSel = new CpPerfilSelecao();
@@ -129,7 +114,7 @@ public class AcessoController extends GiControllerSupport {
 		if (servicoPai == null) {
 			assertAcesso("PERMISSAO:Gerenciar permissões");
 		} else {
-			cpServicoPai = dao().consultarCpServicoPorChave(servicoPai);
+			cpServicoPai = cpDao.consultarCpServicoPorChave(servicoPai);
 			if (cpServicoPai != null) {	
 			   assertAcesso("PERMISSAONARVORE-"+servicoPai+":Gerenciar permissões do serviço "+servicoPai);
 			}
@@ -148,7 +133,7 @@ public class AcessoController extends GiControllerSupport {
 		
 		DpLotacao lotacao = this.idAbrangencia == 2 ? lotacaoSel.buscarObjeto(): null;
 		
-		CpOrgaoUsuario orgao = this.idAbrangencia == 1 ? (this.idOrgaoUsuSel != null ? dao().consultar(this.idOrgaoUsuSel, CpOrgaoUsuario.class, false): null): null;
+		CpOrgaoUsuario orgao = this.idAbrangencia == 1 ? (this.idOrgaoUsuSel != null ? cpDao.consultar(this.idOrgaoUsuSel, CpOrgaoUsuario.class, false): null): null;
 				
 		if (orgao != null)
 			this.nomeOrgaoUsuSel = orgao.getDescricao();				
@@ -157,10 +142,10 @@ public class AcessoController extends GiControllerSupport {
 			List<CpServico> l = null;
 			
 			if (servicoPai == null) {
-				l = dao().listarServicos();
+				l = cpDao.listarServicos();
 			} else {
 				l = new ArrayList<CpServico>(); 
-			//	CpServico cpServicoPai = dao().consultarCpServicoPorChave(servicoPai);
+			//	CpServico cpServicoPai = dao.consultarCpServicoPorChave(servicoPai);
 
 				if (cpServicoPai != null) {	
 					l = listarServicosPorPai(cpServicoPai);
@@ -169,7 +154,7 @@ public class AcessoController extends GiControllerSupport {
 
 			HashMap<String, ConfiguracaoAcesso> achm = new HashMap<String, ConfiguracaoAcesso>();
 			for (CpServico srv : l) {
-				ConfiguracaoAcesso ac = ConfiguracaoAcesso.gerar(perfil, pessoa, lotacao, orgao, srv, null);
+				ConfiguracaoAcesso ac = ConfiguracaoAcesso.gerar(cpDao, cpConf, perfil, pessoa, lotacao, orgao, srv, null);
 				achm.put(ac.getServico().getSigla(), ac);
 				
 			}
@@ -202,7 +187,7 @@ public class AcessoController extends GiControllerSupport {
 	
 	private List<CpServico> listarServicosPorPai(CpServico cpServicoPai) {
 		List<CpServico> lista = new ArrayList<CpServico>(); 
-		lista = dao().listarServicosPorPai(cpServicoPai);
+		lista = cpDao.listarServicosPorPai(cpServicoPai);
 		int contador = 0;
 		lista.add(cpServicoPai);
 		
@@ -210,7 +195,7 @@ public class AcessoController extends GiControllerSupport {
 		    CpServico item = lista.get(contador);
 		    
 			if (item != cpServicoPai) {
-				List<CpServico> subitens = dao().listarServicosPorPai(item);
+				List<CpServico> subitens = cpDao.listarServicosPorPai(item);
 				if (subitens.size() > 0) {
 					lista.addAll(subitens);
 				}
@@ -243,23 +228,23 @@ public class AcessoController extends GiControllerSupport {
 		} else if (lotacaoSel != null && lotacaoSel.getId() != null) {
 			lotacao = daoLot(lotacaoSel.getId()).getLotacaoInicial();
 		} else if (perfilSel != null && perfilSel.getId() != null) {
-			perfil = dao().consultar(perfilSel.getId(), CpPerfil.class,false);
+			perfil = cpDao.consultar(perfilSel.getId(), CpPerfil.class,false);
 		} else if (idOrgaoUsuSel != null && idOrgaoUsuSel != null) {
-			orgao = dao().consultar(idOrgaoUsuSel,CpOrgaoUsuario.class, false);
+			orgao = cpDao.consultar(idOrgaoUsuSel,CpOrgaoUsuario.class, false);
 		} else {
 			throw new AplicacaoException(
 					"Não foi informada pessoa, lotação ou órgão usuário.");
 		}
 
-		CpServico servico = dao().consultar(idServico, CpServico.class, false);
+		CpServico servico = cpDao.consultar(idServico, CpServico.class, false);
 		
 		CpSituacaoDeConfiguracaoEnum situacao = CpSituacaoDeConfiguracaoEnum.getById(idSituacao);
 		
 		CpTipoDeConfiguracao tpConf = CpTipoDeConfiguracao.UTILIZAR_SERVICO;
 		
-		Cp.getInstance().getBL().configurarAcesso(perfil, orgao, lotacao,pessoa, servico, situacao,tpConf, getIdentidadeCadastrante());
+		cpBl.configurarAcesso(perfil, orgao, lotacao,pessoa, servico, situacao,tpConf, getIdentidadeCadastrante());
 		
-		ConfiguracaoAcesso ac = ConfiguracaoAcesso.gerar(perfil, pessoa,lotacao, orgao, servico,null);
+		ConfiguracaoAcesso ac = ConfiguracaoAcesso.gerar(cpDao, cpConf, perfil, pessoa,lotacao, orgao, servico,null);
 		
 		StringBuilder sb = new StringBuilder();
 		acessoHTML(sb, ac);
@@ -409,7 +394,7 @@ public class AcessoController extends GiControllerSupport {
 	}
 
 	protected List<CpOrgaoUsuario> getOrgaosUsu() throws AplicacaoException {
-		return this.dao.listarOrgaosUsuarios();
+		return this.cpDao.listarOrgaosUsuarios();
 	}	
 	
 }

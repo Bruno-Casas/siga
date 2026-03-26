@@ -13,6 +13,8 @@ import br.gov.jfrj.siga.gc.model.GcInformacao;
 import br.gov.jfrj.siga.gc.model.GcTag;
 import br.gov.jfrj.siga.gc.model.GcTipoInformacao;
 
+import javax.enterprise.inject.spi.CDI;
+
 public class GcInformacaoFiltro {
 	public GcTipoInformacao tipo;
 	public DpPessoa autor;
@@ -69,9 +71,9 @@ public class GcInformacaoFiltro {
 			query += " and inf.ou = " + orgaoUsu.getId();
 
 		if (autor != null)
-			query += " and inf.autor.idPessoaIni = " + autor.getIdInicial();
+			query += " and inf.autor.hisIdIni = " + autor.getIdInicial();
 		if (lotacao != null)
-			query += " and inf.lotacao.idLotacaoIni = "
+			query += " and inf.lotacao.hisIdIni = "
 					+ lotacao.getIdInicial();
 
 		if (tipo != null && tipo.getId() != null)
@@ -168,9 +170,10 @@ public class GcInformacaoFiltro {
 
 		List listaRetorno = null;
 		if (parametro) {
+			CpDao dao = CDI.current().select(CpDao.class).get();
 		    listaRetorno = GcInformacao.AR.em()
 				.createQuery(query + subquery + " order by inf.hisDtIni desc")
-				.setParameter("dbDatetime", CpDao.getInstance().consultarDataEHoraDoServidor())
+				.setParameter("dbDatetime", dao.consultarDataEHoraDoServidor())
 				.getResultList();
 		}
 		else {

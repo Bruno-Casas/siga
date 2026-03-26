@@ -97,10 +97,9 @@ public class ExConfiguracaoCache extends CpConfiguracaoCache {
 
 	public boolean podeAdicionarComoPublicador(DpPessoa titular,
 			DpLotacao lotacaoTitular) {
-		return (dpPessoa != 0 && titular != null && ExDao.getInstance().consultar(dpPessoa, DpPessoa.class, false)
-				.getOrgaoUsuario().getId()
+		return (dpPessoa != 0 && titular != null && pessoa.getOrgaoUsuario().getId()
 				.equals(titular.getOrgaoUsuario().getId()))
-				|| (lotacao != 0 && lotacaoTitular != null && ExDao.getInstance().consultar(lotacao, DpLotacao.class, false)
+				|| (lotacao != 0 && lotacaoTitular != null && dpLotacao
 						.getOrgaoUsuario().getId()
 						.equals(lotacaoTitular.getOrgaoUsuario().getId()));
 	}

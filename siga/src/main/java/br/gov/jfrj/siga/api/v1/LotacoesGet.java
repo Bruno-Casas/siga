@@ -17,10 +17,16 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.CpOrgaoUsuarioDaoFiltro;
 import br.gov.jfrj.siga.dp.dao.DpLotacaoDaoFiltro;
 
+import javax.inject.Inject;
+
 public class LotacoesGet implements ILotacoesGet {
+	
+	@Inject
+	CpDao dao;
+	
 	@Override
 	public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
-		if ((((req.texto != null ? 1 : 0) + (req.idLotacaoIni != null ? 1 : 0)
+		if ((((req.texto != null ? 1 : 0) + (req.hisIdIni != null ? 1 : 0)
 				+ (req.siglaOrgaoQuery != null ? 1 : 0)) > 1)) {
 			throw new AplicacaoException("Pesquisa permitida somente por um dos argumentos.");
 		}
@@ -35,7 +41,7 @@ public class LotacoesGet implements ILotacoesGet {
 			return;
 		}
 
-		if (req.idLotacaoIni != null && !req.idLotacaoIni.isEmpty()) {
+		if (req.hisIdIni != null && !req.hisIdIni.isEmpty()) {
 			resp.list = pesquisarLotacaoAtualPorIdIni(req, resp);
 			return;
 		}
@@ -47,14 +53,14 @@ public class LotacoesGet implements ILotacoesGet {
 		final DpLotacaoDaoFiltro flt = new DpLotacaoDaoFiltro();
 		final CpOrgaoUsuarioDaoFiltro fltOrg = new CpOrgaoUsuarioDaoFiltro();
 		fltOrg.setSigla(req.siglaOrgaoQuery);
-		CpOrgaoUsuario org = (CpOrgaoUsuario) CpDao.getInstance().consultarPorSigla(fltOrg);
+		CpOrgaoUsuario org = (CpOrgaoUsuario) dao.consultarPorSigla(fltOrg);
 		if (org != null)
 			flt.setIdOrgaoUsu(Long.valueOf(org.getId()));
 		else
 			throw new AplicacaoException("Órgão não encontrado.");
 
 		List<DpLotacao> l;
-		l = CpDao.getInstance().consultarLotacaoPorOrgao(org);
+		l = dao.consultarLotacaoPorOrgao(org);
 		return l.stream().map(this::lotacaoToResultadoPesquisa).collect(Collectors.toList());
 	}
 
@@ -62,15 +68,15 @@ public class LotacoesGet implements ILotacoesGet {
 		final DpLotacaoDaoFiltro flt = new DpLotacaoDaoFiltro();
 		flt.setNome(Texto.removeAcentoMaiusculas(req.texto));
 		List<DpLotacao> l;
-		l = CpDao.getInstance().consultarPorFiltro(flt);
+		l = dao.consultarPorFiltro(flt);
 		return l.stream().map(this::lotacaoToResultadoPesquisa).collect(Collectors.toList());
 	}
 
 	private List<Lotacao> pesquisarLotacaoAtualPorIdIni(Request req, Response resp) throws SwaggerException {
 		try {
 			DpLotacao Lotacao = new DpLotacao();
-			Lotacao.setIdLotacaoIni(Long.valueOf(req.idLotacaoIni));
-			DpLotacao lotacaoAtual = CpDao.getInstance().obterLotacaoAtual(Lotacao);
+			Lotacao.setHisIdIni(Long.valueOf(req.hisIdIni));
+			DpLotacao lotacaoAtual = dao.obterLotacaoAtual(Lotacao);
 			List<Lotacao> l = new ArrayList<>();
 			l.add(lotacaoToResultadoPesquisa(lotacaoAtual));
 			return l;
@@ -86,7 +92,7 @@ public class LotacoesGet implements ILotacoesGet {
 
 		rp.siglaLotacao = lota.getSigla();
 		rp.idLotacao = lota.getId().toString();
-		rp.idLotacaoIni = lota.getIdLotacaoIni().toString();
+		rp.hisIdIni = lota.getHisIdIni().toString();
 		rp.nome = lota.getNomeLotacao();
 		rp.sigla = lota.getSiglaCompleta();
 		// Orgao Pessoa

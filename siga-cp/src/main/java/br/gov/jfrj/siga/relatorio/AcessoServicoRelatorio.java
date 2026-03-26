@@ -26,7 +26,7 @@ import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpConfiguracaoCache;
 import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
@@ -34,6 +34,7 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 
+import javax.enterprise.inject.spi.CDI;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -48,9 +49,14 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
     private ArrayList<CpSituacaoDeConfiguracaoEnum> cpSituacoesConfiguracao;
     private ArrayList<CpOrgaoUsuario> cpOrgaosUsuario;
 
+    protected final CpDao dao;
+
     @SuppressWarnings("unchecked")
     public AcessoServicoRelatorio(Map parametros) throws DJBuilderException {
         super(parametros);
+
+        dao = CDI.current().select(CpDao.class).get();
+
         if (parametros.get("idServico") == null) {
             throw new DJBuilderException("Parâmetro idServico não informado!");
         }
@@ -66,7 +72,7 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
         try {
             Long t_lngIdServico = Long.parseLong((String) parametros
                     .get("idServico"));
-            setCpServico(dao()
+            setCpServico(dao
                     .consultar(t_lngIdServico, CpServico.class, false));
         } catch (Exception e) {
             throw new DJBuilderException("Parâmetro idServico inválido!");
@@ -88,7 +94,7 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
         Long idOrg = null;
         try {
             if (parametros.get("idOrgaoUsuario").equals("-1")) {
-                setCpOrgaosUsuario((ArrayList<CpOrgaoUsuario>) dao()
+                setCpOrgaosUsuario((ArrayList<CpOrgaoUsuario>) dao
                         .listarOrgaosUsuarios());
 
                 if (!cpOrgaosUsuario.isEmpty()) {
@@ -98,7 +104,7 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
                 idOrg = Long.parseLong((String) parametros
                         .get("idOrgaoUsuario"));
                 ArrayList<CpOrgaoUsuario> cpOrgs = new ArrayList<CpOrgaoUsuario>();
-                cpOrgs.add(dao().consultar(idOrg, CpOrgaoUsuario.class, false));
+                cpOrgs.add(dao.consultar(idOrg, CpOrgaoUsuario.class, false));
                 setCpOrgaosUsuario(cpOrgs);
             }
         } catch (Exception e) {
@@ -142,7 +148,7 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
                 for (DpPessoa pes : obterPessoas(cpou)) {
                     AlteracaoDireitosItem it = gerar(tipo, null, pes, null,
                             cpou, getCpServico(), null);
-                    if (getCpSituacoesConfiguracao().contains(it.getSituacao())) {
+                    if (getCpSituacoesConfiguracao().contains(it.getSituacaoDepois())) {
                         aldis.add(it);
                     }
                 }
@@ -168,24 +174,26 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
         cfgFiltro.setOrgaoUsuario(orgao);
         cfgFiltro.setCpServico(servico);
         cfgFiltro.setCpTipoConfiguracao(tipo);
-        CpConfiguracaoCache cache = Cp.getInstance().getConf().buscaConfiguracao(
+
+        CpConfiguracaoBL conf = CDI.current().select(CpConfiguracaoBL.class).get();
+        CpConfiguracaoCache cache = conf.buscaConfiguracao(
                 cfgFiltro, new int[0], dtEvn);
-        CpConfiguracao cfg = CpDao.getInstance().consultar(cache.idConfiguracao, CpConfiguracao.class, false);
+        CpConfiguracao cfg = dao.consultar(cache.idConfiguracao, CpConfiguracao.class, false);
         AlteracaoDireitosItem itm = new AlteracaoDireitosItem();
         itm.setServico(servico);
         itm.setPessoa(pessoa);
         if (cfg != null) {
-            itm.setCfg(cfg);
-            itm.setSituacao(cfg.getCpSituacaoConfiguracao());
+            itm.setCfgDepois(cfg);
+            itm.getCfgDepois().setCpSituacaoConfiguracao(cfg.getCpSituacaoConfiguracao());
         } else {
-            itm.setSituacao(servico.getCpTipoServico().getSituacaoDefault());
+            itm.getCfgDepois().setCpSituacaoConfiguracao(servico.getCpTipoServico().getSituacaoDefault());
         }
         return itm;
     }
 
     private ArrayList<DpPessoa> obterPessoas(CpOrgaoUsuario cpou) {
-        return (ArrayList<DpPessoa>) dao().listarAtivos(DpPessoa.class,
-                "dataFimPessoa", cpou.getIdOrgaoUsu());
+        return (ArrayList<DpPessoa>) dao.listarAtivos(DpPessoa.class,
+                "hisDtFim", cpou.getIdOrgaoUsu());
     }
 
     /**
@@ -197,11 +205,11 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
     @SuppressWarnings("unused")
     private ArrayList<DpPessoa> obterPessoasTeste(CpOrgaoUsuario cpou) {
         ArrayList<DpPessoa> psas = new ArrayList<DpPessoa>();
-        psas.add(dao().consultar(131078L, DpPessoa.class, true));
-        psas.add(dao().consultar(132232L, DpPessoa.class, true));
-        psas.add(dao().consultar(129903L, DpPessoa.class, true));
-        psas.add(dao().consultar(131002L, DpPessoa.class, true));
-        psas.add(dao().consultar(129929L, DpPessoa.class, true));
+        psas.add(dao.consultar(131078L, DpPessoa.class, true));
+        psas.add(dao.consultar(132232L, DpPessoa.class, true));
+        psas.add(dao.consultar(129903L, DpPessoa.class, true));
+        psas.add(dao.consultar(131002L, DpPessoa.class, true));
+        psas.add(dao.consultar(129929L, DpPessoa.class, true));
         return psas;
     }
 
@@ -217,16 +225,16 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
                 AlteracaoDireitosItem c1 = (AlteracaoDireitosItem) o1;
                 AlteracaoDireitosItem c2 = (AlteracaoDireitosItem) o2;
                 String dscSit1;
-                if (c1.getSituacao() == null) {
+                if (c1.getSituacaoAntes() == null) {
                     dscSit1 = new String();
                 } else {
-                    dscSit1 = c1.getSituacao().getDescr();
+                    dscSit1 = c1.getSituacaoAntes().getDescr();
                 }
                 String dscSit2;
-                if (c2.getSituacao() == null) {
+                if (c2.getSituacaoDepois() == null) {
                     dscSit2 = new String();
                 } else {
-                    dscSit2 = c2.getSituacao().getDescr();
+                    dscSit2 = c2.getSituacaoDepois().getDescr();
                 }
                 if (dscSit1.equals(dscSit2)) {
                     String nome1;
@@ -257,7 +265,7 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
      */
     private void processarItem(AlteracaoDireitosItem cfga, List<String> dados) {
         try {
-            dados.add(cfga.getSituacao().getDescr());
+            dados.add(cfga.getSituacaoDepois().getDescr());
         } catch (Exception e) {
             dados.add("");
         }
@@ -294,20 +302,12 @@ public class AcessoServicoRelatorio extends RelatorioTemplate {
         return df.format(dte);
     }
 
-    /**
-     * @param configuração acesso
-     * @return Uma String representativa da origem
-     */
     private String printOrigem(AlteracaoDireitosItem cfga) {
         return cfga.printOrigemCurta();
     }
 
     private String getDescricaoTipoConfiguracao() {
         return CpTipoDeConfiguracao.UTILIZAR_SERVICO.getDescr();
-    }
-
-    private CpDao dao() {
-        return CpDao.getInstance();
     }
 
     public static void main(String args[]) throws Exception {

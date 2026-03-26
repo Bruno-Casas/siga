@@ -17,7 +17,7 @@ public class ModelosIdPreenchimentosGet implements IModelosIdPreenchimentosGet {
     }
 
     public static List<PreenchimentoItem> listarPreenchimentos(Long idModelo) {
-        ExDao dao = ExDao.getInstance();
+        ExDao dao = dao;
         ExModelo mod = dao.consultar(idModelo, ExModelo.class, false);
         mod = dao.consultar(mod.getIdInicial(), ExModelo.class, false);
 

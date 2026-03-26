@@ -216,10 +216,10 @@ public class RelTempoDocDetalhado extends RelatorioTemplate {
 
         List<WfProcedimento> l;
         if (incluirAbertos)
-            l = WfDao.getInstance().consultarProcedimentosParaEstatisticasPorPrincipalInclusiveNaoFinalizados(pd,
+            l = dao.consultarProcedimentosParaEstatisticasPorPrincipalInclusiveNaoFinalizados(pd,
                     dataInicialDe, dataInicialAte, dataFinalDe, dataFinalAte);
         else
-            l = WfDao.getInstance().consultarProcedimentosParaEstatisticasPorPrincipal(pd, dataInicialDe,
+            l = dao.consultarProcedimentosParaEstatisticasPorPrincipal(pd, dataInicialDe,
                     dataInicialAte, dataFinalDe, dataFinalAte);
 
         Set<Tarefa> tarefas = new TreeSet<>(new TarefaComparator());

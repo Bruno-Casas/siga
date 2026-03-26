@@ -6,7 +6,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaGet;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExDeveReceberEletronico;
 import br.gov.jfrj.siga.ex.vo.ExDocumentoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -55,8 +54,8 @@ public class DocumentosSiglaGet implements IDocumentosSiglaGet {
                 && Ex.getInstance().getComp().pode(ExDeveReceberEletronico.class, titular, lotaTitular, mob)) {
             try {
                 ctx.upgradeParaTransacional();
-                Ex.getInstance().getBL().receber(cadastrante, titular, lotaTitular, mob, new Date());
-                ExDao.getInstance().em().refresh(mob);
+                this.bl.receber(cadastrante, titular, lotaTitular, mob, new Date());
+                dao.em().refresh(mob);
             } catch (Exception e) {
                 e.printStackTrace(System.out);
                 throw e;

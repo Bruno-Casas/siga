@@ -6,7 +6,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExPapel;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.persistencia.ExMobilDaoFiltro;
@@ -63,7 +62,7 @@ abstract class DocumentosSiglaAssinarAutenticarComSenhaPost {
         assertAcesso(titular, lotaTitular, mob);
         assertDocumento(titular, lotaTitular, mob);
 
-        String retornoAssinatura = Ex.getInstance().getBL().assinarDocumentoComSenha(cadastrante, lotaTitular,
+        String retornoAssinatura = this.bl.assinarDocumentoComSenha(cadastrante, lotaTitular,
                 mob.doc(), null, cadastrante.getSiglaCompleta(), null, false, false, titular, this.autenticar, null,
                 false, false);
 
@@ -74,7 +73,7 @@ abstract class DocumentosSiglaAssinarAutenticarComSenhaPost {
         ExMobilDaoFiltro flt = new ExMobilDaoFiltro();
         flt.setSigla(sigla);
 
-        return ExDao.getInstance().consultarPorSigla(flt);
+        return dao.consultarPorSigla(flt);
     }
 
     private void assertAcesso(DpPessoa titular, DpLotacao lotaTitular, final ExMobil mob) throws Exception {

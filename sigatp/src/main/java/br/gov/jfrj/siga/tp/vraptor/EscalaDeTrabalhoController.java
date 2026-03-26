@@ -45,21 +45,8 @@ public class EscalaDeTrabalhoController extends TpController {
 	private static final String PATTERN_DDMMYYYYHHMM = "dd/MM/yyyy HH:mm";
 	private static final String PATTERN_DDMMYYYYHHMM_MYSQL = "yyyy-MM-dd HH:mm";
 
-	private MissaoController missaoController;
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public EscalaDeTrabalhoController() {
-		super();
-	}
-	
 	@Inject
-	public EscalaDeTrabalhoController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em, MissaoController missaoController) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-
-		this.missaoController = missaoController;
-	}
+	private MissaoController missaoController;
 
 	@Path("/listar")
 	public void listar() {
@@ -141,7 +128,7 @@ public class EscalaDeTrabalhoController extends TpController {
     	escalaDeTrabalho.getDataVigenciaFim().set(Calendar.HOUR_OF_DAY, 23);
     	escalaDeTrabalho.getDataVigenciaFim().set(Calendar.MINUTE, 59);
     	escalaDeTrabalho.getDataVigenciaFim().set(Calendar.SECOND, 59);
-		escalaDeTrabalho.save();
+		dao.gravar(escalaDeTrabalho);
 
 		result.redirectTo(this).listarPorCondutor(escalaDeTrabalho.getCondutor().getId());
 	}
@@ -206,7 +193,7 @@ public class EscalaDeTrabalhoController extends TpController {
 	        		DiaDeTrabalho.AR.delete("escalaDeTrabalho", escalas);	        	
         		}	        	
         		            	
-        		escalaDeTrabalho.save();            	        		
+        		dao.gravar(escalaDeTrabalho);            	        		
         		
         		for (DiaDeTrabalho diaDeTrabalho : escalaDeTrabalho.getDiasDeTrabalho()) {
 		                DiaDeTrabalho diaDeTrabalhoNovo = new DiaDeTrabalho();
@@ -215,8 +202,8 @@ public class EscalaDeTrabalhoController extends TpController {
 		                diaDeTrabalhoNovo.setHoraEntrada(diaDeTrabalho.getHoraEntrada());
 		                diaDeTrabalhoNovo.setHoraSaida(diaDeTrabalho.getHoraSaida());
 		                diaDeTrabalhoNovo.setEscalaDeTrabalho(escalaDeTrabalho);
-	
-		                diaDeTrabalhoNovo.save();
+
+						dao.gravar(diaDeTrabalhoNovo);
 	    		}        		
         	 } 
         } else {
@@ -237,7 +224,7 @@ public class EscalaDeTrabalhoController extends TpController {
         	novaEscala.getDataVigenciaInicio().set(Calendar.MINUTE, 0);
         	novaEscala.getDataVigenciaInicio().set(Calendar.SECOND, 0);
         	novaEscala.setDiasDeTrabalho(escalaDeTrabalho.getDiasDeTrabalho());
-        	novaEscala.save();
+			dao.gravar(novaEscala);
 
     		for (DiaDeTrabalho diaDeTrabalho : diasDeTrabalho) {
                 DiaDeTrabalho diaDeTrabalhoNovo = new DiaDeTrabalho();
@@ -247,7 +234,7 @@ public class EscalaDeTrabalhoController extends TpController {
                 diaDeTrabalhoNovo.setHoraSaida(diaDeTrabalho.getHoraSaida());
                 diaDeTrabalhoNovo.setEscalaDeTrabalho(novaEscala);
 
-                diaDeTrabalhoNovo.save();
+				dao.gravar(diaDeTrabalhoNovo);
     		}
          }
 
@@ -271,7 +258,7 @@ public class EscalaDeTrabalhoController extends TpController {
 	public void excluir(final Long id) throws Exception {
     	EscalaDeTrabalho escala = EscalaDeTrabalho.AR.findById(id);
     	Long idCondutor = escala.getCondutor().getId();
-    	escala.delete();
+		dao.excluir(escala);
 
     	result.redirectTo(this).listarPorCondutor(idCondutor);
     }

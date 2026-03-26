@@ -7,9 +7,14 @@ import br.gov.jfrj.siga.dp.DpCargo;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import com.crivano.swaggerservlet.SwaggerException;
 
+import javax.inject.Inject;
 import java.util.List;
 
 public class CargosIdGet implements ICargosIdGet {
+
+    @Inject
+    private CpDao dao;
+
     @Override
     public void run(Request req, Response resp, SigaApiV1Context ctx) throws Exception {
         if (req.id == null) {
@@ -20,8 +25,8 @@ public class CargosIdGet implements ICargosIdGet {
     }
 
     private Cargo pesquisarPorId(Request req, Response resp) throws SwaggerException {
-        List<DpCargo> l = CpDao.getInstance().consultarPorIdOuIdInicial(DpCargo.class,
-                "idCargoIni", "dataFimCargo", Long.valueOf(req.id));
+        List<DpCargo> l = dao.consultarPorIdOuIdInicial(DpCargo.class,
+                "hisIdIni", "hisDtFim", Long.valueOf(req.id));
         if (l.size() == 0)
             throw new SwaggerException("Nenhum cargo foi encontrado para os parâmetros informados.", 404, null, req,
                     resp, null);
@@ -39,7 +44,7 @@ public class CargosIdGet implements ICargosIdGet {
 
         crgo.sigla = (cargo.getSigla() != null ? cargo.getSigla() : null);
         crgo.idCargo = cargo.getId().toString();
-        crgo.idCargoIni = cargo.getIdCargoIni().toString();
+        crgo.hisIdIni = cargo.getHisIdIni().toString();
         crgo.idExterna = (cargo.getIdExterna() != null ? cargo.getIdExterna() : null);
         crgo.nome = (cargo.getNomeCargo() != null ? cargo.getNomeCargo() : null);
 

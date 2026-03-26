@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaDesentranharPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeCancelarJuntada;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -21,8 +20,8 @@ public class DocumentosSiglaDesentranharPost implements IDocumentosSiglaDesentra
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        Ex.getInstance().getBL().cancelarJuntada(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob,
-                ExDao.getInstance().getServerDateTime(), ctx.getTitular(), ctx.getTitular(), req.motivo);
+        this.bl.cancelarJuntada(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob,
+                dao.getServerDateTime(), ctx.getTitular(), ctx.getTitular(), req.motivo);
 
         resp.status = "OK";
     }

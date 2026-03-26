@@ -5,9 +5,7 @@ import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 
 import br.com.caelum.vraptor.Path;
-import br.com.caelum.vraptor.Post;
 import br.com.caelum.vraptor.Controller;
-import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.validator.Validator;
 import br.com.caelum.vraptor.view.Results;
@@ -19,17 +17,7 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 
 @Controller
 public class PrincipalController  extends SrController{
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public PrincipalController() {
-		super();
-	}
-	
-	@Inject
-	public PrincipalController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em,  SrValidator srValidator, Validator validator) {
-        super(request, result, dao, so, em, srValidator);
-    }
+
 	@Path("/app/principal")
 	public void principal() throws Exception {
 		//Principal
@@ -42,7 +30,7 @@ public class PrincipalController  extends SrController{
     	try {
     		SrSolicitacao sol = new SrSolicitacao();
     		if (matricula != null) {
-    			DpPessoa pes = dao().getPessoaFromSigla(matricula);
+    			DpPessoa pes = cpDao.getPessoaFromSigla(matricula);
     			if (pes != null)
     				sol.setLotaTitular(pes.getLotacao());
     		}

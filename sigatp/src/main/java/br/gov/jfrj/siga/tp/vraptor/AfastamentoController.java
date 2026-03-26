@@ -32,18 +32,6 @@ public class AfastamentoController extends TpController {
 	private static final String LABEL_EDITAR = "views.label.editar";
 	private static final String LABEL_INCLUIR = "views.label.incluir";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AfastamentoController() {
-		super();
-	}
-	
-	@Inject
-	public AfastamentoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listarPorCondutor/{idCondutor}")
 	public void listarPorCondutor(Long idCondutor) throws Exception {
 		Condutor condutor = Condutor.AR.findById(idCondutor);
@@ -118,7 +106,7 @@ public class AfastamentoController extends TpController {
 				result.include(AFASTAMENTO, afastamento);
 				validator.onErrorUse(Results.page()).of(AfastamentoController.class).editar(afastamento.getCondutor().getId(), afastamento.getId());
 			} else {
-				afastamento.save();
+				dao.gravar(afastamento);
 				result.redirectTo(this).listarPorCondutor(afastamento.getCondutor().getId());
 			}
 		}
@@ -131,7 +119,7 @@ public class AfastamentoController extends TpController {
 	@Path("/excluir/{id}")
 	public void excluir(Long id) throws Exception {
 		Afastamento afastamento = Afastamento.AR.findById(id);
-		afastamento.delete();
+		dao.excluir(afastamento);
 		result.redirectTo(this).listarPorCondutor(afastamento.getCondutor().getId());
 	}
 

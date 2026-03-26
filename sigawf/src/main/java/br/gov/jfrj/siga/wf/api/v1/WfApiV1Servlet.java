@@ -100,7 +100,7 @@ public class WfApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
             public boolean test() throws Exception {
                 try (WfApiV1Context ctx = new WfApiV1Context()) {
                     ctx.init(null);
-                    return WfDao.getInstance().dt() != null;
+                    return dao.dt() != null;
                 }
             }
 

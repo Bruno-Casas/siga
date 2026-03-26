@@ -29,18 +29,6 @@ import javax.transaction.Transactional;
 public class PenalidadeController extends TpController {
 	private static final String PENALIDADE_STR = "penalidade";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public PenalidadeController() {
-		super();
-	}
-	
-	@Inject
-	public PenalidadeController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,   EntityManager em) {
-		super(request, result, TpDao.getInstance(), validator, so, em);
-	}
-
 	@Path("/listar")
 	public void listar() {
    		List<Penalidade> penalidades = Penalidade.listarTodos();
@@ -62,7 +50,7 @@ public class PenalidadeController extends TpController {
 	public void excluir(Long id) {
         Penalidade penalidade = Penalidade.buscar(id);
 
-		penalidade.delete();
+		dao.excluir(penalidade);
 		result.redirectTo(this).listar();
 	}
 
@@ -90,7 +78,7 @@ public class PenalidadeController extends TpController {
 			    validator.onErrorUse(Results.page()).of(PenalidadeController.class).incluir();
 		}
 
-	 	penalidade.save();
+	 	dao.gravar(penalidade);
 
 	 	result.redirectTo(this).listar();
     }

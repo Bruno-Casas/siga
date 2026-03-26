@@ -6,7 +6,6 @@ import br.gov.jfrj.siga.context.AcessoPublicoEPrivado;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaArquivoProduzirGet;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
@@ -44,14 +43,14 @@ public class DocumentosSiglaArquivoProduzirGet implements IDocumentosSiglaArquiv
 
         final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
         filter.setSigla(sigla);
-        ExMobil mob = (ExMobil) ExDao.getInstance().consultarPorSigla(filter);
+        ExMobil mob = (ExMobil) dao.consultarPorSigla(filter);
         if (mob == null)
             throw new PresentableUnloggedException(
                     "Não foi possível encontrar um documento a partir da sigla fornecida");
 
         ExMovimentacao mov = null;
         if (idMov != null) {
-            mov = ExDao.getInstance().consultar(Long.parseLong(idMov), ExMovimentacao.class, false);
+            mov = dao.consultar(Long.parseLong(idMov), ExMovimentacao.class, false);
             if (!mov.mob().doc().equals(mob.doc()))
                 throw new PresentableUnloggedException("Movimentação não é referente ao documento informado");
         }

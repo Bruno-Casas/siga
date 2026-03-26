@@ -37,7 +37,6 @@ import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -81,9 +80,9 @@ public class ExNivelAcesso extends AbstractExNivelAcesso implements
 	public ExNivelAcesso() {
 	}
 
-	public static ExNivelAcesso getNivelAcessoDefault(final ExTipoDocumento exTpDoc, final ExFormaDocumento forma, 
+	public static ExNivelAcesso getNivelAcessoDefault(ExDao dao, ExConfiguracaoBL conf, final ExTipoDocumento exTpDoc, final ExFormaDocumento forma,
 			final ExModelo exMod, final ExClassificacao classif, final DpPessoa titular, final DpLotacao lotaTitular) {
-		final Date dt = ExDao.getInstance().consultarDataEHoraDoServidor();
+		final Date dt = dao.consultarDataEHoraDoServidor();
 
 		final ExConfiguracao filtro = new ExConfiguracao();
 		filtro.setDpPessoa(titular);
@@ -96,10 +95,9 @@ public class ExNivelAcesso extends AbstractExNivelAcesso implements
 		filtro.setCpSituacaoConfiguracao(CpSituacaoDeConfiguracaoEnum.DEFAULT);
 		
 		ExConfiguracaoCache exConfig = null;
-		exConfig = (ExConfiguracaoCache) Ex.getInstance().getConf()
-				.buscaConfiguracao(filtro, new int[] { ExConfiguracaoBL.NIVEL_ACESSO }, dt);
+		exConfig = (ExConfiguracaoCache) conf.buscaConfiguracao(filtro, new int[] { ExConfiguracaoBL.NIVEL_ACESSO }, dt);
 		if (exConfig != null) {
-			ExDao.getInstance().consultar(exConfig.exNivelAcesso, ExNivelAcesso.class, false);
+			dao.consultar(exConfig.exNivelAcesso, ExNivelAcesso.class, false);
 		}
 
 		return null;

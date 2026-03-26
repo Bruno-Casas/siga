@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaCriarViaPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeCriarVia;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -17,7 +16,7 @@ public class DocumentosSiglaCriarViaPost implements IDocumentosSiglaCriarViaPost
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        Ex.getInstance().getBL().criarVia(ctx.getTitular(), ctx.getLotaTitular(), mob.doc());
+        this.bl.criarVia(ctx.getTitular(), ctx.getLotaTitular(), mob.doc());
 
         resp.sigla = mob.doc().getUltimaVia().getCodigoCompacto();
         resp.status = "OK";

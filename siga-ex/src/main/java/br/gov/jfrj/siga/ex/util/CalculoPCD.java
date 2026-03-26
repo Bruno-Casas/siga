@@ -27,6 +27,8 @@ import java.util.HashMap;
 import br.gov.jfrj.siga.base.SigaCalendar;
 import br.gov.jfrj.siga.dp.DpPessoa;
 
+import javax.enterprise.inject.spi.CDI;
+
 /**
  * Classe que efetua o cálculo dos valores a serem pagos no pedido de concessão
  * de diárias.
@@ -109,8 +111,10 @@ public class CalculoPCD {
 	public int getNumeroDiasInuteis() {
 		int diasInuteis = 0;
 		Calendar ini = new SigaCalendar(dataInicio.getTimeInMillis());
+
+		Feriados feriados = CDI.current().select(Feriados.class).get();
 		while (ini.compareTo(dataFim) <= 0) {
-			if (Feriados.verificarPorData(ini.getTime()) != null
+			if (feriados.verificarPorData(ini.getTime()) != null
 					|| ini.get(SigaCalendar.DAY_OF_WEEK) == SigaCalendar.SATURDAY
 					|| ini.get(SigaCalendar.DAY_OF_WEEK) == SigaCalendar.SUNDAY) {
 				diasInuteis++;

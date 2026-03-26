@@ -53,9 +53,9 @@ public class RelClassificacao extends RelatorioTemplate {
 		List<ExClassificacao> listaClass;
 		
 		if (this.codificacao!=null && this.codificacao.length()>0){
-			listaClass = ExDao.getInstance().consultarExClassificacao(m.getMscFilho(this.codificacao, true), "");
+			listaClass = dao.consultarExClassificacao(m.getMscFilho(this.codificacao, true), "");
 		}else{
-			listaClass= ExDao.getInstance().consultarExClassificacaoVigente();
+			listaClass= dao.consultarExClassificacaoVigente();
 		}
 		
 		for (ExClassificacao c : listaClass) {

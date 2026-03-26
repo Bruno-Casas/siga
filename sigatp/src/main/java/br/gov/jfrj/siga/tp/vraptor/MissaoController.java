@@ -79,20 +79,9 @@ public class MissaoController extends TpController {
 
 	@Inject
 	private AutorizacaoGI autorizacaoGI;
-	private RequisicaoController requisicaoController;
-	
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public MissaoController() {
-		super();
-	}
-	
+
 	@Inject
-	public MissaoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em, RequisicaoController requisicaoController){
-		super(request, result, TpDao.getInstance(), validator, so, em);
-		this.requisicaoController = requisicaoController;
-	}
+	private RequisicaoController requisicaoController;
 
 	@RoleAdmin
 	@RoleAdminMissao
@@ -275,7 +264,7 @@ public class MissaoController extends TpController {
 
 		checarCondutorPeloUsuarioAutenticado(missao);
 		Missao missaoPronta = recuperarComplexoPeloPerfil(missao);
-		missaoPronta.save();
+		dao.gravar(missaoPronta);
 
 		if (novaMissao)
 			gravarAndamentos(dpPessoa, "PROGRAMADO NA MISSAO N. " + missaoPronta.getSequence(), missaoPronta.getRequisicoesTransporte(), missaoPronta, EstadoRequisicao.PROGRAMADA);
@@ -321,7 +310,7 @@ public class MissaoController extends TpController {
 			andamento.setRequisicaoTransporte(requisicaoTransporte);
 			andamento.setResponsavel(dpPessoa);
 			andamento.setMissao(missao);
-			andamento.save();
+			dao.gravar(andamento);
 		}
 	}
 
@@ -338,7 +327,7 @@ public class MissaoController extends TpController {
 			parametros.clear();
 			for (Andamento andamento : andamentos) {
 				if (missaoEmAndamento(missao, andamento) && andamento.getEstadoRequisicao().equals(EstadoRequisicao.PROGRAMADA)) {
-					andamento.delete();
+					dao.excluir(andamento);
 				}
 			}
 		}
@@ -370,7 +359,7 @@ public class MissaoController extends TpController {
 		andamento.setRequisicaoTransporte(requisicaoTransporte);
 		andamento.setResponsavel(dpPessoa);
 		andamento.setMissao(missao);
-		andamento.save();
+		dao.gravar(andamento);
 	}
 
 	@RoleAdmin
@@ -402,7 +391,7 @@ public class MissaoController extends TpController {
 		condicaoComponentesVeiculo();
 	}
 
-    @Transactional
+	@Transactional
 	@RoleAdmin
 	@RoleAdminMissao
 	@RoleAdminMissaoComplexo
@@ -425,7 +414,7 @@ public class MissaoController extends TpController {
 		checarCondutorPeloUsuarioAutenticado(missao);
 
 		Missao missaoPronta = recuperarComplexoPeloPerfil(missao);
-		missaoPronta.save();
+		dao.gravar(missaoPronta);
 
 		RequisicaoTransporte[] requisicoes = missaoPronta.getRequisicoesTransporte().toArray(new RequisicaoTransporte[missaoPronta.getRequisicoesTransporte().size()]);
 		EstadoRequisicao[] estadosRequisicao = new EstadoRequisicao[missaoPronta.getRequisicoesTransporte().size()];
@@ -453,17 +442,17 @@ public class MissaoController extends TpController {
 			validator.add(new I18nMessage(ODOMETRO_RETORNO_EM_KM_STR, "missao.finalizar.odometro.retorno"));
 	}
 
-    private boolean isOdometroZerado(Double odometro) {
-        return odometro.equals(0.0);
-    }    
-    
-    @Transactional
-    @RoleAdmin
+	private boolean isOdometroZerado(Double odometro) {
+		return odometro.equals(0.0);
+	}
+
+	@Transactional
+	@RoleAdmin
 	@RoleAdminMissao
 	@RoleAdminMissaoComplexo
 	@RoleAgente
 	@Path("/iniciarMissao")
-	public void iniciarMissao(Missao missao, List<RequisicaoTransporte> requisicoesTransporteAlt) throws Exception {		
+	public void iniciarMissao(Missao missao, List<RequisicaoTransporte> requisicoesTransporteAlt) throws Exception {
 		if (missao.getDataHoraSaida() == null) {
 			validator.add(new I18nMessage("dataHoraSaida", "missoes.dataHoraSaidaNulo.validation"));
 		}
@@ -471,7 +460,7 @@ public class MissaoController extends TpController {
 			verificarDisponibilidadeDeCondutor(missao);
 			verificarOdometroSaidaZerado(missao);
 		}
-		
+
 		DpPessoa dpPessoa = getCadastrante();
 
 		if (null == requisicoesTransporteAlt || requisicoesTransporteAlt.isEmpty()) {
@@ -498,7 +487,7 @@ public class MissaoController extends TpController {
 		Missao missaoPronta = recuperarComplexoPeloPerfil(missao);
 		checarComplexo(missaoPronta.getCpComplexo().getIdComplexo());
 
-		missaoPronta.save();
+		dao.gravar(missaoPronta);
 		gravarAndamentos(dpPessoa, "PELA MISSAO N." + missaoPronta.getSequence(), missaoPronta.getRequisicoesTransporte(), missaoPronta, EstadoRequisicao.EMATENDIMENTO);
 		buscarPelaSequence(false, missaoPronta.getSequence());
 	}
@@ -513,7 +502,7 @@ public class MissaoController extends TpController {
 		return missao;
 	}
 
-    @Transactional
+	@Transactional
 	@RoleAdmin
 	@RoleAdminMissao
 	@RoleAdminMissaoComplexo
@@ -522,9 +511,9 @@ public class MissaoController extends TpController {
 		Template template = Template.INICIORAPIDO;
 
 		if (requisicoesTransporteAlt == null || requisicoesTransporteAlt.isEmpty())
-		    validator.add(new I18nMessage(REQUISICOES_TRANSPORTE_STR, MISSAO_REQUISICOES_TRANSPORTE_REQUIRED));
+			validator.add(new I18nMessage(REQUISICOES_TRANSPORTE_STR, MISSAO_REQUISICOES_TRANSPORTE_REQUIRED));
 		else
-		    missao.setRequisicoesTransporte(requisicoesTransporteAlt);
+			missao.setRequisicoesTransporte(requisicoesTransporteAlt);
 
 		validarOdometro(missao);
 		redirecionarSeErroAoSalvar(missao, template);
@@ -549,13 +538,13 @@ public class MissaoController extends TpController {
 		checarCondutorPeloUsuarioAutenticado(missaoPronta);
 		checarComplexo(missaoPronta.getCpComplexo().getIdComplexo());
 
-		missaoPronta.save();
+		dao.gravar(missaoPronta);
 
 		gravarAndamentos(dpPessoa, "PROGRAMADO POR INICIO RAPIDO PARA MISSAO NO. " + missaoPronta.getSequence(), missaoPronta.getRequisicoesTransporte(), missaoPronta, EstadoRequisicao.PROGRAMADA);
 		validarRequisicoesDeServico(missaoPronta, template);
 		missaoPronta.setEstadoMissao(EstadoMissao.INICIADA);
 
-		missaoPronta.save();
+		dao.gravar(missaoPronta);
 		gravarAndamentos(dpPessoa, "INICIO RAPIDO PELA MISSAO N." + missaoPronta.getSequence(), missaoPronta.getRequisicoesTransporte(), missaoPronta, EstadoRequisicao.EMATENDIMENTO);
 
 		result.include("mostrarBotoesIniciarRapido", true);
@@ -565,9 +554,9 @@ public class MissaoController extends TpController {
 		result.forwardTo(this).buscarPelaSequence(false, missaoPronta.getSequence());
 	}
 
-    private void validarOdometro(Missao missao) {
-        error(missao.getOdometroSaidaEmKm().equals(0.0), MISSAO_STR, "veiculo.odometroEmKmAtual.zero.validation");
-    }
+	private void validarOdometro(Missao missao) {
+		error(missao.getOdometroSaidaEmKm().equals(0.0), MISSAO_STR, "veiculo.odometroEmKmAtual.zero.validation");
+	}
 
 	@RoleAdmin
 	@RoleAgente
@@ -586,16 +575,16 @@ public class MissaoController extends TpController {
 		condicaoComponentesIniciarMissao(missao);
 	}
 
-    private void condicaoComponentesIniciarMissao(Missao missao) {
-        result.include(MISSAO_STR, missao);
+	private void condicaoComponentesIniciarMissao(Missao missao) {
+		result.include(MISSAO_STR, missao);
 		result.include("mostrarBotoesIniciar", true);
 		result.include(MOSTRAR_DADOS_PROGRAMADA, true);
 		result.include(MOSTRAR_DADOS_INICIADA_STR, true);
 		result.include(MOSTRAR_DADOS_FINALIZADA_STR, false);
-    }
+	}
 
-    private void condicaoComponentesVeiculo() {
-        result.include("estepes", PerguntaSimNao.values());
+	private void condicaoComponentesVeiculo() {
+		result.include("estepes", PerguntaSimNao.values());
 		result.include("triangulos", PerguntaSimNao.values());
 		result.include("cartoesSeguro", PerguntaSimNao.values());
 		result.include("extintores", PerguntaSimNao.values());
@@ -609,7 +598,7 @@ public class MissaoController extends TpController {
 
 		result.include("nivelCombustivelRetorno", NivelDeCombustivel.values());
 		result.include("niveisCombustivelSaida", NivelDeCombustivel.values());
-    }
+	}
 
 	@RoleAdmin
 	@RoleAdminMissao
@@ -625,7 +614,7 @@ public class MissaoController extends TpController {
 		result.include(MISSAO_STR, missao);
 	}
 
-    @Transactional
+	@Transactional
 	@RoleAdmin
 	@RoleAdminMissao
 	@RoleAdminMissaoComplexo
@@ -640,12 +629,12 @@ public class MissaoController extends TpController {
 		missao.setEstadoMissao(EstadoMissao.CANCELADA);
 		checarCondutorPeloUsuarioAutenticado(missao);
 		checarComplexo(missao.getCpComplexo().getIdComplexo());
-		
+
 		if(!missao.getRequisicoesTransporte().isEmpty()){
-		    missao.setCpComplexo(missao.getRequisicoesTransporte().get(0).getCpComplexo());
+			missao.setCpComplexo(missao.getRequisicoesTransporte().get(0).getCpComplexo());
 		}
-		missao.save();
-		
+		dao.gravar(missao);
+
 		if (requisicoes != null && !requisicoes.isEmpty()) {
 			for (RequisicaoTransporte requisicao : requisicoes) {
 				requisicao.cancelarSemMissao(missao.getResponsavel(), missao.getSequence() + ": " + missao.getJustificativa());
@@ -657,7 +646,7 @@ public class MissaoController extends TpController {
 				gravaAndamento(dpPessoa, "MISSAO NO. " + missao.getSequence() + " CANCELADA", missao, EstadoRequisicao.NAOATENDIDA, requisicao);
 			}
 		}
-		
+
 		result.redirectTo(this).listarFiltrado(EstadoMissao.CANCELADA);
 	}
 
@@ -876,7 +865,7 @@ public class MissaoController extends TpController {
 		Missao missao = Missao.AR.findById(id);
 		checarCondutorPeloUsuarioAutenticado(missao);
 		checarComplexo(missao.getCpComplexo().getIdComplexo());
-		missao.delete();
+		dao.excluir(missao);
 		result.redirectTo(this).listar();
 	}
 

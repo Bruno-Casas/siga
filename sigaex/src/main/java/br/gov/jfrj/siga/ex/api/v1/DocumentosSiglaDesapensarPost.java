@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaDesapensarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeDesapensar;
 import br.gov.jfrj.siga.vraptor.Transacional;
 
@@ -20,7 +19,7 @@ public class DocumentosSiglaDesapensarPost implements IDocumentosSiglaDesapensar
 
         ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-        Ex.getInstance().getBL().desapensarDocumento(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob, null, null,
+        this.bl.desapensarDocumento(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob, null, null,
                 ctx.getTitular());
 
         resp.sigla = mob.doc().getCodigo();

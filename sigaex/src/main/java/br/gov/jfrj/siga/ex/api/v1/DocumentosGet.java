@@ -16,7 +16,6 @@ import com.crivano.swaggerservlet.SwaggerException;
 import br.gov.jfrj.siga.base.Data;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.RegraNegocioException;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpMarcadorGrupoEnum;
 import br.gov.jfrj.siga.dp.CpMarca;
 import br.gov.jfrj.siga.dp.CpMarcador;
@@ -27,7 +26,6 @@ import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.DocumentoPesq;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosGet;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.persistencia.ExMobilApiBuilder;
@@ -54,7 +52,7 @@ public class DocumentosGet implements IDocumentosGet {
 		if (qtdMaxima > 50)
 			throw new RegraNegocioException("A quantidade máxima de itens a trazer é de 50 documentos.");
 
-		if (Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(titular, lotaTitular,
+		if (this.conf.podeUtilizarServicoPorConfiguracao(titular, lotaTitular,
 				SIGA_DOC_PESQ_DTLIMITADA)) {
 			if (req.dtinicial != null && !"".equals(req.dtinicial))
 				validarLimiteDeDatas(req.dtinicial, req.dtfinal);
@@ -75,7 +73,7 @@ public class DocumentosGet implements IDocumentosGet {
 
 		CpMarcador marcador = null;
 		if (req.marcador != null) {
-			List<CpMarcador> listMarcador = CpDao.getInstance().consultaCpMarcadorAtivoPorNome(req.marcador,
+			List<CpMarcador> listMarcador = dao.consultaCpMarcadorAtivoPorNome(req.marcador,
 					lotaTitular);
 			if (listMarcador.size() > 0) {
 				marcador = listMarcador.get(0);
@@ -100,7 +98,7 @@ public class DocumentosGet implements IDocumentosGet {
 				.setGrupoMarcador(CpMarcadorGrupoEnum.getByNome(req.grupomarcador)).setDtDocIni(dtIni)
 				.setDtDocFim(dtFim).setIdCadastrante(req.idpessoa).setIdLotaCadastrante(idLota);
 
-		List<Object[]> l = ExDao.getInstance().consultarPorFiltro(builder);
+		List<Object[]> l = dao.consultarPorFiltro(builder);
 		if (l.isEmpty())
 			throw new SwaggerException("Nenhum documento foi encontrado com os argumentos informados.", 404, null, req,
 					resp, null);

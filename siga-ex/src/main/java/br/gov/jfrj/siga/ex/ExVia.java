@@ -29,7 +29,7 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import br.gov.jfrj.siga.hibernate.ExDao;
-import br.gov.jfrj.siga.model.Assemelhavel;
+
 
 /**
  * A class that represents a row in the 'EX_VIA' table. This class may be
@@ -68,10 +68,6 @@ public class ExVia extends AbstractExVia {
 
 	public void setId(Long id) {
 		setIdVia(id);
-	}
-
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return false;
 	}
 
 	/* Add customized code below */

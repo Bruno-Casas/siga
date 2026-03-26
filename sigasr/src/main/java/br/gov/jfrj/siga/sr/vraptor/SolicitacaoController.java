@@ -68,22 +68,6 @@ public class SolicitacaoController extends SrController {
     private static final String PRIORIDADE_LIST = "prioridadeList";
     private static final String TIPO_MOTIVO_ESCALONAMENTO_LIST = "tipoMotivoEscalonamentoList";
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public SolicitacaoController() {
-        super();
-    }
-
-    @Inject
-    public SolicitacaoController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em,
-                                 SrValidator srValidator, Validator validator) throws Throwable {
-        super(request, result, dao, so, em, srValidator);
-
-        result.on(AplicacaoException.class).forwardTo(this).appexception();
-        result.on(Exception.class).forwardTo(this).exception();
-    }
-
     @SuppressWarnings("unchecked")
     @Path("/listarLista")
     public void listarLista(boolean mostrarDesativados) throws Exception {
@@ -132,7 +116,7 @@ public class SolicitacaoController extends SrController {
     @Path("/desativarPermissaoUsoListaEdicao")
     public void desativarPermissaoUsoListaEdicao(Long idLista, Long idPermissao) throws Exception {
         SrConfiguracao configuracao = ContextoPersistencia.em().find(SrConfiguracao.class, idPermissao);
-        configuracao.finalizar();
+        dao.finalizar(configuracao);
 
         result.use(Results.http()).body(configuracao.getSrConfiguracaoJson());
     }
@@ -159,7 +143,7 @@ public class SolicitacaoController extends SrController {
     @Path("/desativarConfiguracaoAutomaticaGravar")
     public void desativarConfiguracaoAutomaticaGravar(Long id) throws Exception {
         SrConfiguracao configuracao = ContextoPersistencia.em().find(SrConfiguracao.class, id);
-        configuracao.finalizar();
+        dao.finalizar(configuracao);
         result.use(Results.http()).body(configuracao.toVO().toJson());
     }
 
@@ -167,7 +151,7 @@ public class SolicitacaoController extends SrController {
     @Path("/reativarConfiguracaoAutomaticaGravar")
     public void reativarConfiguracaoAutomaticaGravar(Long id) throws Exception {
         SrConfiguracao configuracao = ContextoPersistencia.em().find(SrConfiguracao.class, id);
-        configuracao.salvarComHistorico();
+        dao.salvarComHistorico(configuracao);
         result.use(Results.http()).body(configuracao.toVO().toJson());
     }
 
@@ -190,7 +174,7 @@ public class SolicitacaoController extends SrController {
     public void gravarLista(SrLista lista) throws Exception {
         lista.setLotaCadastrante(getLotaTitular());
         validarFormEditarLista(lista);
-        lista.salvarComHistorico();
+        dao.salvarComHistorico(lista);
         SrListaVO srListaVO = getSrListaVOComPermissoes(lista);
         result.use(Results.http()).body(srListaVO.toJson());
     }
@@ -216,7 +200,7 @@ public class SolicitacaoController extends SrController {
     @Path("/desativarLista")
     public void desativarLista(Long id, boolean mostrarDesativados) throws Exception {
         SrLista lista = SrLista.AR.findById(id);
-        lista.finalizar();
+        dao.finalizar(lista);
 
         result.use(Results.http()).body(lista.toJson());
     }
@@ -225,7 +209,7 @@ public class SolicitacaoController extends SrController {
     @Path("/reativarLista")
     public void reativarLista(Long id, boolean mostrarDesativados) throws Exception {
         SrLista lista = SrLista.AR.findById(id);
-        lista.salvarComHistorico();
+        dao.salvarComHistorico(lista);
         result.use(Results.http()).body(lista.toJson());
     }
 
@@ -324,8 +308,8 @@ public class SolicitacaoController extends SrController {
         // voltando a pegar a lotacao do titular ao inves da do solicitante...
         if ((solicitacao.getIdSolicitacao() == null)
                 && solicitacao.getAcao().getTituloAcao().toLowerCase().startsWith("atividades da lotação")) {
-            // solicitacao.setAtendenteNaoDesignado(solicitacao.getSolicitante().getLotacao().getLotacaoAtual());
-            solicitacao.setAtendenteNaoDesignado(getTitular().getLotacao().getLotacaoAtual());
+            // solicitacao.setAtendenteNaoDesignado(solicitacao.getSolicitante().getLotacao().getHistoricoAtual());
+            solicitacao.setAtendenteNaoDesignado(getTitular().getLotacao().getHistoricoAtual());
         }
         // FIM MARRETA
 
@@ -349,8 +333,8 @@ public class SolicitacaoController extends SrController {
         result.include("solicitante", solicitacao.getSolicitante());
         result.include("siglaCompacta", solicitacao.getSiglaCompacta());
         result.include("local", solicitacao.getLocal());
-        result.include("lotacaoDoTitularLegivel", getTitular().getLotacao().getLotacaoAtual().toString() + " - "
-                + getTitular().getLotacao().getLotacaoAtual().getNomeLotacao());
+        result.include("lotacaoDoTitularLegivel", getTitular().getLotacao().getHistoricoAtual().toString() + " - "
+                + getTitular().getLotacao().getHistoricoAtual().getNomeLotacao());
         result.include("solicitanteDescricaoCompleta", getDescricaoCompleta(solicitacao.getSolicitante()));
     }
 
@@ -982,7 +966,7 @@ public class SolicitacaoController extends SrController {
         filtro.setLotacao(getLotaTitular());
         filtro.setBuscarPorPerfis(true);
         filtro.setCpTipoConfiguracao(SrTipoDeConfiguracao.ESCALONAMENTO_SOL_FILHA);
-        CpSituacaoDeConfiguracaoEnum situacao = SrConfiguracaoBL.get().buscaSituacao(filtro, new int[]{0}, null);
+        CpSituacaoDeConfiguracaoEnum situacao = cpConf.buscaSituacao(filtro, new int[]{0}, null);
         boolean criarFilhaDefault = false;
         if (situacao != null
                 && (situacao == CpSituacaoDeConfiguracaoEnum.PODE || situacao == CpSituacaoDeConfiguracaoEnum.DEFAULT))
@@ -1192,7 +1176,7 @@ public class SolicitacaoController extends SrController {
                 p.setNumPosicao(pNova.getNumPosicao());
                 p.setPrioridade(pNova.getPrioridade());
                 p.setNaoReposicionarAutomatico(pNova.getNaoReposicionarAutomatico());
-                p.save();
+                dao.gravar(p);
             } else
                 em().detach(p);
         }
@@ -1206,7 +1190,7 @@ public class SolicitacaoController extends SrController {
         try {
             SrSolicitacao sol = new SrSolicitacao();
             if (matricula != null) {
-                DpPessoa pes = dao().getPessoaFromSigla(matricula);
+                DpPessoa pes = cpDao.getPessoaFromSigla(matricula);
                 if (pes != null)
                     sol.setLotaTitular(pes.getLotacao());
             }
@@ -1244,7 +1228,7 @@ public class SolicitacaoController extends SrController {
         Query query = ContextoPersistencia.em().createNamedQuery("contarSrMarcas");
         query.setParameter("idPessoaIni", getTitular().getIdInicial());
         query.setParameter("idLotacaoIni", getLotaTitular().getIdInicial());
-        query.setParameter("dbDatetime", CpDao.getInstance().consultarDataEHoraDoServidor());
+        query.setParameter("dbDatetime", cpDao.consultarDataEHoraDoServidor());
         List contagens = query.getResultList();
         result.include("contagens", contagens);
     }

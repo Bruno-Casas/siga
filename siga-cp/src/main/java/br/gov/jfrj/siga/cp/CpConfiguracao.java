@@ -1,44 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2006 - 2011 SJRJ.
- *
- *     This file is part of SIGA.
- *
- *     SIGA is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     SIGA is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with SIGA.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
-/*
- * Criado em  12/12/2005
- *
- * TODO To change the template for this generated file go to
- * Window - Preferences - Java - Code Style - Code Templates
- */
 package br.gov.jfrj.siga.cp;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Set;
 
 import javax.persistence.*;
 
 import br.gov.jfrj.siga.dp.*;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.model.ContextoPersistencia;
-import br.gov.jfrj.siga.model.Historico;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
-@SuppressWarnings("serial")
 @Entity
 @Table(name = "corporativo.cp_configuracao")
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -80,10 +49,6 @@ public class CpConfiguracao extends AbstractCpConfiguracao implements CpConverta
         setIdConfiguracao(id);
     }
 
-    public boolean semelhante(Assemelhavel obj, int nivel) {
-        return SincronizavelSuporte.semelhante(this, obj, nivel);
-    }
-
     /**
      * @return retorna o objeto que é a origem da configuração
      */
@@ -116,7 +81,7 @@ public class CpConfiguracao extends AbstractCpConfiguracao implements CpConverta
         } else if (ori instanceof CpOrgaoUsuario) {
             return ((CpOrgaoUsuario) ori).getSiglaOrgaoUsu();
         } else {
-            return new String();
+            return "";
         }
     }
 
@@ -134,7 +99,7 @@ public class CpConfiguracao extends AbstractCpConfiguracao implements CpConverta
         } else if (ori instanceof CpOrgaoUsuario) {
             return ((CpOrgaoUsuario) ori).getNmOrgaoUsu();
         } else {
-            return new String();
+            return "";
         }
     }
 
@@ -162,21 +127,6 @@ public class CpConfiguracao extends AbstractCpConfiguracao implements CpConverta
         return "";
     }
 
-    /**
-     * Retorna a configuração atual no histórico desta configuraçõo
-     *
-     * @return CpConfiguracao
-     */
-    public CpConfiguracao getConfiguracaoAtual() {
-        CpConfiguracao ini = getConfiguracaoInicial();
-        Set<CpConfiguracao> setConfs = ini.getConfiguracoesPosteriores();
-        if (setConfs != null)
-            for (CpConfiguracao l : setConfs)
-                return l;
-
-        return this;
-    }
-
     @Override
     public String toString() {
         return "id: " + getId() + " ,pessoa: " + (getDpPessoa() != null ? getDpPessoa().getNomePessoa() : "")
@@ -186,78 +136,32 @@ public class CpConfiguracao extends AbstractCpConfiguracao implements CpConverta
     }
 
     public void atualizarObjeto() {
-        setLotacao(atual(getLotacao()));
-        setCargo(atual(getCargo()));
-        setFuncaoConfianca(atual(getFuncaoConfianca()));
-        setDpPessoa(atual(getDpPessoa()));
-        setCpIdentidade(atual(getCpIdentidade()));
-        setLotacaoObjeto(atual(getLotacaoObjeto()));
-        setCargoObjeto(atual(getCargoObjeto()));
-        setFuncaoConfiancaObjeto(atual(getFuncaoConfiancaObjeto()));
-        setPessoaObjeto(atual(getPessoaObjeto()));
-        setCpGrupo(atual(getCpGrupo()));
+        setLotacao(getLotacao().getHistoricoAtual());
+        setCargo(getCargo().getHistoricoAtual());
+        setFuncaoConfianca(getFuncaoConfianca().getHistoricoAtual());
+        setDpPessoa(getDpPessoa().getHistoricoAtual());
+        setCpIdentidade(getCpIdentidade().getHistoricoAtual());
+        setLotacaoObjeto(getLotacaoObjeto().getHistoricoAtual());
+        setCargoObjeto(getCargoObjeto().getHistoricoAtual());
+        setFuncaoConfiancaObjeto(getFuncaoConfiancaObjeto().getHistoricoAtual());
+        setPessoaObjeto(getPessoaObjeto().getHistoricoAtual());
+        setCpGrupo(getCpGrupo().getHistoricoAtual());
     }
 
     public void substituirPorObjetoInicial() {
-        setLotacao(inicial(getLotacao()));
-        setCargo(inicial(getCargo()));
-        setFuncaoConfianca(inicial(getFuncaoConfianca()));
-        setDpPessoa(inicial(getDpPessoa()));
-        setCpIdentidade(inicial(getCpIdentidade()));
-        setLotacaoObjeto(inicial(getLotacaoObjeto()));
-        setCargoObjeto(inicial(getCargoObjeto()));
-        setFuncaoConfiancaObjeto(inicial(getFuncaoConfiancaObjeto()));
-        setPessoaObjeto(inicial(getPessoaObjeto()));
-        setCpGrupo(inicial(getCpGrupo()));
-    }
-
-    public <T extends Historico> T atual(final T antigo) {
-        if (antigo == null)
-            return null;
-        Long id = null;
-        GenericClass<T> tclass = new GenericClass(antigo.getClass());
-        EntityManager em = ContextoPersistencia.em();
-
-        if (antigo.getId().equals(antigo.getHisIdIni())) {
-            id = antigo.getId();
-            return antigo;
-        } else if (antigo instanceof DpPessoa) {
-            id = ((DpPessoa) antigo).getPessoaInicial().getIdInicial();
-            return (T) em.getReference(DpPessoa.class, id);
-        } else if (antigo instanceof DpLotacao) {
-            id = ((DpLotacao) antigo).getLotacaoInicial().getIdInicial();
-            return (T) em.getReference(DpLotacao.class, id);
-        } else if (antigo instanceof DpFuncaoConfianca) {
-            id = ((DpFuncaoConfianca) antigo).getIdFuncaoIni();
-            return (T) em.getReference(DpFuncaoConfianca.class, id);
-        } else if (antigo instanceof DpCargo) {
-            id = ((DpCargo) antigo).getIdCargoIni();
-            return (T) em.getReference(DpCargo.class, id);
-        } else {
-            id = antigo.getHisIdIni();
-            return em.getReference(tclass.getType(), id);
-        }
-    }
-
-    public <T extends Historico> T inicial(final T antigo) {
-        if (antigo == null)
-            return null;
-        return CpDao.getInstance().obterInicial(antigo);
+        setLotacao(getLotacao().getHistoricoInicial());
+        setCargo(getCargo().getHistoricoInicial());
+        setFuncaoConfianca(getFuncaoConfianca().getHistoricoInicial());
+        setDpPessoa(getDpPessoa().getHistoricoInicial());
+        setCpIdentidade(getCpIdentidade().getHistoricoInicial());
+        setLotacaoObjeto(getLotacaoObjeto().getHistoricoInicial());
+        setCargoObjeto(getCargoObjeto().getHistoricoInicial());
+        setFuncaoConfiancaObjeto(getFuncaoConfiancaObjeto().getHistoricoInicial());
+        setPessoaObjeto(getPessoaObjeto().getHistoricoInicial());
+        setCpGrupo(getCpGrupo().getHistoricoInicial());
     }
 
     public CpConfiguracaoCache converterParaCache() {
         return new CpConfiguracaoCache(this);
-    }
-
-    public class GenericClass<T> {
-        private final Class<T> type;
-
-        public GenericClass(Class<T> type) {
-            this.type = type;
-        }
-
-        public Class<T> getType() {
-            return this.type;
-        }
     }
 }

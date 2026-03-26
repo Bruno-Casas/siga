@@ -9,7 +9,6 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExModelo;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IModelosListaHierarquicaGet;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.ModeloListaHierarquicaItem;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.util.ListaHierarquica;
 import br.gov.jfrj.siga.util.ListaHierarquicaItem;
 
@@ -33,7 +32,7 @@ public class ModelosListaHierarquicaGet implements IModelosListaHierarquicaGet {
 		}
 		DpPessoa titular = ctx.getTitular();
 		DpLotacao lotaTitular = ctx.getLotaTitular();
-		List<ExModelo> modelos = Ex.getInstance().getBL().obterListaModelos(null, null, isEditandoAnexo,
+		List<ExModelo> modelos = this.bl.obterListaModelos(null, null, isEditandoAnexo,
 				isCriandoSubprocesso, mobPai, headerValue, true, titular, lotaTitular, isAutuando);
 
 		resp.list = new ArrayList<>();

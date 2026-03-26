@@ -23,6 +23,7 @@
  */
 package br.gov.jfrj.siga.wf.dao;
 
+import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
@@ -31,9 +32,6 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import br.gov.jfrj.siga.model.Historico;
 import br.gov.jfrj.siga.model.dao.ModeloDao;
-import br.gov.jfrj.siga.sinc.lib.Item;
-import br.gov.jfrj.siga.sinc.lib.Sincronizador;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
 import br.gov.jfrj.siga.wf.model.*;
 import br.gov.jfrj.siga.wf.util.SiglaUtils;
 import br.gov.jfrj.siga.wf.util.SiglaUtils.SiglaDecodificada;
@@ -43,6 +41,7 @@ import br.gov.jfrj.siga.wf.util.WfTarefa;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.inject.Specializes;
+import javax.persistence.PrePersist;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.*;
@@ -58,21 +57,13 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
     private static final Logger log = Logger.getLogger(WfDao.class);
 
-    public static WfDao getInstance() {
-        return ModeloDao.getInstance(WfDao.class);
-    }
-
-    public WfDao() {
-
-    }
-
     public WfDefinicaoDeProcedimento consultarWfDefinicaoDeProcedimentoPorNome(String nome) {
         CriteriaQuery<WfDefinicaoDeProcedimento> q = cb().createQuery(WfDefinicaoDeProcedimento.class);
         Root<WfDefinicaoDeProcedimento> c = q.from(WfDefinicaoDeProcedimento.class);
         q.select(c);
         q.where(cb().equal(c.get("nome"), nome), cb().equal(c.get("hisAtivo"), 1));
         try {
-            return em().createQuery(q).getSingleResult();
+            return em.createQuery(q).getSingleResult();
         } catch (Exception ex) {
             throw new RuntimeException("Não foi possível localizar definição de procedimento com nome '" + nome + "'",
                     ex);
@@ -91,7 +82,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
         q.where(cb().like(c.get("nome"), "%" + nome + "%"), cb().equal(c.get("hisAtivo"), 1));
 
         try {
-            return em().createQuery(q).getResultList();
+            return em.createQuery(q).getResultList();
         } catch (Exception ex) {
             throw new RuntimeException("Não foi possível localizar definições de procedimento com nome '" + nome + "'",
                     ex);
@@ -105,7 +96,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
     public List<WfProcedimento> consultarProcedimentosAtivosPorEvento(String evento) {
         String sql = "from WfProcedimento p where p.eventoNome like :eventoNome";
-        TypedQuery<WfProcedimento> query = em().createQuery(sql, WfProcedimento.class);
+        TypedQuery<WfProcedimento> query = em.createQuery(sql, WfProcedimento.class);
         query.setParameter("eventoNome", evento + "%");
         List<WfProcedimento> result = query.getResultList();
         return result;
@@ -113,17 +104,15 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
     public List<WfProcedimento> consultarProcedimentosAtivosPorPrincipal(String principal) {
         String sql = "select p from WfProcedimento p where p.hisDtFim is null and p.principal is not null and p.principal <> '' and p.principal like :principal";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
+        javax.persistence.Query query = em.createQuery(sql);
         query.setParameter("principal", principal + "%");
         List<WfProcedimento> result = query.getResultList();
         return result;
     }
 
     public void gravarInstanciaDeProcedimento(WfProcedimento pi) {
-        SortedSet<Sincronizavel> setDepois = new TreeSet<>();
-        SortedSet<Sincronizavel> setAntes = new TreeSet<>();
-
-        setAntes.addAll(pi.getVariaveis());
+        SortedSet<WfVariavel> setDepois = new TreeSet<>();
+        SortedSet<WfVariavel> setAntes = new TreeSet<>(pi.getVariaveis());
 
         if (pi.getVariavelMap() != null) {
             for (String k : pi.getVariavelMap().keySet()) {
@@ -146,36 +135,46 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
             }
         }
 
-        // Utilizaremos o sincronizador para perceber apenas as diferenças entre a
-        // as variáveis que estão no banco e as variáveis no mapa..
-        Sincronizador sinc = new Sincronizador();
-        sinc.setSetNovo(setDepois);
-        sinc.setSetAntigo(setAntes);
-        List<Item> list = sinc.getEncaixe();
-        sinc.ordenarOperacoes();
+        // Compara os dois conjuntos ordenados para determinar inclusões e exclusões.
+        // Itens em setDepois que não estão em setAntes devem ser incluídos.
+        // Itens em setAntes que não estão em setDepois devem ser excluídos (cancelados).
+        Iterator<WfVariavel> iNovo = setDepois.iterator();
+        Iterator<WfVariavel> iAntigo = setAntes.iterator();
 
-        gravar(pi);
-        for (Item i : list) {
-            switch (i.getOperacao()) {
-                case alterar:
-                    WfVariavel antigo = (WfVariavel) i.getAntigo();
-                    WfVariavel novo = (WfVariavel) i.getNovo();
-                    antigo.setBool(novo.getBool());
-                    antigo.setDate(novo.getDate());
-                    antigo.setNumber(novo.getNumber());
-                    antigo.setString(novo.getString());
-                    gravar(antigo);
-                    break;
-                case incluir:
-                    pi.getVariaveis().add((WfVariavel) i.getNovo());
-                    gravar(i.getNovo());
-                    break;
-                case excluir:
-                    pi.getVariaveis().remove((WfVariavel) i.getAntigo());
-                    excluir(i.getAntigo());
-                    break;
+        WfVariavel oNovo = iNovo.hasNext() ? iNovo.next() : null;
+        WfVariavel oAntigo = iAntigo.hasNext() ? iAntigo.next() : null;
+
+        while (oNovo != null || oAntigo != null) {
+            if (oAntigo == null || (oNovo != null && oNovo.compareTo(oAntigo) < 0)) {
+                pi.getVariaveis().add(oNovo);
+                gravar(oNovo);
+                oNovo = iNovo.hasNext() ? iNovo.next() : null;
+            } else if (oNovo == null || (oAntigo != null && oAntigo.compareTo(oNovo) < 0)) {
+                pi.getVariaveis().remove(oAntigo);
+                excluir(oAntigo);
+                oAntigo = iAntigo.hasNext() ? iAntigo.next() : null;
+            } else {
+                oAntigo.setBool(oNovo.getBool());
+                oAntigo.setDate(oNovo.getDate());
+                oAntigo.setNumber(oNovo.getNumber());
+                oAntigo.setString(oNovo.getString());
+                gravar(oAntigo);
+                oNovo = iNovo.hasNext() ? iNovo.next() : null;
+                oAntigo = iAntigo.hasNext() ? iAntigo.next() : null;
             }
         }
+
+        if (pi.getAno() != null)
+            return;
+
+        pi.setAno(dt().getYear() + 1900);
+        Query qry = em.createQuery(
+                "select max(numero) from WfProcedimento pi where ano = :ano and orgaoUsuario.idOrgaoUsu = :ouid");
+        qry.setParameter("ano", pi.getAno());
+        qry.setParameter("ouid", pi.getOrgaoUsuario().getId());
+        Integer i = (Integer) qry.getSingleResult();
+        pi.setNumero((i == null ? 0 : i) + 1);
+
         gravar(pi);
     }
 
@@ -196,21 +195,11 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
         return null;
     }
 
-//	public List<ExDocumento> consultarDocsInclusosNoBoletim(ExDocumento doc) {
-//		final Query query = em().createNamedQuery(
-//				"consultarDocsInclusosNoBoletim");
-//		query.setHint("org.hibernate.cacheable", true);
-//		query.setHint("org.hibernate.cacheRegion", ExDao.CACHE_QUERY_SECONDS);
-//
-//		query.setParameter("idDoc", doc.getIdDoc());
-//		return query.getResultList();
-//	}
-
     public List<WfProcedimento> consultarProcedimentosPorPessoaOuLotacao(DpPessoa titular, DpLotacao lotaTitular) {
-        String sql = "select p from WfProcedimento p left join p.eventoPessoa pes left join p.eventoLotacao lot where pes.idPessoaIni = :idPessoaIni or lot.idLotacaoIni = :idLotacaoIni";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
-        query.setParameter("idPessoaIni", titular.getIdPessoaIni());
-        query.setParameter("idLotacaoIni", lotaTitular.getIdLotacaoIni());
+        String sql = "select p from WfProcedimento p left join p.eventoPessoa pes left join p.eventoLotacao lot where pes.hisIdIni = :idPessoaIni or lot.hisIdIni = :idLotacaoIni";
+        javax.persistence.Query query = em.createQuery(sql);
+        query.setParameter("idPessoaIni", titular.getHisIdIni());
+        query.setParameter("idLotacaoIni", lotaTitular.getHisIdIni());
         List<WfProcedimento> result = query.getResultList();
         List<WfProcedimento> l = new ArrayList<>();
         result.stream().forEach(i -> l.add(i));
@@ -220,7 +209,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
     public List<WfProcedimento> consultarProcedimentosAtivosPorDiagrama(WfDefinicaoDeProcedimento pd) {
         String sql = "select p from WfProcedimento p join p.definicaoDeProcedimento pd where pd.hisIdIni = :idIni and p.status not in ('FINISHED', 'INACTIVE')";
-        TypedQuery<WfProcedimento> query = ContextoPersistencia.em().createQuery(sql, WfProcedimento.class);
+        TypedQuery<WfProcedimento> query = em.createQuery(sql, WfProcedimento.class);
         query.setParameter("idIni", pd.getHisIdIni());
 
         List<WfProcedimento> result = query.getResultList();
@@ -230,7 +219,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
     public List<WfResponsavel> consultarResponsaveisPorDefinicaoDeResponsavel(WfDefinicaoDeResponsavel dr) {
         String sql = "from WfResponsavel o where o.definicaoDeResponsavel.hisIdIni = :idIni and o.hisDtFim is null";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
+        javax.persistence.Query query = em.createQuery(sql);
         query.setParameter("idIni", dr.getHisIdIni());
         List<WfResponsavel> result = query.getResultList();
         if (result == null || result.size() == 0)
@@ -241,7 +230,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
     public WfResponsavel consultarResponsavelPorOrgaoEDefinicaoDeResponsavel(CpOrgaoUsuario ou,
                                                                              WfDefinicaoDeResponsavel dr) {
         String sql = "from WfResponsavel o where o.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu and o.definicaoDeResponsavel.hisIdIni = :idIni and o.hisDtFim is null";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
+        javax.persistence.Query query = em.createQuery(sql);
         query.setParameter("idOrgaoUsu", ou.getIdOrgaoUsu());
         query.setParameter("idIni", dr.getHisIdIni());
         WfResponsavel result = (WfResponsavel) query.getSingleResult();
@@ -253,7 +242,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
         String sql = "select p from WfProcedimento p inner join p.definicaoDeProcedimento pd where pd.hisIdIni = :hisIdIni and p.hisDtFim is not null "
                 + " and p.hisDtIni >= :dataInicialDe and p.hisDtIni <= :dataInicialAte "
                 + " and p.hisDtFim >= :dataFinalDe and p.hisDtFim <= :dataFinalAte";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
+        javax.persistence.Query query = em.createQuery(sql);
         query.setParameter("hisIdIni", pd.getHisIdIni());
         query.setParameter("dataInicialDe", dataInicialDe);
         query.setParameter("dataInicialAte", dataInicialAte);
@@ -269,7 +258,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
                 + " and p.hisDtIni >= :dataInicialDe and p.hisDtIni <= :dataInicialAte "
                 + " and p.hisDtFim >= :dataFinalDe and p.hisDtFim <= :dataFinalAte "
                 + " and p.principal is not null and p.principal <> '' order by p.principal";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
+        javax.persistence.Query query = em.createQuery(sql);
         query.setParameter("hisIdIni", pd.getHisIdIni());
         query.setParameter("dataInicialDe", dataInicialDe);
         query.setParameter("dataInicialAte", dataInicialAte);
@@ -286,7 +275,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
                 + " and p.hisDtIni >= :dataInicialDe and p.hisDtIni <= :dataInicialAte "
                 + " and ((p.hisDtFim >= :dataFinalDe and p.hisDtFim <= :dataFinalAte) or p.hisDtFim is null) "
                 + " and p.principal is not null and p.principal <> '' order by p.principal";
-        javax.persistence.Query query = ContextoPersistencia.em().createQuery(sql);
+        javax.persistence.Query query = em.createQuery(sql);
         query.setParameter("hisIdIni", pd.getHisIdIni());
         query.setParameter("dataInicialDe", dataInicialDe);
         query.setParameter("dataInicialAte", dataInicialAte);
@@ -318,7 +307,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
         Integer numero = d.numero;
         CpOrgaoUsuario orgaoUsuario = d.orgaoUsuario;
 
-        final CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+        final CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<T> q = criteriaBuilder.createQuery(clazz);
         Root<T> c = q.from(clazz);
         Join<T, CpOrgaoUsuario> joinOrgao = c.join("orgaoUsuario", JoinType.INNER);
@@ -329,7 +318,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
         else
             q.where(cb().equal(c.get("numero"), numero), cb().equal(c.get("ano"), ano),
                     cb().equal(joinOrgao.get("idOrgaoUsu"), orgaoUsuario.getId()));
-        return em().createQuery(q).getSingleResult();
+        return em.createQuery(q).getSingleResult();
     }
 
     public List<WfConfiguracao> consultar(final WfConfiguracao exemplo) {
@@ -375,7 +364,7 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
         }
 
-        Query query = em().createNativeQuery(sbf.toString(), WfConfiguracao.class);
+        Query query = em.createNativeQuery(sbf.toString(), WfConfiguracao.class);
         query.setHint("org.hibernate.cacheable", true);
         query.setHint("org.hibernate.cacheRegion", "query.ExConfiguracao");
         return query.getResultList();
@@ -384,6 +373,25 @@ public class WfDao extends CpDao implements com.crivano.jflow.Dao<WfProcedimento
 
     public List<WfDefinicaoDeProcedimento> listarDefinicoesDeProcedimentos() {
         return listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
+    }
+
+    public WfDefinicaoDeProcedimento defProcedimentoBySigla(String sigla) {
+        SiglaDecodificada d = SiglaUtils.parse(sigla, "DP", null);
+
+        WfDefinicaoDeProcedimento info = null;
+
+        if (d.id != null) {
+            info = AR.findById(d.id);
+        } else if (d.numero != null) {
+            info = AR.find("ano = ?1 and numero = ?2 and ou.idOrgaoUsu = ?3", d.ano, d.numero, d.orgaoUsuario.getId())
+                    .first();
+        }
+
+        if (info == null) {
+            throw new AplicacaoException("Não foi possível encontrar uma definição de procedimento com o código "
+                    + sigla + ". Favor verificá-lo.");
+        } else
+            return info;
     }
 
 }

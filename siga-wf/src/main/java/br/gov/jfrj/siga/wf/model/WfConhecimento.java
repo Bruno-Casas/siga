@@ -19,9 +19,6 @@
 package br.gov.jfrj.siga.wf.model;
 
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 /**
  * Classe que representa o conhecimento a respeito da execução de uma tarefa do
@@ -31,7 +28,6 @@ import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
  * 
  */
 public class WfConhecimento extends HistoricoAuditavelSuporte {
-	@Desconsiderar
 	private Long id;
 	private String procedimento;
 	private String tarefa;
@@ -70,7 +66,4 @@ public class WfConhecimento extends HistoricoAuditavelSuporte {
 		this.descricao = descricao;
 	}
 
-	public boolean semelhante(Assemelhavel obj, int profundidade) {
-		return SincronizavelSuporte.semelhante(this, obj, profundidade);
-	}
 }

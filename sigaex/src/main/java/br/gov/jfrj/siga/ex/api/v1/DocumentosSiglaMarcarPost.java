@@ -15,7 +15,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaMarcarPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import br.gov.jfrj.siga.vraptor.builder.ExMovimentacaoBuilder;
@@ -28,7 +27,7 @@ public class DocumentosSiglaMarcarPost implements IDocumentosSiglaMarcarPost {
 		if (StringUtils.isNotEmpty(req.matricula)) {
 			pes = new DpPessoa();
 			pes.setSigla(req.matricula);
-			pes = dao().consultarPorSigla(pes);
+			pes = dao.consultarPorSigla(pes);
 		}
 		return pes;
 	}
@@ -38,7 +37,7 @@ public class DocumentosSiglaMarcarPost implements IDocumentosSiglaMarcarPost {
 		if (StringUtils.isNotEmpty(req.lotacao)) {
 			lot = new DpLotacao();
 			lot.setSigla(req.lotacao);
-			lot = dao().consultarPorSigla(lot);
+			lot = dao.consultarPorSigla(lot);
 		}
 		return lot;
 	}
@@ -73,12 +72,12 @@ public class DocumentosSiglaMarcarPost implements IDocumentosSiglaMarcarPost {
 
 		ctx.assertAcesso(mob, ctx.getTitular(), ctx.getLotaTitular());
 
-		CpMarcador m = dao().consultar(Long.parseLong(req.idMarcador), CpMarcador.class, false);
+		CpMarcador m = dao.consultar(Long.parseLong(req.idMarcador), CpMarcador.class, false);
 		DpLotacao lot = getLotacao(req);
 		DpPessoa pes = getPessoa(req);
 		Date dt1 = this.getData1(req);
 		Date dt2 = this.getData2(req);
-		Date dt = dao().consultarDataEHoraDoServidor();
+		Date dt = dao.consultarDataEHoraDoServidor();
 
 		if (m == null)
 			throw new AplicacaoException("Marcador deve ser informado.");
@@ -106,14 +105,14 @@ public class DocumentosSiglaMarcarPost implements IDocumentosSiglaMarcarPost {
 		mov.setSubscritor(pes);
 		mov.setLotaSubscritor(lot);
 		mov.setDescrMov(req.texto);
-		Ex.getInstance().getBL().marcar(ctx.getCadastrante(), ctx.getLotaCadastrante(), ctx.getTitular(),
+		this.bl.marcar(ctx.getCadastrante(), ctx.getLotaCadastrante(), ctx.getTitular(),
 				ctx.getLotaTitular(), mob, mov.getDtMov(), mov.getSubscritor(), mov.getLotaSubscritor(),
 				mov.getDescrMov(), mov.getMarcador(), dt1, dt2, true);
 		resp.status = "OK";
 	}
 
 	public ExDao dao() {
-		return ExDao.getInstance();
+		return dao;
 	}
 
 	@Override

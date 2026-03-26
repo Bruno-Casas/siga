@@ -65,14 +65,6 @@ public class ContextoPersistencia {
 		userPrincipalByThread.remove();
 	}
 	
-	static public void setDt(Date dt) {
-		dataEHoraDoServidor.set(dt);
-	}
-
-	static public Date dt() {
-		return dataEHoraDoServidor.get();
-	}
-	
 	static public void setUsuarioDeSistema(UsuarioDeSistemaEnum u) {
 		usuarioDeSistema.set(u);
 	}
@@ -88,7 +80,6 @@ public class ContextoPersistencia {
 	static public void removeAll() {
 		removeUsuarioDeSistema();
 		removeUserPrincipal();
-		setDt(null);
 	}
 	
 	

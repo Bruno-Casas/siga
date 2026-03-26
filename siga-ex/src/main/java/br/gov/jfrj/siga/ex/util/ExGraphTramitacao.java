@@ -3,9 +3,11 @@ package br.gov.jfrj.siga.ex.util;
 import br.gov.jfrj.siga.cp.model.enm.ITipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
+import br.gov.jfrj.siga.ex.bl.ExMobilBL;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.parser.PessoaLotacaoParser;
 
+import javax.enterprise.inject.spi.CDI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +16,9 @@ public class ExGraphTramitacao extends ExGraph {
 
     public ExGraphTramitacao(ExMobil mob) {
         int numTransicao = 0;
+
+        // TODO: Elaborar meio mais coerênte com o CDI
+        ExMobilBL mobBl = CDI.current().select(ExMobilBL.class).get();
 
         List<ExMovimentacao> listMov = new ArrayList<ExMovimentacao>();
         listMov.addAll(mob.getExMovimentacaoSet());
@@ -28,8 +33,8 @@ public class ExGraphTramitacao extends ExGraph {
             if (criacao != null)
                 cadastrante = new PessoaLotacaoParser(criacao.getCadastrante(), criacao.getLotaCadastrante());
 
-            boolean atendente = mob.isAtendente(cadastrante.getPessoa(), cadastrante.getLotacao());
-            boolean notificado = mob.isNotificado(cadastrante.getPessoa(), cadastrante.getLotacao());
+            boolean atendente = mobBl.isAtendente(mob, cadastrante.getPessoa(), cadastrante.getLotacao());
+            boolean notificado = mobBl.isNotificado(mob, cadastrante.getPessoa(), cadastrante.getLotacao());
 
             adicionar(new Nodo(cadastrante.getSiglaCompleta()).setLabel(cadastrante.getSigla()).setShape("oval")
                     .setDestacar(atendente || notificado)
@@ -67,8 +72,8 @@ public class ExGraphTramitacao extends ExGraph {
                 Nodo nodo = localizarNodoPorNome(destinatario.getSiglaCompleta());
                 if (nodo == null || (t != ExTipoDeMovimentacao.NOTIFICACAO
                         && ESTILO_PONTILHADO.equals(nodo.getEstilo()))) {
-                    boolean atendente = mob.isAtendente(destinatario.getPessoa(), destinatario.getLotacao());
-                    boolean notificado = mob.isNotificado(destinatario.getPessoa(), destinatario.getLotacao());
+                    boolean atendente = mobBl.isAtendente(mob, destinatario.getPessoa(), destinatario.getLotacao());
+                    boolean notificado = mobBl.isNotificado(mob, destinatario.getPessoa(), destinatario.getLotacao());
                     adicionar(new Nodo(destinatario.getSiglaCompleta()).setLabel(destinatario.getSigla())
                             .setShape("rectangle").setDestacar(atendente || notificado)
                             .setEstilo((t == ExTipoDeMovimentacao.NOTIFICACAO && !atendente)

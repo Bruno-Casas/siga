@@ -3,20 +3,14 @@ package br.gov.jfrj.siga.vraptor;
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Post;
-import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpServicosNotificacaoPorEmail;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,18 +18,6 @@ import java.util.List;
 public class ConfiguracaoNotificarPorEmailController extends GiControllerSupport {
 
     private static final Boolean UTILIZAVEL = true;
-
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ConfiguracaoNotificarPorEmailController() {
-        super();
-    }
-
-    @Inject
-    public ConfiguracaoNotificarPorEmailController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
-    }
 
     @Get({"/app/notificarPorEmail/listar", "/public/app/page/usuario/listar"})
     public void listar() throws Exception {
@@ -53,7 +35,7 @@ public class ConfiguracaoNotificarPorEmailController extends GiControllerSupport
             CpServico servico = new CpServico();
             CpConfiguracao configuracao = new CpConfiguracao();
             if (servicoDoUsuario.getCondicao().equals(UTILIZAVEL)) {
-                if (Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getCadastrante(), getCadastrante().getLotacao(), servicoDoUsuario.getChave()))
+                if (this.cpConf.podeUtilizarServicoPorConfiguracao(getCadastrante(), getCadastrante().getLotacao(), servicoDoUsuario.getChave()))
                     configuracao.setCpSituacaoConfiguracao(CpSituacaoDeConfiguracaoEnum.PODE);
                 else
                     configuracao.setCpSituacaoConfiguracao(CpSituacaoDeConfiguracaoEnum.NAO_PODE);
@@ -74,10 +56,10 @@ public class ConfiguracaoNotificarPorEmailController extends GiControllerSupport
         DpLotacao lotacao = null;
         pessoa = daoPes(getCadastrante().getId()).getPessoaInicial();
         lotacao = daoLot(getLotaCadastrante().getId()).getLotacaoInicial();
-        servico = dao().consultarCpServicoPorChave(siglaServ);
+        servico = cpDao.consultarCpServicoPorChave(siglaServ);
         CpSituacaoDeConfiguracaoEnum situacao = CpSituacaoDeConfiguracaoEnum.getById(idSituacao);
         CpTipoDeConfiguracao tpConf = CpTipoDeConfiguracao.UTILIZAR_SERVICO;
-        Cp.getInstance().getBL().configurarAcesso(null, getCadastrante().getOrgaoUsuario(),
+        this.cpBl.configurarAcesso(null, getCadastrante().getOrgaoUsuario(),
                 lotacao, pessoa, servico, situacao, tpConf, getIdentidadeCadastrante());
         result.redirectTo(ConfiguracaoNotificarPorEmailController.class).listar();
     }

@@ -29,7 +29,7 @@ public class SrCorreio {
 
 	public static void notificarMovimentacao(SrMovimentacao movimentacao) throws Exception{
 		/*SrSolicitacao sol = movimentacao.solicitacao.getSolicitacaoAtual();
-		DpPessoa pessoaAtual = sol.solicitante.getPessoaAtual();
+		DpPessoa pessoaAtual = sol.solicitante.getHistoricoAtual();
 		if (pessoaAtual == null || pessoaAtual.getEmailPessoa() == null)
 			return;
 	
@@ -81,7 +81,7 @@ public class SrCorreio {
 		setSubject("Movimentação da solicitação " + sol.getCodigo());
 		setFrom("Administrador do Siga<sigadocs@jfrj.jus.br>");
 		for (SrGestorItem gestor : sol.itemConfiguracao.gestorSet) {
-			DpPessoa pessoaGestorAtual = gestor.getDpPessoa().getPessoaAtual();
+			DpPessoa pessoaGestorAtual = gestor.getDpPessoa().getHistoricoAtual();
 			if (pessoaGestorAtual != null
 					&& pessoaGestorAtual.getDataFim() == null)
 				if (pessoaGestorAtual.getEmailPessoa() != null)
@@ -90,9 +90,9 @@ public class SrCorreio {
 			if (gestor.getDpLotacao() != null)
 				for (DpPessoa gestorPessoa : gestor.getDpLotacao()
 						.getDpPessoaLotadosSet())
-					if (gestorPessoa.getPessoaAtual().getDataFim() == null)
-						if (gestorPessoa.getPessoaAtual().getEmailPessoa() != null)
-							recipients.add(gestorPessoa.getPessoaAtual()
+					if (gestorPessoa.getHistoricoAtual().getDataFim() == null)
+						if (gestorPessoa.getHistoricoAtual().getEmailPessoa() != null)
+							recipients.add(gestorPessoa.getHistoricoAtual()
 									.getEmailPessoa());
 		}
 		recipients.add(sol.solicitante.getEmailPessoa());
@@ -105,7 +105,7 @@ public class SrCorreio {
 	public static void notificarCancelamentoMovimentacao(
 			SrMovimentacao movimentacao) {
 	/*	SrSolicitacao sol = movimentacao.solicitacao.getSolicitacaoAtual();
-		DpPessoa solicitanteAtual = sol.solicitante.getPessoaAtual();
+		DpPessoa solicitanteAtual = sol.solicitante.getHistoricoAtual();
 		if (solicitanteAtual.getEmailPessoa() == null)
 			return;
 		setSubject("Movimentação da solicitação " + sol.getCodigo());
@@ -116,7 +116,7 @@ public class SrCorreio {
 
 	public static void pesquisaSatisfacao(SrSolicitacao sol) throws Exception {
 		/*SrSolicitacao solAtual = sol.getSolicitacaoAtual();
-		DpPessoa solicitanteAtual = solAtual.solicitante.getPessoaAtual();
+		DpPessoa solicitanteAtual = solAtual.solicitante.getHistoricoAtual();
 		if (solicitanteAtual.getEmailPessoa() == null)
 			return;
 		setSubject("Pesquisa de Satisfação da solicitação "

@@ -43,8 +43,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
-import br.gov.jfrj.siga.ex.bl.Ex;
-import br.gov.jfrj.siga.ex.bl.ExBL;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
 import net.sf.jasperreports.engine.JRException;
@@ -92,7 +90,7 @@ public class RelConsultaDocEntreDatas extends RelatorioTemplate {
 	}
 	
 	private DpLotacao buscarLotacaoPor(Long id) {
-		CpDao dao = CpDao.getInstance();
+		CpDao dao = dao;
 		DpLotacao lotacao = dao.consultar(id, DpLotacao.class, false);
 		return lotacao;
 	}
@@ -145,7 +143,7 @@ public class RelConsultaDocEntreDatas extends RelatorioTemplate {
 		List<String> dados = new ArrayList<String>();
 		
 		try {
-			ExDao dao = ExDao.getInstance();
+			ExDao dao = dao;
 			Query query = ContextoPersistencia.em().createNamedQuery("consultarDocumentosFinalizadosEntreDatas");
 			
 			query.setParameter("idTipoDocumento", tipoDoDocumento);
@@ -154,21 +152,21 @@ public class RelConsultaDocEntreDatas extends RelatorioTemplate {
 			query.setParameter("dataFinal", dataFinal);
 			
 			Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-					"from DpLotacao lot " + "where lot.dataFimLotacao is null "
+					"from DpLotacao lot " + "where lot.hisDtFim is null "
 							+ "and lot.orgaoUsuario = "
 							+ parametros.get("orgaoUsuario")
 							+ " and lot.siglaLotacao = '"
 							+ parametros.get("lotacaoTitular") + "'");
 			DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-			DpPessoa titular = ExDao.getInstance().consultar(
+			DpPessoa titular = dao.consultar(
 					new Long((String) parametros.get("idTit")), DpPessoa.class,
 					false);
 			
 			List<ExDocumento> listaDocumentos = query.getResultList();
 
 			for (ExDocumento documento : listaDocumentos) {
-				if (Ex.getInstance().getBL().exibirQuemTemAcessoDocumentosLimitados(
+				if (this.bl.exibirQuemTemAcessoDocumentosLimitados(
 						documento, titular, 
 								lotaTitular)) {
 					dados.add(documento.getCodigo());
@@ -192,7 +190,7 @@ public class RelConsultaDocEntreDatas extends RelatorioTemplate {
 		List<String> dados = new ArrayList<String>();
 		// HibernateUtil.configurarHibernate("/br/gov/jfrj/siga/hibernate/hibernate.cfg.xml");
 
-		ExDao dao = ExDao.getInstance();
+		ExDao dao = dao;
 		final Query query = ContextoPersistencia.em().createNamedQuery(
 				"consultarMobilNoPeriodo");
 
@@ -204,7 +202,7 @@ public class RelConsultaDocEntreDatas extends RelatorioTemplate {
 		query.setParameter("dataFinal", (String) parametros.get("dataFinal"));
 
 		Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-				"from DpLotacao lot " + "where lot.dataFimLotacao is null "
+				"from DpLotacao lot " + "where lot.hisDtFim is null "
 						+ "and lot.orgaoUsuario = "
 						+ parametros.get("orgaoUsuario")
 						+ " and lot.siglaLotacao = '"
@@ -212,7 +210,7 @@ public class RelConsultaDocEntreDatas extends RelatorioTemplate {
 
 		DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-		DpPessoa titular = ExDao.getInstance().consultar(
+		DpPessoa titular = dao.consultar(
 				new Long((String) parametros.get("idTit")), DpPessoa.class,
 				false);
 

@@ -2,7 +2,6 @@ package br.gov.jfrj.siga.ex.api.v1;
 
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IDocumentosSiglaIncluirCopiaPost;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.ExPodeCopiar;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -19,11 +18,11 @@ public class DocumentosSiglaIncluirCopiaPost implements IDocumentosSiglaIncluirC
 
         ctx.assertAcesso(mob, ctx.getCadastrante(), ctx.getLotaTitular());
 
-        Date dt = ExDao.getInstance().consultarDataEHoraDoServidor();
+        Date dt = dao.consultarDataEHoraDoServidor();
 
         Ex.getInstance().getComp().afirmar("Não é permitido incluir cópia", ExPodeCopiar.class, ctx.getCadastrante(), ctx.getLotaTitular(), mob);
 
-        Ex.getInstance().getBL().copiar(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob, mobCopia, dt, null,
+        this.bl.copiar(ctx.getCadastrante(), ctx.getLotaCadastrante(), mob, mobCopia, dt, null,
                 ctx.getTitular());
 
         resp.status = "OK";

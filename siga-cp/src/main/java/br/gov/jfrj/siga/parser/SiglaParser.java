@@ -20,6 +20,9 @@ package br.gov.jfrj.siga.parser;
 
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
+import br.gov.jfrj.siga.dp.dao.CpDao;
+
+import javax.enterprise.inject.spi.CDI;
 
 public abstract class SiglaParser {
 
@@ -27,10 +30,14 @@ public abstract class SiglaParser {
 
 	protected DpLotacao lotacao;
 
+	protected CpDao dao;
+
 	public SiglaParser(DpPessoa pessoa, DpLotacao lotacao) {
 		super();
 		this.pessoa = pessoa;
 		this.lotacao = lotacao;
+
+		dao = CDI.current().select(CpDao.class).get();
 	}
 
 	public DpPessoa getPessoa() {

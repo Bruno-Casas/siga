@@ -19,7 +19,7 @@ public class AllReferencesGet implements IXjusRecordAPI.IAllReferencesGet {
         if (req.lastid == null)
             req.lastid = Utils.formatId(0L);
         try {
-            ExDao dao = ExDao.getInstance();
+            ExDao dao = dao;
             TypedQuery<Long> q = dao.em().createQuery(HQL, Long.class);
             q.setMaxResults(Integer.parseInt(req.max));
             Long first = Long.valueOf(req.lastid);

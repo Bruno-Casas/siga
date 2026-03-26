@@ -5,10 +5,7 @@ import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeResponsavel;
 import br.gov.jfrj.siga.wf.model.enm.WfTipoDeTarefa;
 import br.gov.jfrj.siga.wf.util.NaoSerializar;
@@ -24,14 +21,12 @@ import java.util.List;
 @BatchSize(size = 500)
 @Table(name = "sigawf.wf_def_tarefa")
 public class WfDefinicaoDeTarefa extends HistoricoAuditavelSuporte
-        implements TaskDefinition<WfTipoDeTarefa, WfTipoDeResponsavel, WfDefinicaoDeVariavel, WfDefinicaoDeDesvio>,
-        Sincronizavel, Comparable<Sincronizavel> {
+        implements TaskDefinition<WfTipoDeTarefa, WfTipoDeResponsavel, WfDefinicaoDeVariavel, WfDefinicaoDeDesvio>, SincronizavelSimples {
     public static ActiveRecord<WfDefinicaoDeTarefa> AR = new ActiveRecord<>(WfDefinicaoDeTarefa.class);
 
     @Id
     @GeneratedValue
     @Column(name = "DEFT_ID", unique = true, nullable = false)
-    @Desconsiderar
     private java.lang.Long id;
 
     @Column(name = "DEFT_NM", length = 256)
@@ -93,12 +88,10 @@ public class WfDefinicaoDeTarefa extends HistoricoAuditavelSuporte
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "definicaoDeTarefa")
     @OrderBy("ordem ASC")
-    @Desconsiderar
     private List<WfDefinicaoDeVariavel> definicaoDeVariavel = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "definicaoDeTarefa")
     @OrderBy("ordem ASC")
-    @Desconsiderar
     private List<WfDefinicaoDeDesvio> definicaoDeDesvio = new ArrayList<>();
 
     @Column(name = "DEFT_ID_REF")
@@ -302,63 +295,17 @@ public class WfDefinicaoDeTarefa extends HistoricoAuditavelSuporte
         this.seguinteIde = seguinteIde;
     }
 
-    @Override
     public String getIdExterna() {
         return this.getHisIde();
     }
 
     @Override
-    public void setIdExterna(String idExterna) {
-        this.setHisIde(idExterna);
-    }
-
-    @Override
-    public void setIdInicial(Long idInicial) {
-        this.setHisIdIni(idInicial);
-    }
-
-    @Override
-    public Date getDataInicio() {
-        return getHisDtIni();
-    }
-
-    @Override
-    public void setDataInicio(Date dataInicio) {
-        setHisDtIni(dataInicio);
-    }
-
-    @Override
-    public Date getDataFim() {
-        return getHisDtFim();
-    }
-
-    @Override
-    public void setDataFim(Date dataFim) {
-        setHisDtFim(dataFim);
-    }
-
-    @Override
-    public String getLoteDeImportacao() {
-        return null;
-    }
-
-    @Override
-    public void setLoteDeImportacao(String loteDeImportacao) {
-    }
-
-    @Override
-    public String getDescricaoExterna() {
-        return getNome();
-    }
-
-    @Override
-    public int getNivelDeDependencia() {
-        return SincronizavelSuporte.getNivelDeDependencia(this);
-    }
-
-    @Override
-    public boolean semelhante(Assemelhavel obj, int profundidade) {
-        return SincronizavelSuporte.semelhante(this, obj, profundidade);
+    public String getIdSincronizacao() {
+        String idExt = getIdExterna();
+        if (idExt == null || "null".equals(idExt) || idExt.isEmpty()) {
+            return (getHisIdIni() != null) ? "DB:" + getHisIdIni() : "NEW:" + System.identityHashCode(this);
+        }
+        return "EXT:" + idExt;
     }
 
     public java.lang.String getHisIde() {
@@ -367,13 +314,6 @@ public class WfDefinicaoDeTarefa extends HistoricoAuditavelSuporte
 
     public void setHisIde(java.lang.String hisIde) {
         this.hisIde = hisIde;
-    }
-
-    @Override
-    public int compareTo(Sincronizavel o) {
-        if (!this.getClass().equals(o.getClass()))
-            return this.getClass().getName().compareTo(o.getClass().getName());
-        return this.getIdExterna().compareTo(o.getIdExterna());
     }
 
     @PostLoad

@@ -11,8 +11,8 @@ import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.IMesaGet;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.Marca;
 import br.gov.jfrj.siga.ex.api.v1.IExApiV1.MesaItem;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
+import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.ex.logic.ExPodeAssinar;
 import br.gov.jfrj.siga.ex.logic.ExPodeFazerAnotacao;
 import br.gov.jfrj.siga.ex.logic.ExPodeTransferir;
@@ -21,10 +21,20 @@ import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.vraptor.Transacional;
 import org.ocpsoft.prettytime.PrettyTime;
 
+import javax.inject.Inject;
 import java.util.*;
 
 @Transacional
 public class MesaGet implements IMesaGet {
+
+    @Inject
+    private ExDao dao;
+
+    @Inject
+    private ExConfiguracaoBL conf;
+
+    @Inject
+    private ExCompetenciaBL comp;
 
     private static class MeM {
         ExMarca marca;
@@ -55,7 +65,7 @@ public class MesaGet implements IMesaGet {
             lota = lotaCadastrante;
         }
 
-        List<Object[]> l = ExDao.getInstance().listarDocumentosPorPessoaOuLotacao(pes, lota);
+        List<Object[]> l = dao.listarDocumentosPorPessoaOuLotacao(pes, lota);
 
         HashMap<ExMobil, List<MeM>> map = new HashMap<>();
 
@@ -73,7 +83,7 @@ public class MesaGet implements IMesaGet {
         }
 
         resp.list = listarReferencias(TipoDePainelEnum.UNIDADE, map, cadastrante, lotaCadastrante,
-                ExDao.getInstance().consultarDataEHoraDoServidor());
+                dao.consultarDataEHoraDoServidor());
     }
 
     @Override
@@ -94,7 +104,7 @@ public class MesaGet implements IMesaGet {
         return tempo;
     }
 
-    public static List<MesaItem> listarReferencias(TipoDePainelEnum tipo, Map<ExMobil, List<MeM>> references,
+    private List<MesaItem> listarReferencias(TipoDePainelEnum tipo, Map<ExMobil, List<MeM>> references,
                                                    DpPessoa pessoa, DpLotacao unidade, Date currentDate) {
         List<MesaItem> l = new ArrayList<>();
 
@@ -121,11 +131,10 @@ public class MesaGet implements IMesaGet {
             r.grupoOrdem = Integer.toString(CpMarcadorGrupoEnum.valueOf(r.grupo).ordinal());
             r.grupoNome = CpMarcadorGrupoEnum.valueOf(r.grupo).getNome();
 
-            ExCompetenciaBL comp = Ex.getInstance().getComp();
             r.podeAnotar = comp.pode(ExPodeFazerAnotacao.class, pessoa, unidade, mobil);
             r.podeAssinar = comp.pode(ExPodeAssinar.class, pessoa, unidade, mobil);
 
-            boolean apenasComSolicitacaoDeAssinatura = !Ex.getInstance().getConf().podePorConfiguracao(pessoa,
+            boolean apenasComSolicitacaoDeAssinatura = !conf.podePorConfiguracao(pessoa,
                     ExTipoDeConfiguracao.PODE_ASSINAR_SEM_SOLICITACAO);
 
             r.podeAssinarEmLote = apenasComSolicitacaoDeAssinatura
@@ -161,12 +170,12 @@ public class MesaGet implements IMesaGet {
                 t.titulo = MesaGet.calcularTempoRelativo(tag.marca.getDtIniMarca());
 
                 if (tag.marca.getDpPessoaIni() != null) {
-                    DpPessoa pes = tag.marca.getDpPessoaIni().getPessoaAtual();
+                    DpPessoa pes = tag.marca.getDpPessoaIni().getHistoricoAtual();
                     if (pes.getNomeExibicao() != null)
                         t.pessoa = pes.getNomeExibicao();
                 }
                 if (tag.marca.getDpLotacaoIni() != null)
-                    t.lotacao = tag.marca.getDpLotacaoIni().getLotacaoAtual().getSigla();
+                    t.lotacao = tag.marca.getDpLotacaoIni().getHistoricoAtual().getSigla();
                 t.inicio = tag.marca.getDtIniMarca();
                 t.termino = tag.marca.getDtFimMarca();
 

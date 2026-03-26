@@ -14,7 +14,7 @@ import br.com.caelum.vraptor.InterceptionException;
 import br.com.caelum.vraptor.Intercepts;
 import br.com.caelum.vraptor.interceptor.SimpleInterceptorStack;
 import br.gov.jfrj.siga.base.Prop;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 
 @RequestScoped
 @Intercepts(after=ParameterOptionalLoaderInterceptor.class)
@@ -22,10 +22,15 @@ public class AccessAuthInterceptor {
 
 	@Inject
 	private SigaObjects so;
+
     @Inject
     private HttpServletRequest request;
+
     @Inject
     private HttpServletResponse response;
+
+	@Inject
+	private CpConfiguracaoBL conf;
     
     /**
 	 * @deprecated CDI eyes only
@@ -34,9 +39,7 @@ public class AccessAuthInterceptor {
 	}
 	@AroundCall
 	public void intercept(SimpleInterceptorStack stack) throws InterceptionException, UnsupportedEncodingException, IOException {
-		if (so.getCadastrante() != null && !Cp.getInstance()
-				.getConf()
-				.podeUtilizarServicoPorConfiguracao(so.getCadastrante(), so.getLotaTitular(), 
+		if (so.getCadastrante() != null && !conf.podeUtilizarServicoPorConfiguracao(so.getCadastrante(), so.getLotaTitular(),
 						"SIGA:Sistema Integrado de Gestão Administrativa;WEB:Acesso via Web Browser;")) {
 			HttpSession session = request.getSession(false);
 			if (session != null)

@@ -30,7 +30,7 @@ public class ExClassificacaoSelecao extends Selecao<ExClassificacao> {
 		final ExClassificacao oExemplo = new ExClassificacao();
 		oExemplo.setSigla(getSigla());
 
-		final ExClassificacao o = ExDao.getInstance().consultarPorSigla(
+		final ExClassificacao o = dao.consultarPorSigla(
 				oExemplo);
 
 		if (o == null) {
@@ -44,7 +44,7 @@ public class ExClassificacaoSelecao extends Selecao<ExClassificacao> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final ExClassificacao o = ExDao.getInstance().consultar(getId(),
+		final ExClassificacao o = dao.consultar(getId(),
 				ExClassificacao.class, false);
 		if (o == null)
 			return false;
@@ -68,7 +68,7 @@ public class ExClassificacaoSelecao extends Selecao<ExClassificacao> {
 		if (getId() == null)
 			return null;
 
-		final ExClassificacao o = ExDao.getInstance().consultar(getId(),
+		final ExClassificacao o = dao.consultar(getId(),
 				ExClassificacao.class, false);
 
 		return o;

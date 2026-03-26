@@ -50,18 +50,6 @@ public class AbastecimentoController extends TpController {
     @Inject
     private AutorizacaoGI autorizacaoGI;
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public AbastecimentoController() {
-		super();
-	}
-	
-    @Inject
-	public AbastecimentoController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/listar")
     public void listar() throws Exception {
         List<Abastecimento> abastecimentos = Lists.newArrayList();
@@ -182,8 +170,7 @@ public class AbastecimentoController extends TpController {
             abastecimento.setTitular(getTitular());
             abastecimento.setSolicitante(getCadastrante());
 
-            abastecimento.save();
-
+            dao.gravar(abastecimento);
             result.redirectTo(this).listar();
         }
     }
@@ -221,7 +208,7 @@ public class AbastecimentoController extends TpController {
     public void excluir(Long id) throws Exception {
         Abastecimento abastecimento = Abastecimento.AR.findById(id);
         verificarAcesso(abastecimento);
-        abastecimento.delete();
+        dao.excluir(abastecimento);
         result.redirectTo(this).listar();
     }
 

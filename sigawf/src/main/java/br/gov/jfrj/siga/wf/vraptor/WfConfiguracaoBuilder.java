@@ -15,7 +15,7 @@ public final class WfConfiguracaoBuilder extends CpConfiguracaoBuilder<WfConfigu
 	private Long idDefinicaoDeProcedimento;
 
 	WfConfiguracaoBuilder() {
-		super(WfConfiguracao.class, WfDao.getInstance());
+		super(WfConfiguracao.class, dao);
 	}
 
 	public WfConfiguracao construir() {
@@ -29,7 +29,7 @@ public final class WfConfiguracaoBuilder extends CpConfiguracaoBuilder<WfConfigu
 
 		if (idDefinicaoDeProcedimento != null && idDefinicaoDeProcedimento != 0) {
 			config.setDefinicaoDeProcedimento(
-					WfDao.getInstance().consultar(idDefinicaoDeProcedimento, WfDefinicaoDeProcedimento.class, false));
+					dao.consultar(idDefinicaoDeProcedimento, WfDefinicaoDeProcedimento.class, false));
 		} else
 			config.setDefinicaoDeProcedimento(null);
 

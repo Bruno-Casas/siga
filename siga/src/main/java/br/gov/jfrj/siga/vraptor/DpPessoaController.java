@@ -37,7 +37,6 @@ import br.gov.jfrj.siga.base.client.Hcaptcha;
 import br.gov.jfrj.siga.base.util.CPFUtils;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.cp.util.SigaUtil;
@@ -49,9 +48,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 import javax.ws.rs.PathParam;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -67,17 +64,8 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
     private Long orgaoUsu;
     private DpLotacaoSelecao lotacaoSel;
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public DpPessoaController() {
-        super();
-    }
-
-    @Inject
-    public DpPessoaController(HttpServletRequest request, Result result, CpDao dao,
-                              SigaObjects so, EntityManager em) {
-        super(request, result, dao, so, em);
+    @PostConstruct
+    public void init() {
         setSel(new DpPessoa());
         setItemPagina(10);
     }
@@ -125,7 +113,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
     @Get("/app/pessoa/exibir")
     public void exibi(String sigla) {
         if (sigla != null) {
-            result.include("pessoa", dao().getPessoaPorPrincipal(sigla));
+            result.include("pessoa", cpDao.getPessoaPorPrincipal(sigla));
         }
     }
 
@@ -152,7 +140,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         // Acrescenta o sesb e repete a busca
         final String sigla = flt.getSigla();
         flt.setSigla(getTitular().getSesbPessoa() + sigla);
-        sel = dao().consultarPorSigla(flt);
+        sel = cpDao.consultarPorSigla(flt);
         if (sel != null)
             return sel;
         flt.setSigla(sigla);
@@ -161,7 +149,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         flt.setIdOrgaoUsu(getLotaTitular().getOrgaoUsuario().getIdOrgaoUsu());
         flt.setNome(Texto.removeAcentoMaiusculas(flt.getSigla()));
         flt.setSigla(null);
-        final List<DpPessoa> pessoas = dao().consultarPorFiltro(flt);
+        final List<DpPessoa> pessoas = cpDao.consultarPorFiltro(flt);
         if (pessoas != null)
             if (pessoas.size() == 1)
                 return pessoas.get(0);
@@ -169,7 +157,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
     }
 
     private boolean temPermissaoParaExportarDados() {
-        return Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(), "SIGA;GI;CAD_PESSOA;EXP_DADOS");
+        return this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(), "SIGA;GI;CAD_PESSOA;EXP_DADOS");
     }
 
     @Get
@@ -196,13 +184,13 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         result.include("temPermissaoParaExportarDados", temPermissaoParaExportarDados());
 
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-            list = dao().listarOrgaosUsuarios();
+            list = cpDao.listarOrgaosUsuarios();
             result.include("orgaosUsu", list);
             if (idOrgaoUsu == null) {
                 carregarCombos(null, list.get(0).getId(), null, null, null, null, null, null, 0, Boolean.FALSE);
             }
         } else {
-            ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             list.add(ou);
             result.include("orgaosUsu", list);
             if (idOrgaoUsu == null) {
@@ -210,7 +198,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             }
         }
         if (idOrgaoUsu != null && ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(idOrgaoUsu))) {
+                || cpDao.consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(idOrgaoUsu))) {
             DpPessoaDaoFiltro dpPessoa = new DpPessoaDaoFiltro();
             if (paramoffset == null) {
                 paramoffset = 0;
@@ -241,9 +229,9 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             }
             dpPessoa.setBuscarFechadas(Boolean.TRUE);
             dpPessoa.setId(0L);
-            setItens(CpDao.getInstance().consultarPorFiltro(dpPessoa, paramoffset, 15));
+            setItens(cpDao.consultarPorFiltro(dpPessoa, paramoffset, 15));
             result.include("itens", getItens());
-            Integer tamanho = dao().consultarQuantidade(dpPessoa);
+            Integer tamanho = cpDao.consultarQuantidade(dpPessoa);
             result.include("tamanho", tamanho);
 
             result.include("idOrgaoUsu", idOrgaoUsu);
@@ -264,26 +252,24 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
     @Get("/app/pessoa/ativarInativar")
     public void ativarInativar(final Long id, Integer offset, Long idOrgaoUsu, String nome, String cpfPesquisa, Long idCargoPesquisa, Long idFuncaoPesquisa, Long idLotacaoPesquisa, String emailPesquisa, String identidadePesquisa) throws Exception {
         CpOrgaoUsuario ou = new CpOrgaoUsuario();
-        DpPessoa pessoaAnt = dao().consultar(id, DpPessoa.class, false).getPessoaAtual();
+        DpPessoa pessoaAnt = cpDao.obterPessoaAtual(cpDao.consultar(id, DpPessoa.class, false));
         DpPessoa pessoa = new DpPessoa();
         ou.setIdOrgaoUsu(pessoaAnt.getOrgaoUsuario().getId());
-        ou = CpDao.getInstance().consultarPorId(ou);
+        ou = cpDao.consultarPorId(ou);
 
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(ou.getId())) {
-            pessoaAnt = dao().consultar(id, DpPessoa.class, false).getPessoaAtual();
+                || cpDao.consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(ou.getId())) {
+            pessoaAnt = cpDao.obterPessoaAtual(cpDao.consultar(id, DpPessoa.class, false));
             // inativar
-            if (pessoaAnt.getDataFimPessoa() == null) {
+            if (pessoaAnt.getHisDtFim() == null) {
                 Calendar calendar = new GregorianCalendar();
                 Date date = new Date();
                 calendar.setTime(date);
-                pessoaAnt.setDataFimPessoa(calendar.getTime());
+                pessoaAnt.setHisDtFim(calendar.getTime());
                 pessoaAnt.setHisIdcFim(getIdentidadeCadastrante());
 
                 try {
-                    CpDao.iniciarTransacao();
-                    dao().gravar(pessoaAnt);
-                    CpDao.commitTransacao();
+                    cpDao.gravar(pessoaAnt);
                 } catch (final Exception e) {
                     if (e.getCause() instanceof ConstraintViolationException
                             && ((ConstraintViolationException) e.getCause()).getConstraintName().toUpperCase().contains("DP_PESSOA_UNIQUE_PESSOA_ATIVA")) {
@@ -291,7 +277,6 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                     } else {
                         throw new AplicacaoException("Erro na gravação", 0, e);
                     }
-                    CpDao.rollbackTransacao();
                 }
 
             } else {// ativar
@@ -308,21 +293,21 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 dpPessoa.setId(id);
 
                 dpPessoa.setBuscarFechadas(Boolean.FALSE);
-                int tamanho = dao().consultarQuantidade(dpPessoa);
+                int tamanho = cpDao.consultarQuantidade(dpPessoa);
 
                 if (tamanho > 0) {
                     throw new AplicacaoException(
                             "Já existe outro usuário ativo com estes dados: Órgão, Cargo, Função, Unidade e CPF");
                 }
 
-                DpLotacao lotacaoAtual = dpPessoa.getLotacao().getLotacaoAtual();
-                if (lotacaoAtual == null || lotacaoAtual.getDataFim() != null) {
+                DpLotacao lotacaoAtual = cpDao.obterLotacaoAtual(dpPessoa.getLotacao());
+                if (lotacaoAtual == null || lotacaoAtual.getHisDtFim() != null) {
                     throw new AplicacaoException(
                             "Não é possível ativar pessoa. Lotação inexistente ou inativada.");
                 }
                 pessoa.setLotacao(lotacaoAtual);
 
-                DpCargo cargoAtual = CpDao.getInstance().consultarPorIdInicialDpCargoAtual(pessoaAnt.getCargo().getIdCargoIni());
+                DpCargo cargoAtual = cpDao.consultarPorIdInicialDpCargoAtual(pessoaAnt.getCargo().getHisIdIni());
                 if (cargoAtual == null || cargoAtual.getDataFim() != null) {
                     throw new AplicacaoException(
                             "Não é possível ativar pessoa. Cargo inexistente ou inativado.");
@@ -331,7 +316,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
 
                 DpFuncaoConfianca funcaoConfiancaAtual = null;
                 if (pessoaAnt.getFuncaoConfianca() != null) {
-                    funcaoConfiancaAtual = CpDao.getInstance().consultarPorIdInicialDpFuncaoConfiancaAtual(pessoaAnt.getFuncaoConfianca().getIdFuncaoIni());
+                    funcaoConfiancaAtual = cpDao.consultarPorIdInicialDpFuncaoConfiancaAtual(pessoaAnt.getFuncaoConfianca().getHisIdIni());
                     if (funcaoConfiancaAtual == null || funcaoConfiancaAtual.getDataFim() != null) {
                         throw new AplicacaoException(
                                 "Não é possível ativar pessoa. Função de Confiança encontra-se inativada.");
@@ -350,7 +335,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 pessoa.setEmailPessoa(pessoaAnt.getEmailPessoa());
                 pessoa.setIdInicial(pessoaAnt.getIdInicial());
                 try {
-                    dao().gravarComHistorico(pessoa, pessoaAnt, dao().consultarDataEHoraDoServidor(), getIdentidadeCadastrante());
+                    cpDao.gravarComHistorico(pessoa, pessoaAnt, cpDao.consultarDataEHoraDoServidor(), getIdentidadeCadastrante());
                 } catch (Exception e) {
                     if (e.getCause() instanceof ConstraintViolationException
                             && ((ConstraintViolationException) e.getCause()).getConstraintName().toUpperCase().contains("DP_PESSOA_UNIQUE_PESSOA_ATIVA")) {
@@ -372,14 +357,14 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         CpOrgaoUsuario ou = new CpOrgaoUsuario();
 
         /*Carrega lista UF*/
-        List<CpUF> ufList = dao().consultarUF();
+        List<CpUF> ufList = cpDao.consultarUF();
         result.include("ufList", ufList);
 
         if (id != null) {
-            DpPessoa pessoa = dao().consultar(id, DpPessoa.class, false);
+            DpPessoa pessoa = cpDao.consultar(id, DpPessoa.class, false);
             ou.setIdOrgaoUsu(pessoa.getOrgaoUsuario().getId());
-            ou = CpDao.getInstance().consultarPorId(ou);
-            if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla()) || CpDao.getInstance()
+            ou = cpDao.consultarPorId(ou);
+            if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla()) || cpDao
                     .consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(ou.getId())) {
 
                 /*
@@ -388,7 +373,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                  */
                 result.include(
                         "temPermissaoParaEditarMatricula",
-                        Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(), "SIGA;GI;CAD_PESSOA;ALT_MATRICULA")
+                        this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(), "SIGA;GI;CAD_PESSOA;ALT_MATRICULA")
                 );
 
                 result.include("sigla", getUsuario().getOrgaoUsuario().getSigla());
@@ -417,15 +402,23 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 }
 
                 if (pessoa.getCargo() != null) {
-                    result.include("idCargo", pessoa.getCargo().getCargoAtual().getId());
+                    if (pessoa.getCargo().getDataFim() != null)
+                        result.include("idCargo",  cpDao.consultarPorIdInicialDpCargoAtual(pessoa.getCargo().getHisIdIni()));
+                    else {
+                        result.include("idCargo", pessoa.getCargo());
+                    }
                 }
 
                 if (pessoa.getFuncaoConfianca() != null) {
-                    result.include("idFuncao", pessoa.getFuncaoConfianca().getFuncaoConfiancaAtual().getId());
+                    if (pessoa.getFuncaoConfianca().getDataFim() != null)
+                        result.include("idFuncao", cpDao.consultarPorIdInicialDpFuncaoConfiancaAtual(pessoa.getFuncaoConfianca().getHisIdIni()));
+                    else {
+                        result.include("idFuncao", pessoa.getFuncaoConfianca());
+                    }
                 }
 
                 if (pessoa.getLotacao() != null) {
-                    result.include("idLotacao", pessoa.getLotacao().getLotacaoAtual().getId());
+                    result.include("idLotacao", cpDao.obterLotacaoAtual(pessoa.getLotacao()).getId());
                 }
 
                 if (pessoa.getUfIdentidade() != null) {
@@ -440,9 +433,9 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             result.include("temPermissaoParaEditarMatricula", true);
 
         if (id == null || (ou.getId() != null && ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(ou.getId())))) {
+                || cpDao.consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(ou.getId())))) {
             if (ou.getId() == null) {
-                ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+                ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             }
 
             if (ou.getId() != null) {
@@ -454,7 +447,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 c.setId(0L);
                 c.setDescricao("Selecione");
                 lista.add(c);
-                lista.addAll(CpDao.getInstance().consultarPorFiltro(cargo));
+                lista.addAll(cpDao.consultarPorFiltro(cargo));
                 result.include("listaCargo", lista);
 
                 DpLotacaoDaoFiltro lotacao = new DpLotacaoDaoFiltro();
@@ -470,7 +463,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 cpOrgaoUsuario.setSiglaOrgaoUsu("");
                 l.setOrgaoUsuario(cpOrgaoUsuario);
                 listaLotacao.add(l);
-                listaLotacao.addAll(CpDao.getInstance().consultarPorFiltro(lotacao));
+                listaLotacao.addAll(cpDao.consultarPorFiltro(lotacao));
                 result.include("listaLotacao", listaLotacao);
 
                 DpFuncaoConfiancaDaoFiltro funcao = new DpFuncaoConfiancaDaoFiltro();
@@ -481,7 +474,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 f.setNomeFuncao("Selecione");
                 f.setIdFuncao(0L);
                 listaFuncao.add(f);
-                listaFuncao.addAll(CpDao.getInstance().consultarPorFiltro(funcao));
+                listaFuncao.addAll(cpDao.consultarPorFiltro(funcao));
                 result.include("listaFuncao", listaFuncao);
 
                 result.include("request", getRequest());
@@ -490,13 +483,13 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         }
         List<CpOrgaoUsuario> list = new ArrayList<>();
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || (id != null && Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(
+                || (id != null && this.cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;CAD_PESSOA:Cadastrar Pessoa;ALT:Alterar Órgão Cadastro Pessoa"
         ))
         ) {
-            list = dao().listarOrgaosUsuarios();
+            list = cpDao.listarOrgaosUsuarios();
 
             List<CpOrgaoUsuario> list1 = new ArrayList<>();
             for (CpOrgaoUsuario cpOrgaoUsuario : list) {
@@ -511,7 +504,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             list1.add(0, org);
             result.include("orgaosUsu", list1);
         } else {
-            ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             list.add(ou);
             result.include("orgaosUsu", list);
 
@@ -536,14 +529,14 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         List<CpOrgaoUsuario> list = new ArrayList<>();
 
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || (id != null && Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(
+                || (id != null && this.cpConf.podeUtilizarServicoPorConfiguracao(
                 getTitular(),
                 getLotaTitular(),
                 "SIGA:Sistema Integrado de Gestão Administrativa;GI:Módulo de Gestão de Identidade;CAD_PESSOA:Cadastrar Pessoa;ALT:Alterar Órgão Cadastro Pessoa"
         ))
         ) {
             List<CpOrgaoUsuario> list1 = new ArrayList<>();
-            list = dao().consultaCpOrgaoUsuario();
+            list = cpDao.consultaCpOrgaoUsuario();
 
             for (CpOrgaoUsuario cpOrgaoUsuario : list) {
                 if (!"ZZ".equals(cpOrgaoUsuario.getSiglaOrgaoUsu())) {
@@ -552,7 +545,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             }
             result.include("orgaosUsu", list1);
         } else {
-            CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             list.add(ou);
             result.include("orgaosUsu", list);
         }
@@ -568,7 +561,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
 
             List<DpCargo> lista = new ArrayList<>();
             lista.add(c);
-            lista.addAll(CpDao.getInstance().consultarPorFiltro(cargo));
+            lista.addAll(cpDao.consultarPorFiltro(cargo));
 
             result.include("listaCargo", lista);
         }
@@ -587,7 +580,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         l.setOrgaoUsuario(cpOrgaoUsuario);
         listaLotacao.add(l);
         if (idOrgaoUsu != null && idOrgaoUsu != 0)
-            listaLotacao.addAll(CpDao.getInstance().consultarPorFiltro(lotacao));
+            listaLotacao.addAll(cpDao.consultarPorFiltro(lotacao));
         result.include("listaLotacao", listaLotacao);
 
         if (retornarEnvioEmail == null || !retornarEnvioEmail) {
@@ -599,20 +592,20 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             f.setNomeFuncao("Selecione");
             f.setIdFuncao(0L);
             listaFuncao.add(f);
-            listaFuncao.addAll(CpDao.getInstance().consultarPorFiltro(funcao));
+            listaFuncao.addAll(cpDao.consultarPorFiltro(funcao));
             result.include("listaFuncao", listaFuncao);
         }
 
         if (retornarEnvioEmail == null || !retornarEnvioEmail) {
             /*Carrega lista UF*/
-            List<CpUF> ufList = dao().consultarUF();
+            List<CpUF> ufList = cpDao.consultarUF();
             result.include("ufList", ufList);
         }
 
         if (Objects.nonNull(id)) {
             result.include(
                     "temPermissaoParaEditarMatricula",
-                    Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(), "SIGA;GI;CAD_PESSOA;ALT_MATRICULA")
+                    this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(), "SIGA;GI;CAD_PESSOA;ALT_MATRICULA")
             );
         }
         else
@@ -663,7 +656,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         }
         List<DpPessoa> lista = new ArrayList<>();
         if (cpf != null && !"".equals(cpf.trim())) {
-            lista = dao().listarCpfAtivoInativo(Long.parseLong(cpf.replace(".", "").replace("-", "")));
+            lista = cpDao.listarCpfAtivoInativo(Long.parseLong(cpf.replace(".", "").replace("-", "")));
         }
 
         List<DpPessoa> pessoas = new ArrayList<>();
@@ -684,7 +677,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
     @Get("/app/pessoa/carregarExcel")
     public void carregarExcel() {
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-            result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+            result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
         } else {
             result.include("nmOrgaousu", getTitular().getOrgaoUsuario().getNmOrgaoUsu());
         }
@@ -734,7 +727,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         dpPessoa.setIdOrgaoUsu(dados.getIdOrgaoUsu());
         dpPessoa.prepararLotacao(dados.getIdLotacaoSelecao());
 
-        List<DpPessoaUsuarioDTO> usuarios = dao().consultarUsuariosComEnvioDeEmailPendenteFiltrandoPorLotacao(dpPessoa);
+        List<DpPessoaUsuarioDTO> usuarios = cpDao.consultarUsuariosComEnvioDeEmailPendenteFiltrandoPorLotacao(dpPessoa);
 
         result.use(Results.json()).from(usuarios).serialize();
     }
@@ -748,14 +741,14 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         List<CpOrgaoUsuario> list = new ArrayList<>();
         CpOrgaoUsuario ou;
         if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-            list = dao().listarOrgaosUsuarios();
+            list = cpDao.listarOrgaosUsuarios();
             list.remove(0);
             result.include("orgaosUsu", list);
             if (idOrgaoUsu == null) {
                 carregarCombos(null, idOrgaoUsu, null, null, null, null, null, null, 0, Boolean.TRUE);
             }
         } else {
-            ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+            ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
             list.add(ou);
             result.include("orgaosUsu", list);
             if (idOrgaoUsu == null) {
@@ -763,7 +756,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             }
         }
         if (idOrgaoUsu != null && ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(idOrgaoUsu))) {
+                || cpDao.consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(idOrgaoUsu))) {
             DpPessoaDaoFiltro dpPessoa = new DpPessoaDaoFiltro();
             if (paramoffset == null) {
                 paramoffset = 0;
@@ -777,12 +770,12 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 dpPessoa.setCpf(Long.valueOf(cpfPesquisa.replace(".", "").replace("-", "")));
             }
             dpPessoa.setBuscarFechadas(Boolean.TRUE);
-            setItens(CpDao.getInstance().consultarPorFiltroSemIdentidade(dpPessoa, paramoffset, 15));
+            setItens(cpDao.consultarPorFiltroSemIdentidade(dpPessoa, paramoffset, 15));
             result.include("itens", getItens());
 
             int tamanho;
             if (paramTamanho == null) {
-                tamanho = dao().consultarQuantidadeDpPessoaSemIdentidade(dpPessoa);
+                tamanho = cpDao.consultarQuantidadeDpPessoaSemIdentidade(dpPessoa);
             } else {
                 tamanho = paramTamanho;
             }
@@ -817,14 +810,14 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             dpPessoa.setCpf(Long.valueOf(cpfPesquisa.replace(".", "").replace("-", "")));
         }
 
-        List<DpPessoa> lista = CpDao.getInstance().consultarPorFiltroSemIdentidade(dpPessoa, 0, 0);
+        List<DpPessoa> lista = cpDao.consultarPorFiltroSemIdentidade(dpPessoa, 0, 0);
         String cpfAnterior = "";
         for (DpPessoa dpPessoa2 : lista) {
 
             if (!cpfAnterior.equals(dpPessoa2.getCpfPessoa().toString())) {
                 senhaGerada[0] = GeraMessageDigest.geraSenha();
             }
-            Cp.getInstance().getBL().criarIdentidade(dpPessoa2.getSesbPessoa() + dpPessoa2.getMatricula(),
+            this.cpBl.criarIdentidade(dpPessoa2.getSesbPessoa() + dpPessoa2.getMatricula(),
                     dpPessoa2.getCpfFormatado(), getIdentidadeCadastrante(), null, senhaGerada, Boolean.FALSE);
             cpfAnterior = dpPessoa2.getCpfPessoa().toString();
         }
@@ -839,12 +832,12 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
         CpOrgaoUsuario ou = new CpOrgaoUsuario();
 
         if (idOrgaoUsu != null && ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())
-                || CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(idOrgaoUsu))) {
+                || cpDao.consultarPorSigla(getTitular().getOrgaoUsuario()).getId().equals(idOrgaoUsu))) {
             DpPessoa dpPessoa = new DpPessoa();
 
             if (ou.getId() == null) {
                 ou.setIdOrgaoUsu(idOrgaoUsu);
-                ou = CpDao.getInstance().consultarPorId(ou);
+                ou = cpDao.consultarPorId(ou);
             }
             dpPessoa.setOrgaoUsuario(ou);
             dpPessoa.setNomePessoa(Texto.removeAcento(nome != null ? nome : ""));
@@ -869,7 +862,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 dpPessoa.setCpfPessoa(Long.valueOf(cpfPesquisa.replace(".", "").replace("-", "")));
             }
             dpPessoa.setId(0L);
-            List<DpPessoa> lista = CpDao.getInstance().consultarPessoaComOrgaoFuncaoCargo(dpPessoa);
+            List<DpPessoa> lista = cpDao.consultarPessoaComOrgaoFuncaoCargo(dpPessoa);
 
             if (lista.size() > 0) {
                 InputStream inputStream;
@@ -891,7 +884,7 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                     texto.append(p.getOrgaoIdentidade() != null ? p.getOrgaoIdentidade() + ";" : ";");
                     texto.append(p.getUfIdentidade() != null ? p.getUfIdentidade() + ";" : ";");
                     texto.append(p.getDataExpedicaoIdentidadeDDMMYYYY() != null ? p.getDataExpedicaoIdentidadeDDMMYYYY() + ";" : ";");
-                    texto.append(p.getDataFimPessoa() == null ? "Ativo" : "Inativo").append(";");
+                    texto.append(p.getHisDtFim() == null ? "Ativo" : "Inativo").append(";");
                     texto.append(System.lineSeparator());
                 }
 
@@ -900,10 +893,10 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
                 return new InputStreamDownload(inputStream, "text/csv", "pessoas.csv");
             } else {
                 if ("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-                    result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+                    result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
                 } else {
                     List<CpOrgaoUsuario> list = new ArrayList<>();
-                    result.include("orgaosUsu", list.add(CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario())));
+                    result.include("orgaosUsu", list.add(cpDao.consultarPorSigla(getTitular().getOrgaoUsuario())));
                 }
                 result.include("idOrgaoUsu", idOrgaoUsu);
                 result.include("nome", nome);
@@ -975,20 +968,20 @@ public class DpPessoaController extends SigaSelecionavelControllerSupport<DpPess
             dpPessoa.setCpf(Long.valueOf(cpf));
             dpPessoa.setNome("");
 
-            List<DpPessoa> usuarios = dao().consultarPorFiltro(dpPessoa);
+            List<DpPessoa> usuarios = cpDao.consultarPorFiltro(dpPessoa);
             Set<String> emailsOculto = new HashSet<>();
 
             final String mensagemUsuarioOuIdentidadeInexistente = "Usuário não localizado ou não possui um acesso ativo. "
                     + "Verifique os dados informados e caso necessite, entre em contato com o Administrador Local";
 
             if (!usuarios.isEmpty()) {
-                List<CpIdentidade> listaIdentidadesCpf = CpDao.getInstance().consultaIdentidadesPorCpf(cpf);
+                List<CpIdentidade> listaIdentidadesCpf = cpDao.consultaIdentidadesPorCpf(cpf);
 
                 if (!listaIdentidadesCpf.isEmpty()) {
                     Set<String> emailsDistintos = new HashSet<>();
                     //Adiciona email normal de forma distinta
                     for (DpPessoa usuario : usuarios) {
-                        emailsDistintos.add(usuario.getEmailPessoaAtual());
+                        emailsDistintos.add(cpDao.obterPessoaAtual(usuario).getEmailPessoa());
                     }
                     //Troca emails distintos por Email estenografado
                     for (String email : emailsDistintos) {

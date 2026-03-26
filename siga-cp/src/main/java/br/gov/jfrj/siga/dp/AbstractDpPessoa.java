@@ -25,7 +25,7 @@ package br.gov.jfrj.siga.dp;
 import br.gov.jfrj.siga.base.util.Texto;
 import br.gov.jfrj.siga.cp.CpIdentidade;
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavel;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
+import br.gov.jfrj.siga.model.Historico;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -34,36 +34,36 @@ import java.util.Set;
 
 @MappedSuperclass
 @NamedQueries({
-        @NamedQuery(name = "consultarPorIdDpPessoa", query = "select pes from DpPessoa pes where pes.idPessoaIni = :idPessoa"),
-        @NamedQuery(name = "consultarPorIdInicialDpPessoa", query = "select pes from DpPessoa pes where pes.idPessoaIni = :idPessoaIni and pes.dataFimPessoa = null"),
-        @NamedQuery(name = "consultarPorSiglaDpPessoa", query = "select pes from DpPessoa pes where pes.matricula = :matricula and pes.sesbPessoa = :sesb and pes.dataFimPessoa = null"),
+        @NamedQuery(name = "consultarPorIdDpPessoa", query = "select pes from DpPessoa pes where pes.hisIdIni = :idPessoa"),
+        @NamedQuery(name = "consultarPorIdInicialDpPessoa", query = "select pes from DpPessoa pes where pes.hisIdIni = :idPessoaIni and pes.hisDtFim = null"),
+        @NamedQuery(name = "consultarPorSiglaDpPessoa", query = "select pes from DpPessoa pes where pes.matricula = :matricula and pes.sesbPessoa = :sesb and pes.hisDtFim = null"),
         @NamedQuery(name = "consultarPorSiglaInclusiveFechadasDpPessoa", query = "select pes from DpPessoa pes where pes.matricula = :matricula and pes.sesbPessoa = :sesb "
-                + " 	and exists (select 1 from DpPessoa pAux where pAux.idPessoaIni = pes.idPessoaIni "
-                + "	 group by pAux.idPessoaIni having max(pAux.dataInicioPessoa) = pes.dataInicioPessoa)"),
+                + " 	and exists (select 1 from DpPessoa pAux where pAux.hisIdIni = pes.hisIdIni "
+                + "	 group by pAux.hisIdIni having max(pAux.hisDtIni) = pes.hisDtIni)"),
         @NamedQuery(name = "consultarPessoaAtualPelaInicial", query = "from DpPessoa pes "
-                + "		where pes.idPessoaIni = :idPessoaIni "
-                + "		and exists (select 1 from DpPessoa pAux where pAux.idPessoaIni = :idPessoaIni"
-                + "				group by pAux.idPessoaIni having max(pAux.dataInicioPessoa) = pes.dataInicioPessoa)"),
-        @NamedQuery(name = "consultarPorIdInicialDpPessoaInclusiveFechadas", query = "select pes from DpPessoa pes where pes.idPessoaIni = :idPessoaIni"),
-        @NamedQuery(name = "consultarPorCpf", query = "from DpPessoa pes where pes.cpfPessoa = :cpfPessoa and pes.dataFimPessoa = null"),
+                + "		where pes.hisIdIni = :idPessoaIni "
+                + "		and exists (select 1 from DpPessoa pAux where pAux.hisIdIni = :idPessoaIni"
+                + "				group by pAux.hisIdIni having max(pAux.hisDtIni) = pes.hisDtIni)"),
+        @NamedQuery(name = "consultarPorIdInicialDpPessoaInclusiveFechadas", query = "select pes from DpPessoa pes where pes.hisIdIni = :idPessoaIni"),
+        @NamedQuery(name = "consultarPorCpf", query = "from DpPessoa pes where pes.cpfPessoa = :cpfPessoa and pes.hisDtFim = null"),
         @NamedQuery(name = "consultarPorCpfAtivoInativo", query = "from DpPessoa pes"
                 + " where pes.cpfPessoa = :cpfPessoa"
                 + "  and pes.situacaoFuncionalPessoa != '17' "
                 + "  and exists ("
                 + "   select 1 from DpPessoa pAux"
-                + "   where pAux.idPessoaIni = pes.idPessoaIni "
-                + "	   group by pAux.idPessoaIni"
-                + "    having max(pAux.dataInicioPessoa) = pes.dataInicioPessoa"
+                + "   where pAux.hisIdIni = pes.hisIdIni "
+                + "	   group by pAux.hisIdIni"
+                + "    having max(pAux.hisDtIni) = pes.hisDtIni"
                 + " )"
         ),
-        @NamedQuery(name = "consultarPorEmail", query = "from DpPessoa pes where pes.emailPessoa = :emailPessoa and pes.dataFimPessoa = null"),
+        @NamedQuery(name = "consultarPorEmail", query = "from DpPessoa pes where pes.emailPessoa = :emailPessoa and pes.hisDtFim = null"),
         @NamedQuery(name = "consultarPorEmailIgualCpfDiferente", query = "select count(1) "
                 + " from DpPessoa pes "
                 + " where  pes.emailPessoa = :emailPessoa     "
                 + "        and pes.cpfPessoa         <> :cpf  "
-                + "        and pes.idPessoaIni <> :idPessoaIni "
-                + " and exists (select 1 from DpPessoa pAux where pAux.idPessoaIni = pes.idPessoaIni  "
-                + "	 	group by pAux.idPessoaIni having max(pAux.dataInicioPessoa) = pes.dataInicioPessoa)"),
+                + "        and pes.hisIdIni <> :idPessoaIni "
+                + " and exists (select 1 from DpPessoa pAux where pAux.hisIdIni = pes.hisIdIni  "
+                + "	 	group by pAux.hisIdIni having max(pAux.hisDtIni) = pes.hisDtIni)"),
         @NamedQuery(name = "consultarPorOrgaoUsuDpPessoaInclusiveFechadas", query = "from DpPessoa pes where pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu"),
         @NamedQuery(name = "consultarPorFiltroDpPessoa", query = "from DpPessoa pes "
                 + "  where ((pes.nomePessoaAI like upper('%' || :nome || '%')) or ((pes.sesbPessoa || pes.matricula) like upper('%' || :nome || '%')))"
@@ -77,27 +77,27 @@ import java.util.Set;
                 + " and (:email = null or (upper(pes.emailPessoa) like upper('%' || :email || '%')) ) "
                 + " and (:identidade = null or (upper(pes.identidade) like upper('%' || :identidade || '%')) ) "
                 + "	and (:situacaoFuncionalPessoa = null or pes.situacaoFuncionalPessoa = :situacaoFuncionalPessoa)"
-                + "   	and pes.dataFimPessoa = null"
+                + "   	and pes.hisDtFim = null"
                 + "   	order by pes.nomePessoa"),
         @NamedQuery(name = "consultarUsuariosComEnvioDeEmailPendenteFiltrandoPorLotacao", query = "select new br.gov.jfrj.siga.dp.DpPessoaUsuarioDTO(pes.idPessoa, pes.nomePessoa, pes.lotacao.nomeLotacao) from DpPessoa pes "
                 + "	 where pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu"
                 + " and pes.lotacao.idLotacao in (:idLotacaoLista)"
-                + " and pes.dataFimPessoa = null"
-                + "  and not exists (select 1 from CpIdentidade i inner join i.dpPessoa pes1 where pes1.idPessoaIni = pes.idPessoaIni and pes1.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
+                + " and pes.hisDtFim = null"
+                + "  and not exists (select 1 from CpIdentidade i inner join i.dpPessoa pes1 where pes1.hisIdIni = pes.hisIdIni and pes1.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
                 + "   	order by pes.lotacao.nomeLotacao, pes.nomePessoaAI"),
         @NamedQuery(name = "consultarPorFiltroDpPessoaSemIdentidade", query = "from DpPessoa pes "
                 + " where (pes.cpfPessoa = :cpf or :cpf = 0L)"
                 + " and pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu"
                 + "	and (pes.lotacao.idLotacao = :lotacao or :lotacao = 0L)"
-                + " and pes.dataFimPessoa = null"
-                + " and not exists (select 1 from CpIdentidade i inner join i.dpPessoa pes1 where pes1.idPessoaIni = pes.idPessoaIni and pes1.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu and i.dtCancelamentoIdentidade IS NULL and i.hisAtivo = 1)"
+                + " and pes.hisDtFim = null"
+                + " and not exists (select 1 from CpIdentidade i inner join i.dpPessoa pes1 where pes1.hisIdIni = pes.hisIdIni and pes1.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu and i.dtCancelamentoIdentidade IS NULL and i.hisAtivo = 1)"
                 + " order by pes.nomePessoaAI, pes.cpfPessoa"),
         @NamedQuery(name = "consultarQuantidadeDpPessoaSemIdentidade", query = "select count(pes) from DpPessoa pes "
                 + "  where (pes.cpfPessoa = :cpf or :cpf = 0L)"
                 + " and pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu"
                 + "	and (pes.lotacao.idLotacao = :lotacao or :lotacao = 0L)"
-                + " and pes.dataFimPessoa = null"
-                + " and not exists (select 1 from CpIdentidade i inner join i.dpPessoa pes1 where pes1.idPessoaIni = pes.idPessoaIni and pes1.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"),
+                + " and pes.hisDtFim = null"
+                + " and not exists (select 1 from CpIdentidade i inner join i.dpPessoa pes1 where pes1.hisIdIni = pes.hisIdIni and pes1.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"),
         @NamedQuery(name = "consultarQuantidadeDpPessoa", query = "select count(pes) from DpPessoa pes "
                 + " where ((pes.nomePessoaAI like upper('%' || :nome || '%')) or ((pes.sesbPessoa || pes.matricula) like upper('%' || :nome || '%'))) "
                 + " and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
@@ -110,7 +110,7 @@ import java.util.Set;
                 + " and (:funcao = null or :funcao = 0L or pes.funcaoConfianca.idFuncao = :funcao) "
                 + " and (pes.id <> :id or :id = 0)"
                 + "	and (:situacaoFuncionalPessoa = null or :situacaoFuncionalPessoa = '' or pes.situacaoFuncionalPessoa = :situacaoFuncionalPessoa)"
-                + "   	and pes.dataFimPessoa = null"
+                + "   	and pes.hisDtFim = null"
                 + "   	order by pes.nomePessoa"),
         @NamedQuery(name = "consultarPorFiltroDpPessoaInclusiveFechadas", query = "from DpPessoa pes where idPessoa in ("
                 + "	select max(pes.idPessoa)"
@@ -125,8 +125,8 @@ import java.util.Set;
                 + " and (:email = null or (upper(pes.emailPessoa) like upper('%' || :email || '%')) ) "
                 + " and (:identidade = null or (upper(pes.identidade) like upper('%' || :identidade || '%')) ) "
                 + " and pes.situacaoFuncionalPessoa != '17' "
-                + "	group by pes.idPessoaIni"
-                + ", pes.idPessoa having pes.idPessoa = (select max(a.idPessoa) from DpPessoa a where a.idPessoaIni = pes.idPessoaIni)"
+                + "	group by pes.hisIdIni"
+                + ", pes.idPessoa having pes.idPessoa = (select max(a.idPessoa) from DpPessoa a where a.hisIdIni = pes.hisIdIni)"
                 + ") order by pes.nomePessoaAI"),
         @NamedQuery(name = "consultarPessoaComOrgaoFuncaoCargo", query = "from DpPessoa pes"
                 + " inner join fetch pes.orgaoUsuario orgao "
@@ -142,9 +142,9 @@ import java.util.Set;
                 + " and (:email = null or (upper(pes.emailPessoa) like upper('%' || :email || '%'))) "
                 + " and (:identidade = null or (upper(pes.identidade) like upper('%' || :identidade || '%'))) "
                 + " and ((pes.nomePessoaAI like upper('%' || :nome || '%')) or ((pes.sesbPessoa || pes.matricula) like upper('%' || :nome || '%')))"
-                + " and exists (select 1 from DpPessoa pAux where pAux.idPessoaIni = pes.idPessoaIni"
-                + "		group by pAux.idPessoaIni having max(pAux.dataInicioPessoa) = pes.dataInicioPessoa) order by pes.nomePessoaAI"),
-        @NamedQuery(name = "consultarQuantidadeDpPessoaInclusiveFechadas", query = "select count(distinct pes.idPessoaIni)"
+                + " and exists (select 1 from DpPessoa pAux where pAux.hisIdIni = pes.hisIdIni"
+                + "		group by pAux.hisIdIni having max(pAux.hisDtIni) = pes.hisDtIni) order by pes.nomePessoaAI"),
+        @NamedQuery(name = "consultarQuantidadeDpPessoaInclusiveFechadas", query = "select count(distinct pes.hisIdIni)"
                 + "	from DpPessoa pes"
                 + "	where ((pes.nomePessoaAI like upper('%' || :nome || '%')) or ((pes.sesbPessoa || pes.matricula) like upper('%' || :nome || '%')))"
                 + " and (:idOrgaoUsu = null or :idOrgaoUsu = 0L or pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
@@ -156,17 +156,17 @@ import java.util.Set;
                 + " and (:cargo = null or :cargo = 0L or pes.cargo.idCargo = :cargo) "
                 + " and (:funcao = null or :funcao = 0L or pes.funcaoConfianca.idFuncao = :funcao) "
                 + " "
-                + " and pes.idPessoa in (select max(idPessoa) from DpPessoa p where p.idPessoaIni = pes.idPessoaIni)"),
+                + " and pes.idPessoa in (select max(idPessoa) from DpPessoa p where p.hisIdIni = pes.hisIdIni)"),
         @NamedQuery(name = "consultarPorCpfMatricula", query = "from DpPessoa pes "
                 + "  where pes.cpfPessoa = :cpfPessoa"
                 + "    and pes.matricula = :matricula"
-                + "    and pes.dataFimPessoa = null"),
+                + "    and pes.hisDtFim = null"),
         @NamedQuery(name = "consultarAtivasNaDataOrgao", query = "from DpPessoa pes "
                 + "  where (:idOrgaoUsu = null or :idOrgaoUsu = 0L or pes.orgaoUsuario.idOrgaoUsu = :idOrgaoUsu)"
-                + "  and  ((pes.dataInicioPessoa < :dt and pes.dataFimPessoa >= :dt )"
-                + "  or (pes.dataInicioPessoa < :dt and pes.dataFimPessoa = null ))"),
-        @NamedQuery(name = "consultarPessoasComFuncaoConfianca", query = "from DpPessoa p where p.funcaoConfianca.idFuncao = :idFuncaoConfianca and p.dataFimPessoa = null"),
-        @NamedQuery(name = "consultarPessoasComCargo", query = "from DpPessoa p where p.cargo.id = :idCargo and p.dataFimPessoa = null"),
+                + "  and  ((pes.hisDtIni < :dt and pes.hisDtFim >= :dt )"
+                + "  or (pes.hisDtIni < :dt and pes.hisDtFim = null ))"),
+        @NamedQuery(name = "consultarPessoasComFuncaoConfianca", query = "from DpPessoa p where p.funcaoConfianca.idFuncao = :idFuncaoConfianca and p.hisDtFim = null"),
+        @NamedQuery(name = "consultarPessoasComCargo", query = "from DpPessoa p where p.cargo.id = :idCargo and p.hisDtFim = null"),
         @NamedQuery(name = "consultarDadosBasicos", query = "select u,  pes from CpIdentidade as u join u.dpPessoa.pessoaInicial pes"
                 + "  where u.nmLoginIdentidade = :nmUsuario"
                 + "   and pes.sesbPessoa = :sesbPessoa"
@@ -174,31 +174,16 @@ import java.util.Set;
                 + "   and (u.hisDtFim = null)"
                 + "   and (u.dtCancelamentoIdentidade = null)"
                 + "   and (u.dtExpiracaoIdentidade = null or u.dtExpiracaoIdentidade > current_date())"
-                + "   and (pes.dataFimPessoa = null)"
+                + "   and (pes.hisDtFim = null)"
                 + "   and (pes.situacaoFuncionalPessoa in ('1', '2', '4', '12', '22', '31', '36'))")
 })
-public abstract class AbstractDpPessoa extends DpResponsavel implements
-        Serializable, HistoricoAuditavel {
+public abstract class AbstractDpPessoa extends DpResponsavel<DpPessoa> implements
+        Serializable {
 
     @Id
-    @SequenceGenerator(name = "DP_PESSOA_SEQ", sequenceName = "CORPORATIVO.DP_PESSOA_SEQ")
-    @GeneratedValue(generator = "DP_PESSOA_SEQ")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "ID_PESSOA", unique = true, nullable = false)
-    @Desconsiderar
     private Long idPessoa;
-
-    @Column(name = "ID_PESSOA_INICIAL")
-    @Desconsiderar
-    private Long idPessoaIni;
-
-    @Column(name = "DATA_FIM_PESSOA", length = 19)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date dataFimPessoa;
-
-    @Column(name = "DATA_INI_PESSOA", length = 19)
-    @Temporal(TemporalType.TIMESTAMP)
-    @Desconsiderar
-    private Date dataInicioPessoa;
 
     @Column(name = "IDE_PESSOA", length = 256)
     private String idePessoa;
@@ -223,10 +208,10 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
     private Long cpfPessoa;
 
     @Column(name = "MATRICULA")
-    private String matricula;
+    protected String matricula;
 
     @Column(name = "SESB_PESSOA", length = 10)
-    private String sesbPessoa;
+    protected String sesbPessoa;
 
     @Column(name = "EMAIL_PESSOA", length = 60)
     private String emailPessoa;
@@ -319,7 +304,6 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_PESSOA_INICIAL", insertable = false, updatable = false)
-    @Desconsiderar
     private DpPessoa pessoaInicial;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -336,8 +320,7 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ORGAO_USU")
-    @Desconsiderar
-    private CpOrgaoUsuario orgaoUsuario;
+    protected CpOrgaoUsuario orgaoUsuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_TP_PESSOA")
@@ -345,33 +328,8 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "pessoaInicial")
     @OrderBy("idPessoa DESC")
-    @Desconsiderar
     // private Set<DpPessoa> pessoasPosteriores = new HashSet<DpPessoa>(0);
     private Set<DpPessoa> pessoasPosteriores;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "HIS_IDC_INI")
-    private CpIdentidade hisIdcIni;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "HIS_IDC_FIM")
-    private CpIdentidade hisIdcFim;
-
-    public CpIdentidade getHisIdcIni() {
-        return hisIdcIni;
-    }
-
-    public void setHisIdcIni(CpIdentidade hisIdcIni) {
-        this.hisIdcIni = hisIdcIni;
-    }
-
-    public CpIdentidade getHisIdcFim() {
-        return hisIdcFim;
-    }
-
-    public void setHisIdcFim(CpIdentidade hisIdcFim) {
-        this.hisIdcFim = hisIdcFim;
-    }
 
     /**
      * @return the cpTipoPessoa
@@ -466,14 +424,12 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
      */
     @Override
     public boolean equals(final Object rhs) {
-        if ((rhs == null) || !(rhs instanceof DpPessoa))
+        if (!(rhs instanceof DpPessoa))
             return false;
         final DpPessoa that = (DpPessoa) rhs;
 
-        if ((this.getIdPessoa() == null ? that.getIdPessoa() == null : this
-                .getIdPessoa().equals(that.getIdPessoa())))
-            return true;
-        return false;
+        return this.getIdPessoa() == null ? that.getIdPessoa() == null : this
+                .getIdPessoa().equals(that.getIdPessoa());
 
     }
 
@@ -489,20 +445,6 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
      */
     public Long getCpfPessoa() {
         return cpfPessoa;
-    }
-
-    /**
-     * @return Retorna o atributo dataFimPessoa.
-     */
-    public Date getDataFimPessoa() {
-        return dataFimPessoa;
-    }
-
-    /**
-     * @return Retorna o atributo dataInicioPessoa.
-     */
-    public Date getDataInicioPessoa() {
-        return dataInicioPessoa;
     }
 
     /**
@@ -530,9 +472,6 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
         return idPessoa;
     }
 
-    public Long getIdPessoaIni() {
-        return idPessoaIni;
-    }
 
     /**
      * @return Retorna o atributo lotacao.
@@ -593,20 +532,6 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
     }
 
     /**
-     * @param dataFimPessoa Atribui a dataFimPessoa o valor.
-     */
-    public void setDataFimPessoa(final Date dataFimPessoa) {
-        this.dataFimPessoa = dataFimPessoa;
-    }
-
-    /**
-     * @param dataInicioPessoa Atribui a dataInicioPessoa o valor.
-     */
-    public void setDataInicioPessoa(final Date dataInicioPessoa) {
-        this.dataInicioPessoa = dataInicioPessoa;
-    }
-
-    /**
      * @param dataNascimento Atribui a dataNascimento o valor.
      */
     public void setDataNascimento(final Date dataNascimento) {
@@ -629,10 +554,6 @@ public abstract class AbstractDpPessoa extends DpResponsavel implements
      */
     public void setIdPessoa(final Long idPessoa) {
         this.idPessoa = idPessoa;
-    }
-
-    public void setIdPessoaIni(Long idPessoaIni) {
-        this.idPessoaIni = idPessoaIni;
     }
 
     /**

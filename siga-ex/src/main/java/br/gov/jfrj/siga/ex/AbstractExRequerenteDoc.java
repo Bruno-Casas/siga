@@ -11,7 +11,6 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.Store;
 
 import br.gov.jfrj.siga.model.Objeto;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 
 @MappedSuperclass
 @Indexed
@@ -23,7 +22,6 @@ public abstract class AbstractExRequerenteDoc extends Objeto{
 	@SequenceGenerator(name = "EX_REQUERENTE_SEQ", sequenceName = "SIGA.EX_REQUERENTE_SEQ")
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "EX_REQUERENTE_SEQ")
 	@Column(name = "ID_REQUERENTE", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idRequerente;
 	
 	@Column(name = "CPF_REQUERENTE", nullable = false)

@@ -112,7 +112,7 @@
 			<tbody>
 				<c:forEach var="lotacaoSubordinada"
 					items="${lotacao.dpLotacaoSubordinadosSet}">
-					<c:if test="${empty lotacaoSubordinada.dataFimLotacao}">
+					<c:if test="${empty lotacaoSubordinada.hisDtFim}">
 						<tr>
 							<td><siga:selecionado sigla="${lotacaoSubordinada.sigla}"
 									descricao="${lotacaoSubordinada.descricaoAmpliada}"

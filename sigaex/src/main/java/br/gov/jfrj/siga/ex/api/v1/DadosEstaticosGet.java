@@ -47,7 +47,7 @@ public class DadosEstaticosGet implements IDadosEstaticosGet {
             clazz = clazz.getSuperclass();
         }
 
-        for (T i : ExDao.getInstance().listarTodos(c, sort)) {
+        for (T i : dao.listarTodos(c, sort)) {
             JSONObject o = new JSONObject();
             a.put(o);
             // o.put("id", i.name());

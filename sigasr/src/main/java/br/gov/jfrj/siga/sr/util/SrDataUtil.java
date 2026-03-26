@@ -15,7 +15,7 @@ public class SrDataUtil {
 	public static List<CpFeriado> getListaFeriados() {
 		if (listaFeriados == null) {
 			try{
-				CpDao dao = CpDao.getInstance();
+				CpDao dao = dao;
 				listaFeriados = dao.listarFeriados();
 				for (CpFeriado f : listaFeriados)
 					f.getCpOcorrenciaFeriadoSet().size();

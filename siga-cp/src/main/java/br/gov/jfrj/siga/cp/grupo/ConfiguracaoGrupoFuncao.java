@@ -57,11 +57,11 @@ public class ConfiguracaoGrupoFuncao extends ConfiguracaoGrupo {
 		 * t_strUpper.substring(2, 7);
 		 * t_pesPessoaExemplo.setMatricula(Long.parseLong(t_strMatricula));
 		 * Funcao t_pesPessoa =
-		 * CpDao.getInstance().consultarPorSigla(t_pesPessoaExemplo);
+		 * dao.consultarPorSigla(t_pesPessoaExemplo);
 		 */
 
 		Long t_lngId = Long.parseLong(p_strConteudo);
-		DpFuncaoConfianca t_pesPessoa = CpDao.getInstance().consultar(t_lngId,
+		DpFuncaoConfianca t_pesPessoa = dao.consultar(t_lngId,
 				DpFuncaoConfianca.class, false);
 		setFuncao(t_pesPessoa);
 		conteudoConfiguracao = p_strConteudo;

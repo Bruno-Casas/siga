@@ -26,16 +26,10 @@ package br.gov.jfrj.siga.dp;
 
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.ActiveRecord;
-import br.gov.jfrj.siga.model.Assemelhavel;
-import br.gov.jfrj.siga.model.Historico;
 import br.gov.jfrj.siga.model.Selecionavel;
 import br.gov.jfrj.siga.parser.SiglaParser;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -53,7 +47,7 @@ import java.util.regex.Pattern;
 @SqlResultSetMapping(name = "scalar", columns = @ColumnResult(name = "dt"))
 @Cache(region = CpDao.CACHE_CORPORATIVO, usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 public class DpPessoa extends AbstractDpPessoa implements Serializable,
-        Selecionavel, Historico, Sincronizavel, Comparable<DpPessoa>, DpConvertableEntity {
+        Selecionavel, Comparable<DpPessoa>, DpConvertableEntity {
 
     public static final ActiveRecord<DpPessoa> AR = new ActiveRecord<>(
             DpPessoa.class);
@@ -77,16 +71,16 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
     public Long getIdLotacaoIni() {
         if (getLotacao() == null)
             return null;
-        return getLotacao().getIdLotacaoIni();
+        return getLotacao().getHisIdIni();
     }
 
     public boolean isFechada() {
-        if (getDataFimPessoa() == null)
+        if (this.getHisDtFim() == null)
             return false;
         Set<DpPessoa> setPessoas = getPessoaInicial().getPessoasPosteriores();
         if (setPessoas != null)
             for (DpPessoa l : setPessoas)
-                if (l.getDataFimPessoa() == null)
+                if (l.getHisDtFim() == null)
                     return false;
 
         return true;
@@ -181,29 +175,45 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
                 + getLotacao().getSiglaCompleta();
     }
 
-    static Pattern p1 = null;
-
     public void setSigla(String sigla) {
         if (sigla == null) return;
 
-        if (p1 == null) {
-            Map<String, CpOrgaoUsuario> mapAcronimo = new TreeMap<String, CpOrgaoUsuario>();
-            for (CpOrgaoUsuario ou : CpDao.getInstance().listarOrgaosUsuarios()) {
-                mapAcronimo.put(ou.getAcronimoOrgaoUsu(), ou);
-                mapAcronimo.put(ou.getSiglaOrgaoUsu(), ou);
+        String siglaUpper = sigla.trim().toUpperCase();
+
+        if (this.orgaoUsuario != null) {
+            String siglaOrgao = this.orgaoUsuario.getSiglaOrgaoUsu();
+            String acronimoOrgao = this.orgaoUsuario.getAcronimoOrgaoUsu();
+
+            if (siglaOrgao != null && siglaUpper.startsWith(siglaOrgao.toUpperCase())) {
+                this.sesbPessoa = siglaOrgao.toUpperCase();
+                this.matricula = siglaUpper.substring(siglaOrgao.length());
+                return;
             }
-            p1 = Pattern.compile("^(?<orgao>" + String.join("|", mapAcronimo.keySet()) + ")?(?<numero>[A-Z0-9]+)$");
+
+            if (acronimoOrgao != null && siglaUpper.startsWith(acronimoOrgao.toUpperCase())) {
+                this.sesbPessoa = acronimoOrgao.toUpperCase();
+                this.matricula = siglaUpper.substring(acronimoOrgao.length());
+                return;
+            }
         }
 
-        sigla = sigla.trim().toUpperCase();
+        // Sem órgão ou sigla não começa com órgão, usa padrão alfanumérico
+        // Extrai letras iniciais como órgão e números como matrícula
+        Pattern pattern = Pattern.compile("^(?<orgao>[A-Z]*)(?<numero>[A-Z0-9]+)$");
+        Matcher matcher = pattern.matcher(siglaUpper);
 
+        if (matcher.find()) {
+            String orgao = matcher.group("orgao");
+            String numero = matcher.group("numero");
 
-        final Matcher m = p1.matcher(sigla);
-        if (m.find()) {
-            String orgao = m.group("orgao");
-            String numero = m.group("numero");
-            setSesbPessoa(orgao.toUpperCase());
-            setMatricula(numero);
+            if (!orgao.isEmpty()) {
+                this.sesbPessoa = orgao;
+                this.matricula = numero;
+            } else {
+                this.matricula = siglaUpper;
+            }
+        } else {
+            this.matricula = siglaUpper;
         }
     }
 
@@ -218,7 +228,7 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
     }
 
     public Long getIdInicial() {
-        return getIdPessoaIni();
+        return this.getHisIdIni();
     }
 
     public String getPadraoReferenciaInvertido() {
@@ -247,11 +257,11 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
     // Metodos necessarios para ser "Sincronizavel"
     //
     public Date getDataFim() {
-        return getDataFimPessoa();
+        return this.getHisDtFim();
     }
 
     public Date getDataInicio() {
-        return getDataInicioPessoa();
+        return this.getHisDtIni();
     }
 
     public String getDescricaoExterna() {
@@ -266,20 +276,12 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
         return getOrgaoUsuario().getId().toString();
     }
 
-    public int getNivelDeDependencia() {
-        return SincronizavelSuporte.getNivelDeDependencia(this);
-    }
-
-    public boolean semelhante(Assemelhavel obj, int nivel) {
-        return SincronizavelSuporte.semelhante(this, obj, nivel);
-    }
-
     public void setDataFim(Date dataFim) {
-        setDataFimPessoa(dataFim);
+        this.setHisDtFim(dataFim);
     }
 
     public void setDataInicio(Date dataInicio) {
-        setDataInicioPessoa(dataInicio);
+        this.setHisDtIni(dataInicio);
     }
 
     public void setIdExterna(String idExterna) {
@@ -287,14 +289,10 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
     }
 
     public void setIdInicial(Long idInicial) {
-        setIdPessoaIni(idInicial);
+        this.setHisIdIni(idInicial);
     }
 
     public void setLoteDeImportacao(String loteDeImportacao) {
-    }
-
-    public boolean isBloqueada() throws AplicacaoException {
-        return Cp.getInstance().getComp().isPessoaBloqueada(this);
     }
 
     //
@@ -420,40 +418,6 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
                 || descricao.toLowerCase().contains(s);
     }
 
-    public DpPessoa getPessoaAtual() {
-
-        if (this.getDataFim() != null)
-            return CpDao.getInstance().obterPessoaAtual(this);
-
-        return this;
-    }
-
-    /**
-     * Devolve as lotacoes que o cadastrante pode acessar
-     *
-     * @return Retorna as lotações que o cadastrante pode acessar
-     */
-    public List<List<String>> getLotacoes() {
-
-        if (listaLotacoes.isEmpty()) {
-            List<CpIdentidade> idsCpf = CpDao.getInstance().consultaIdentidadesCadastrante(getCpfPessoa().toString(), true);
-            for (CpIdentidade identCpf : idsCpf) {
-                List<String> listaUserLota = new ArrayList<String>();
-                listaUserLota.add(identCpf.getNmLoginIdentidade());
-                listaUserLota.add(identCpf.getDpPessoa().getPessoaAtual().getLotacao().getLotacaoAtual().getSiglaLotacao());
-                if (identCpf.getDpPessoa().getPessoaAtual().getFuncaoConfianca() != null) {
-                    listaUserLota.add(identCpf.getDpPessoa().getPessoaAtual().getFuncaoConfianca().getNomeFuncao() + "/" +
-                            identCpf.getDpPessoa().getPessoaAtual().getCargo().getNomeCargo());
-                } else {
-                    listaUserLota.add("");
-                }
-                listaLotacoes.add(listaUserLota);
-            }
-        }
-
-        return listaLotacoes;
-    }
-
     /**
      * Seta as lotacoes que o cadastrante pode acessar
      *
@@ -536,27 +500,27 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
     }
 
     public Long getHisIdIni() {
-        return getIdPessoaIni();
+        return this.getHisIdIni();
     }
 
     public void setHisIdIni(Long hisIdIni) {
-        setIdPessoaIni(hisIdIni);
+        this.setHisIdIni(hisIdIni);
     }
 
     public Date getHisDtIni() {
-        return getDataInicioPessoa();
+        return this.getHisDtIni();
     }
 
     public void setHisDtIni(Date hisDtIni) {
-        setDataInicioPessoa(hisDtIni);
+        this.setHisDtIni(hisDtIni);
     }
 
     public Date getHisDtFim() {
-        return getDataFimPessoa();
+        return this.getHisDtFim();
     }
 
     public void setHisDtFim(Date hisDtFim) {
-        setDataFimPessoa(hisDtFim);
+        this.setHisDtFim(hisDtFim);
     }
 
     public Integer getHisAtivo() {
@@ -567,17 +531,8 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
         //
     }
 
-    public String getEmailPessoaAtual() {
-        try {
-            return getPessoaAtual().getEmailPessoa();
-        } catch (Exception e) {
-            return getEmailPessoa();
-        }
-
-    }
-
-    public String getEmailPessoaAtualParcialmenteOculto() {
-        return getEmailPessoaAtual().substring(0, 4) + "*********@***" + getEmailPessoaAtual().substring(getEmailPessoaAtual().length() - 6);
+    public String getEmailPessoaParcialmenteOculto() {
+        return getEmailPessoa().substring(0, 4) + "*********@***" + getEmailPessoa().substring(getEmailPessoa().length() - 6);
     }
 
     /**
@@ -588,10 +543,10 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
      * exemplo, 01/02/10 14:10:00.
      */
     public String getDtInicioPessoaDDMMYYHHMMSS() {
-        if (getDataInicioPessoa() != null) {
+        if (this.getHisDtIni() != null) {
             final SimpleDateFormat df = new SimpleDateFormat(
                     "dd/MM/yy HH:mm:ss");
-            return df.format(getDataInicioPessoa());
+            return df.format(this.getHisDtIni());
         }
         return "";
     }
@@ -604,10 +559,10 @@ public class DpPessoa extends AbstractDpPessoa implements Serializable,
      * 01/02/10 14:10:00.
      */
     public String getDtFimPessoaDDMMYYHHMMSS() {
-        if (getDataFimPessoa() != null) {
+        if (this.getHisDtFim() != null) {
             final SimpleDateFormat df = new SimpleDateFormat(
                     "dd/MM/yy HH:mm:ss");
-            return df.format(getDataFimPessoa());
+            return df.format(this.getHisDtFim());
         }
         return "";
     }

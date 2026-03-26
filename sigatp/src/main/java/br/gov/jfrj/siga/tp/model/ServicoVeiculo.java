@@ -314,10 +314,6 @@ public class ServicoVeiculo extends TpModel implements Comparable<ServicoVeiculo
 		}
 	}
 
-	public static List<ServicoVeiculo> buscarEmAndamento() {
-		return ServicoVeiculo.AR.find(FormatarDataHora.recuperaFuncaoTrunc() +"(dataHoraFim) = " + FormatarDataHora.recuperaFuncaoTrunc() + "(" + CpDao.getInstance().consultarDataEHoraDoServidor() + ")").fetch();
-	}
-
 	public static ServicoVeiculo buscar(String sequence) throws Exception {
 		String[] partesDoCodigo=null;
 		ServicoVeiculo servico = new ServicoVeiculo();

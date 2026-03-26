@@ -10,7 +10,6 @@ import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.model.ContextoPersistencia;
@@ -78,14 +77,14 @@ public class RelTempoTramitacaoPorEspecie extends RelatorioTemplate {
     public Collection processarDados() throws Exception {
 
         Query qryLotacaoTitular = ContextoPersistencia.em().createQuery(
-                "from DpLotacao lot " + "where lot.dataFimLotacao is null "
+                "from DpLotacao lot " + "where lot.hisDtFim is null "
                         + "and lot.orgaoUsuario = "
                         + parametros.get("orgao")
                         + " and lot.siglaLotacao = '"
                         + parametros.get("lotacaoTitular") + "'");
         DpLotacao lotaTitular = (DpLotacao) qryLotacaoTitular.getSingleResult();
 
-        DpPessoa titular = ExDao.getInstance().consultar(
+        DpPessoa titular = dao.consultar(
                 new Long((String) parametros.get("idTit")), DpPessoa.class,
                 false);
 
@@ -106,7 +105,7 @@ public class RelTempoTramitacaoPorEspecie extends RelatorioTemplate {
 
         String queryLotacao = "";
         if (parametros.get("lotacao") != null && !"".equals(parametros.get("lotacao"))) {
-            queryLotacao = " and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.idLotacaoIni = :idLotacao) ";
+            queryLotacao = " and doc.lotaCadastrante.idLotacao in (select l.idLotacao from DpLotacao as l where l.hisIdIni = :idLotacao) ";
         }
         String queryUsuario = "";
         if (parametros.get("usuario") != null && !"".equals(parametros.get("usuario"))) {
@@ -188,7 +187,7 @@ public class RelTempoTramitacaoPorEspecie extends RelatorioTemplate {
             Set<DpPessoa> pessoaSet = new HashSet<DpPessoa>();
             DpPessoa pessoa = (DpPessoa) qryPes.getResultList().get(0);
             pessoaSet.add(pessoa);
-            query.setParameter("usuario", pessoa.getIdPessoaIni());
+            query.setParameter("usuario", pessoa.getHisIdIni());
         }
 
         Date dtini = formatter.parse((String) parametros.get("dataInicial"));
@@ -217,7 +216,7 @@ public class RelTempoTramitacaoPorEspecie extends RelatorioTemplate {
             obj = (Object[]) it.next();
             ExMobil mob = (ExMobil) obj[0];
             ExDocumento doc = (ExDocumento) mob.getDoc();
-            if (Ex.getInstance().getBL().exibirQuemTemAcessoDocumentosLimitados(
+            if (this.bl.exibirQuemTemAcessoDocumentosLimitados(
                     doc, titular, lotaTitular)) {
                 Long idDoc1 = doc.getIdDoc();
                 Long idMob1 = mob.getId();

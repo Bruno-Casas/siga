@@ -7,10 +7,9 @@ import br.gov.jfrj.siga.cp.model.HistoricoAuditavel;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.model.GenericoSelecao;
+import br.gov.jfrj.siga.model.SincronizadorSimples;
+import br.gov.jfrj.siga.model.SincronizavelSimples;
 import br.gov.jfrj.siga.model.dao.DaoFiltroSelecionavel;
-import br.gov.jfrj.siga.sinc.lib.Item;
-import br.gov.jfrj.siga.sinc.lib.Sincronizador;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
 import br.gov.jfrj.siga.vraptor.SigaIdStringDescrString;
 import br.gov.jfrj.siga.vraptor.SigaObjects;
 import br.gov.jfrj.siga.vraptor.Transacional;
@@ -30,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,6 +41,10 @@ import java.util.*;
 
 @Controller
 public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDeProcedimento, DaoFiltroSelecionavel> {
+
+    @Inject
+    private WfDao dao;
+
 
     private static final String VERIFICADOR_ACESSO = "FE;DEFP:Gerenciar Diagramas";
     private static final String UTF8 = "utf-8";
@@ -151,7 +155,7 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
     public void lista() throws Exception {
         try {
             assertAcesso(VERIFICADOR_ACESSO);
-            List<WfDefinicaoDeProcedimento> modelos = dao().listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
+            List<WfDefinicaoDeProcedimento> modelos = dao.listarAtivos(WfDefinicaoDeProcedimento.class, "nome");
             result.include("itens", modelos);
         } catch (Exception e) {
             throw new AplicacaoException(e.getMessage(), 0, e);
@@ -169,7 +173,7 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
         result.include("dot", util.getDot(pd));
 
         SortedSet<WfTarefa> tis = new TreeSet<>();
-        List<WfProcedimento> pis = dao().consultarProcedimentosAtivosPorDiagrama(pd);
+        List<WfProcedimento> pis = dao.consultarProcedimentosAtivosPorDiagrama(pd);
         for (WfProcedimento pi : pis) {
             tis.add(new WfTarefa(pi));
         }
@@ -223,7 +227,7 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                 pdOriginal.assertAcessoDeEditar(getTitular(), getLotaTitular());
             }
 
-            List<WfDefinicaoDeProcedimento> pds = dao().listarDefinicoesDeProcedimentos();
+            List<WfDefinicaoDeProcedimento> pds = dao.listarDefinicoesDeProcedimentos();
             for (WfDefinicaoDeProcedimento opd : pds) {
                 if (opd.getNome().equals(pd.getNome()) && !opd.getId().equals(lId))
                     throw new AplicacaoException("Já existe um diagrama com este nome: " + pd.getNome());
@@ -241,20 +245,19 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                 pd.setHisIdcIni(getIdentidadeCadastrante());
 
             if (pd.getResponsavelId() != null)
-                pd.setResponsavel(dao().consultar(pd.getResponsavelId(), DpPessoa.class, false));
+                pd.setResponsavel(dao.consultar(pd.getResponsavelId(), DpPessoa.class, false));
             if (pd.getResponsavel() == null)
                 pd.setResponsavel(getTitular());
             if (pd.getLotaResponsavelId() != null)
-                pd.setLotaResponsavel(dao().consultar(pd.getLotaResponsavelId(), DpLotacao.class, false));
+                pd.setLotaResponsavel(dao.consultar(pd.getLotaResponsavelId(), DpLotacao.class, false));
             if (pd.getLotaResponsavel() == null)
                 pd.setLotaResponsavel(getLotaTitular());
 
-            SortedSet<Sincronizavel> setDepois = new TreeSet<>();
-            SortedSet<Sincronizavel> setAntes = new TreeSet<>();
+            List<SincronizavelSimples> setDepois = new ArrayList<>();
+            List<SincronizavelSimples> setAntes = new ArrayList<>();
 
+            // Prepara a definição submetida (Depois)
             setDepois.add(pd);
-
-            // Prepara a definição para ser sincronizada
             if (pd.getDefinicaoDeTarefa() != null) {
                 for (WfDefinicaoDeTarefa td : pd.getDefinicaoDeTarefa()) {
                     td.setDefinicaoDeProcedimento(pd);
@@ -268,11 +271,11 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                         }
                     }
                     if (td.getPessoaId() != null)
-                        td.setPessoa(dao().consultar(td.getPessoaId(), DpPessoa.class, false));
+                        td.setPessoa(dao.consultar(td.getPessoaId(), DpPessoa.class, false));
                     if (td.getLotacaoId() != null)
-                        td.setLotacao(dao().consultar(td.getLotacaoId(), DpLotacao.class, false));
+                        td.setLotacao(dao.consultar(td.getLotacaoId(), DpLotacao.class, false));
                     if (td.getDefinicaoDeResponsavelId() != null)
-                        td.setDefinicaoDeResponsavel(dao().consultar(td.getDefinicaoDeResponsavelId(),
+                        td.setDefinicaoDeResponsavel(dao.consultar(td.getDefinicaoDeResponsavelId(),
                                 WfDefinicaoDeResponsavel.class, false));
 
                     if (td.getDefinicaoDeVariavel() != null) {
@@ -298,6 +301,7 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                 }
             }
 
+            // Recupera a definição atual do banco (Antes)
             if (id != null) {
                 WfDefinicaoDeProcedimento opd = buscar(id);
                 setAntes.add(opd);
@@ -311,34 +315,44 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                         if (otd.getDefinicaoDeVariavel() != null)
                             for (WfDefinicaoDeVariavel ovd : otd.getDefinicaoDeVariavel())
                                 setAntes.add(ovd);
-                        if (otd.getDefinicaoDeVariavel() != null)
+                        if (otd.getDefinicaoDeDesvio() != null)
                             for (WfDefinicaoDeDesvio odd : otd.getDefinicaoDeDesvio())
                                 setAntes.add(odd);
                     }
                 }
             }
 
-            // Utilizaremos o sincronizador para perceber apenas as diferenças entre a
-            // definição que está guardada no banco de dados e a nova versão submetida..
-            Sincronizador sinc = new Sincronizador();
-            sinc.setSetNovo(setDepois);
-            sinc.setSetAntigo(setAntes);
-            List<Item> list = sinc.getEncaixe();
-            sinc.ordenarOperacoes();
+            SincronizadorSimples<SincronizavelSimples> sinc = new SincronizadorSimples<>();
+            List<SincronizadorSimples.Item<SincronizavelSimples>> operacoes = sinc.encaixar(setAntes, setDepois);
+            Date dt = dao.consultarDataEHoraDoServidor();
 
-            for (Item i : list) {
-                Date dt = new Date();
-                switch (i.getOperacao()) {
+            // Ordenação para respeitar chaves estrangeiras (Pai antes de Filho na inclusão, inverso na exclusão)
+            Collections.sort(operacoes, new Comparator<SincronizadorSimples.Item<SincronizavelSimples>>() {
+                @Override
+                public int compare(SincronizadorSimples.Item<SincronizavelSimples> i1, SincronizadorSimples.Item<SincronizavelSimples> i2) {
+                    int p1 = getPriority(i1);
+                    int p2 = getPriority(i2);
+                    return Integer.compare(p1, p2);
+                }
+
+                private int getPriority(SincronizadorSimples.Item<SincronizavelSimples> item) {
+                    Object obj = item.operacao == SincronizadorSimples.Operacao.excluir ? item.antigo : item.novo;
+                    int base = (obj instanceof WfDefinicaoDeProcedimento) ? 1 : (obj instanceof WfDefinicaoDeTarefa) ? 2 : 3;
+                    return (item.operacao == SincronizadorSimples.Operacao.excluir) ? (10 - base) : base;
+                }
+            });
+
+            for (SincronizadorSimples.Item<SincronizavelSimples> i : operacoes) {
+                switch (i.operacao) {
                     case alterar:
-                        dao().gravarComHistorico((HistoricoAuditavel) i.getNovo(), (HistoricoAuditavel) i.getAntigo(), dt,
-                                getIdentidadeCadastrante());
+                        dao.gravarComHistorico((HistoricoAuditavel) i.novo, (HistoricoAuditavel) i.antigo, dt, getIdentidadeCadastrante());
                         break;
                     case incluir:
-                        dao().gravarComHistorico((HistoricoAuditavel) i.getNovo(), getIdentidadeCadastrante());
+                        dao.gravarComHistorico((HistoricoAuditavel) i.novo, getIdentidadeCadastrante());
                         break;
                     case excluir:
-                        ((HistoricoAuditavel) i.getAntigo()).setHisDtFim(dt);
-                        dao().gravarComHistorico((HistoricoAuditavel) i.getAntigo(), getIdentidadeCadastrante());
+                        ((HistoricoAuditavel) i.antigo()).setHisDtFim(dt);
+                        dao.gravarComHistorico((HistoricoAuditavel) i.antigo, getIdentidadeCadastrante());
                         break;
                 }
             }
@@ -373,7 +387,7 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
                 throw new AplicacaoException("ID inválida");
             if (!pd.isAtivo())
                 throw new AplicacaoException("Diagrama já está inativo");
-            dao().excluirComHistorico(pd, dao().consultarDataEHoraDoServidor(), getIdentidadeCadastrante());
+            dao.excluirComHistorico(pd, dao.consultarDataEHoraDoServidor(), getIdentidadeCadastrante());
             jsonSuccess("OK");
         } catch (Exception e) {
             jsonError(e);
@@ -384,11 +398,11 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
         if (id != null) {
             WfDefinicaoDeProcedimento pd = null;
             if (StringUtils.isNumeric(id))
-                pd = dao().consultar(Long.valueOf(id), WfDefinicaoDeProcedimento.class, false);
+                pd = dao.consultar(Long.valueOf(id), WfDefinicaoDeProcedimento.class, false);
             else
-                pd = WfDefinicaoDeProcedimento.findBySigla(id);
+                pd = dao.defProcedimentoBySigla(id);
             if (pd != null)
-                pd = pd.getAtual();
+                pd = pd.getHistoricoAtual();
             return pd;
         }
         return new WfDefinicaoDeProcedimento();
@@ -396,7 +410,7 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
 
     private WfDefinicaoDeProcedimento buscarAntiga(final Long idInicial) {
         if (idInicial != null) {
-            return dao().consultarAtivoPorIdInicial(WfDefinicaoDeProcedimento.class, idInicial);
+            return dao.consultarAtivoPorIdInicial(WfDefinicaoDeProcedimento.class, idInicial);
         }
         return null;
     }
@@ -505,7 +519,6 @@ public class WfDiagramaController extends WfSelecionavelController<WfDefinicaoDe
         if (getTitular() != null)
             flt.setOuDefault(getTitular().getOrgaoUsuario());
 
-        WfDao dao = WfDao.getInstance();
         WfDefinicaoDeProcedimento pd = null;
         try {
             pd = dao.consultarPorSigla(flt);

@@ -33,11 +33,9 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
 
 import br.gov.jfrj.siga.cp.model.HistoricoAuditavelSuporte;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 
 @MappedSuperclass
 @NamedQueries({
@@ -59,12 +57,11 @@ import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
 		@NamedQuery(name = "consultarCpGrupoPorCpTipoGrupoId", query = "from br.gov.jfrj.siga.cp.CpGrupo cpgrp "
 				+ " where ( cpgrp.cpTipoGrupo.idTpGrupo = :idTpGrupo) "
 				+ " and cpgrp.hisDtFim = null " + " order by cpgrp.siglaGrupo") })
-public abstract class AbstractCpGrupo extends HistoricoAuditavelSuporte {
+public abstract class AbstractCpGrupo extends HistoricoAuditavelSuporte<CpGrupo> {
 	@Id
 	@SequenceGenerator(name = "CP_GRUPO_SEQ", sequenceName = "CORPORATIVO.CP_GRUPO_SEQ")
 	@GeneratedValue(generator = "CP_GRUPO_SEQ")
 	@Column(name = "ID_GRUPO", unique = true, nullable = false)
-	@Desconsiderar
 	private Long idGrupo;
 	@Column(name = "SIGLA_GRUPO", length = 20)
 	private String siglaGrupo;

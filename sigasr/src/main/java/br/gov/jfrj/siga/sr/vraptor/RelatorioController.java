@@ -36,20 +36,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 public class RelatorioController extends SrController {
 
 	private HttpServletResponse response;
-	
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioController() {
-		super();
-	}
-	
-	@Inject
-	public RelatorioController(HttpServletRequest request, Result result, CpDao dao, SigaObjects so, EntityManager em, SrValidator srValidator,
-			HttpServletResponse response) {
-		super(request, result, dao, so, em, srValidator);
-		this.response = response;
-	}
 
 	private static final String APPLICATION_EXCEL = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 

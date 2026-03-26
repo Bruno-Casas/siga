@@ -20,7 +20,7 @@ public class RecordIdContentGet implements IXjusRecordAPI.IRecordIdContentGet {
                 throw new RuntimeException("REMOVED");
             }
 
-            ExDocumento doc = ExDao.getInstance().consultar(primaryKey, ExDocumento.class, false);
+            ExDocumento doc = dao.consultar(primaryKey, ExDocumento.class, false);
             if (doc == null) {
                 throw new RuntimeException("REMOVED");
             }

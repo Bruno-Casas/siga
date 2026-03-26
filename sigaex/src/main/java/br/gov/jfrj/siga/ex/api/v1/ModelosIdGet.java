@@ -11,7 +11,7 @@ public class ModelosIdGet implements IModelosIdGet {
 
 	@Override
 	public void run(Request req, Response resp, ExApiV1Context ctx) throws Exception {
-		ExModelo mod = ExDao.getInstance().consultar(Long.parseLong(req.id), ExModelo.class, false);
+		ExModelo mod = dao.consultar(Long.parseLong(req.id), ExModelo.class, false);
 		resp.idModelo = mod.getId().toString();
 		resp.nome = mod.getNmMod();
 		resp.descr = mod.getDescMod();

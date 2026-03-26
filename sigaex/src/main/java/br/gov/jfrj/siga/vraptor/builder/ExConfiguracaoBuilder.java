@@ -38,7 +38,7 @@ public final class ExConfiguracaoBuilder extends CpConfiguracaoBuilder<ExConfigu
     public ExConfiguracao construir(ExConfiguracao config) {
         super.construir(config);
 
-        ExDao dao = ExDao.getInstance();
+        ExDao dao = dao;
 
         if (idTpMov != null && idTpMov != 0) {
             config.setExTipoMovimentacao(ExTipoDeMovimentacao.getById(idTpMov));

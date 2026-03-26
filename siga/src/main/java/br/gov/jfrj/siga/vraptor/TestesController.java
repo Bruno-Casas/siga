@@ -18,7 +18,6 @@ import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Contexto;
 import br.gov.jfrj.siga.base.SigaHTTP;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
@@ -26,25 +25,11 @@ import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.model.GenericoSelecao;
 
 @Controller
-public class TestesController extends SigaController {
+public class TestesController extends VraptorController {
 
 	private static final String OK = "<span style=\"color: green;\">OK</span>";
 	private static final String ERRO = "<span style=\"color: red;\">ERRO</span>";
 	private static final String SIGA_TESTES_ACTION = "/siga/public/app/testes/testes";
-
-
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public TestesController() {
-		super();
-	}
-
-	@Inject
-	public TestesController(HttpServletRequest request, Result result,
-			CpDao dao, SigaObjects so, EntityManager em) {
-		super(request, result, dao, so, em);
-	}
 
 	@Get("/public/app/testes/testes")
 	public void testes() {
@@ -78,7 +63,7 @@ public class TestesController extends SigaController {
 
 			List<String> orgaos = new ArrayList<String>();
 			String copiaSigla = sigla.toUpperCase();
-			for (CpOrgaoUsuario o : dao().consultaCpOrgaoUsuario()) {
+			for (CpOrgaoUsuario o : cpDao.consultaCpOrgaoUsuario()) {
 				orgaos.add(o.getSiglaOrgaoUsu());
 				orgaos.add(o.getAcronimoOrgaoUsu());
 			}
@@ -97,18 +82,14 @@ public class TestesController extends SigaController {
 			// inicie com SR
 			if (copiaSigla.startsWith("SR")) {
 				// if (copiaSigla.matches("^[SR|sr].*[0-9]+$")) {
-				if (Cp.getInstance()
-						.getConf()
-						.podeUtilizarServicoPorConfiguracao(pes, lot, "SIGA;SR"))
+				if (cpConf.podeUtilizarServicoPorConfiguracao(pes, lot, "SIGA;SR"))
 					URLSelecionar = urlBase + "/sigasr" + testes
 							+ "/solicitacao/selecionar?sigla=" + sigla
 							+ incluirMatricula;
 			} else if (copiaSigla.startsWith("MTP")
 					|| copiaSigla.startsWith("RTP")
 					|| copiaSigla.startsWith("STP")) {
-				if (Cp.getInstance()
-						.getConf()
-						.podeUtilizarServicoPorConfiguracao(pes, lot, "SIGA;TP")) {
+				if (cpConf.podeUtilizarServicoPorConfiguracao(pes, lot, "SIGA;TP")) {
 					URLSelecionar = urlBase + "/sigatp"
 							+ "/selecionar.action?sigla=" + sigla
 							+ incluirMatricula;

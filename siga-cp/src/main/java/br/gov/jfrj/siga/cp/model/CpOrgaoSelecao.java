@@ -30,7 +30,7 @@ public class CpOrgaoSelecao extends Selecao<CpOrgao> {
 		final CpOrgao oExemplo = new CpOrgao();
 		oExemplo.setSigla(getSigla());
 
-		final CpOrgao o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final CpOrgao o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();
@@ -43,7 +43,7 @@ public class CpOrgaoSelecao extends Selecao<CpOrgao> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final CpOrgao o = CpDao.getInstance().consultar(getId(),
+		final CpOrgao o = dao.consultar(getId(),
 				CpOrgao.class, false);
 		if (o == null)
 			return false;
@@ -62,7 +62,7 @@ public class CpOrgaoSelecao extends Selecao<CpOrgao> {
 		if (getId() == null)
 			return null;
 
-		final CpOrgao o = CpDao.getInstance().consultar(getId(),
+		final CpOrgao o = dao.consultar(getId(),
 				CpOrgao.class, false);
 
 		return o;

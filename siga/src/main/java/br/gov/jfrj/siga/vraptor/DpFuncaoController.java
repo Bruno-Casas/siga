@@ -4,21 +4,16 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 
 import br.com.caelum.vraptor.Controller;
 import br.com.caelum.vraptor.Get;
 import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Post;
-import br.com.caelum.vraptor.Result;
 import br.com.caelum.vraptor.observer.download.Download;
 import br.com.caelum.vraptor.observer.download.InputStreamDownload;
 import br.com.caelum.vraptor.observer.upload.UploadedFile;
@@ -26,12 +21,10 @@ import br.com.caelum.vraptor.view.Results;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.SigaModal;
 import br.gov.jfrj.siga.base.util.Texto;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.bl.CpBL;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpFuncaoConfianca;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.DpFuncaoConfiancaDaoFiltro;
 import br.gov.jfrj.siga.model.Selecionavel;
 
@@ -39,19 +32,9 @@ import br.gov.jfrj.siga.model.Selecionavel;
 public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFuncaoConfianca, DpFuncaoConfiancaDaoFiltro>{
 
 	private Long orgaoUsu;
-	
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public DpFuncaoController() {
-		super();
-	}
-
-	@Inject
-	public DpFuncaoController(HttpServletRequest request, Result result, SigaObjects so, EntityManager em) {
-		super(request, result, CpDao.getInstance(), so, em);
-		
+	@PostConstruct
+	public void init() {
 		setSel(new DpFuncaoConfianca());
 		setItemPagina(10);
 	}
@@ -73,7 +56,7 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 		// Procura por nome
 		flt.setNome(Texto.removeAcentoMaiusculas(flt.getSigla()));
 		flt.setSigla(null);
-		final List<DpFuncaoConfianca> l = dao().consultarPorFiltro(flt);
+		final List<DpFuncaoConfianca> l = cpDao.consultarPorFiltro(flt);
 		if (l != null)
 			if (l.size() == 1)
 				return (DpFuncaoConfianca) l.get(0);
@@ -81,7 +64,7 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 	}
 	
 	public boolean temPermissaoParaExportarDados() {
-		return Boolean.valueOf(Cp.getInstance().getConf().podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(),"SIGA;GI;CAD_FUNCAO;EXP_DADOS"));
+		return Boolean.valueOf(this.cpConf.podeUtilizarServicoPorConfiguracao(getTitular(), getTitular().getLotacao(),"SIGA;GI;CAD_FUNCAO;EXP_DADOS"));
 	}
 	
 	@Get
@@ -121,9 +104,9 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 	@Get("app/funcao/listar")
 	public void lista(Integer paramoffset, Long idOrgaoUsu, String nome) throws Exception {
 		if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-			result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+			result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 		} else {
-			CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+			CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
 			List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
 			list.add(ou);
 			result.include("orgaosUsu", list);
@@ -136,9 +119,9 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 			dpFuncao.setIdOrgaoUsu(idOrgaoUsu);
 			dpFuncao.setNome(Texto.removeAcento(nome));
 			dpFuncao.setBuscarInativas(Boolean.TRUE);
-			setItens(CpDao.getInstance().consultarPorFiltro(dpFuncao, paramoffset, 15));
+			setItens(cpDao.consultarPorFiltro(dpFuncao, paramoffset, 15));
 			result.include("itens", getItens());
-			result.include("tamanho", dao().consultarQuantidade(dpFuncao));
+			result.include("tamanho", cpDao.consultarQuantidade(dpFuncao));
 			
 			result.include("idOrgaoUsu", idOrgaoUsu);
 			result.include("nome", nome);
@@ -157,7 +140,7 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
  		if(idOrgaoUsu != null) {
  			DpFuncaoConfiancaDaoFiltro dpFuncao = new DpFuncaoConfiancaDaoFiltro(nome, idOrgaoUsu);																
 															
-			List <DpFuncaoConfianca> lista = CpDao.getInstance().consultarPorFiltro(dpFuncao, 0, 0);
+			List <DpFuncaoConfianca> lista = cpDao.consultarPorFiltro(dpFuncao, 0, 0);
 			
 			if (lista.size() > 0) {				
 				InputStream inputStream = null;
@@ -176,9 +159,9 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 			} else {
 				
 				if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-					result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+					result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 				} else {
-					CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+					CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
 					List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
 					list.add(ou);
 					result.include("orgaosUsu", list);
@@ -197,21 +180,21 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 	@Get("/app/funcao/editar")
 	public void edita(final Long id){
 		if (id != null) {
-			DpFuncaoConfianca funcao = dao().consultar(id, DpFuncaoConfianca.class, false);
+			DpFuncaoConfianca funcao = cpDao.consultar(id, DpFuncaoConfianca.class, false);
 			result.include("nmFuncao",funcao.getDescricao());
 			result.include("idOrgaoUsu", funcao.getOrgaoUsuario().getId());
 			result.include("nmOrgaousu", funcao.getOrgaoUsuario().getNmOrgaoUsu());
 			
-			List<DpPessoa> list = CpDao.getInstance().consultarPessoasComFuncaoConfianca(id);
+			List<DpPessoa> list = cpDao.consultarPessoasComFuncaoConfianca(id);
 			if(list.size() == 0) {
 				result.include("podeAlterarOrgao", Boolean.TRUE);
 			}
 		}
 		
 		if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-			result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+			result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 		} else {
-			CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(getTitular().getOrgaoUsuario());
+			CpOrgaoUsuario ou = cpDao.consultarPorSigla(getTitular().getOrgaoUsuario());
 			List<CpOrgaoUsuario> list = new ArrayList<CpOrgaoUsuario>();
 			list.add(ou);
 			result.include("orgaosUsu", list);
@@ -226,7 +209,7 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 							 final String nmFuncao, 
 							 final Long idOrgaoUsu) throws Exception{
 		assertAcesso("GI:Módulo de Gestão de Identidade;CAD_FUNCAO:Cadastrar Função de Confiança");
-		Cp.getInstance().getBL().gravarFuncaoConfianca(getIdentidadeCadastrante(), id, nmFuncao, idOrgaoUsu,null);
+		this.cpBl.gravarFuncaoConfianca(getIdentidadeCadastrante(), id, nmFuncao, idOrgaoUsu,null);
 		this.result.redirectTo(this).lista(0, null, "");
 	}
 	
@@ -235,13 +218,13 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 	public void ativarInativar(final Long id) throws Exception {
 		assertAcesso("GI:Módulo de Gestão de Identidade;CAD_FUNCAO:Cadastrar Função de Confiança");
 		
-		DpFuncaoConfianca funcaoConfianca = dao().consultar(id, DpFuncaoConfianca.class, false);
+		DpFuncaoConfianca funcaoConfianca = cpDao.consultar(id, DpFuncaoConfianca.class, false);
 
 		// ativar
-		if (funcaoConfianca.getDataFimFuncao() != null ) {		
-			Cp.getInstance().getBL().gravarFuncaoConfianca(getIdentidadeCadastrante(), id, null, null, Boolean.TRUE);
+		if (funcaoConfianca.getHisDtFim() != null ) {
+			this.cpBl.gravarFuncaoConfianca(getIdentidadeCadastrante(), id, null, null, Boolean.TRUE);
 		} else {// inativar
-			Cp.getInstance().getBL().gravarFuncaoConfianca(getIdentidadeCadastrante(), id, null, null, Boolean.FALSE);
+			this.cpBl.gravarFuncaoConfianca(getIdentidadeCadastrante(), id, null, null, Boolean.FALSE);
 		}
 		
 		if (funcaoConfianca.getOrgaoUsuario() != null)
@@ -257,8 +240,8 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 		
 		if (id != null) {
 			try {
-				DpFuncaoConfianca funcaoConfianca = dao().consultar(id, DpFuncaoConfianca.class, false);;	
-				Cp.getInstance().getBL().excluirFuncaoConfianca(funcaoConfianca);	
+				DpFuncaoConfianca funcaoConfianca = cpDao.consultar(id, DpFuncaoConfianca.class, false);;
+				this.cpBl.excluirFuncaoConfianca(funcaoConfianca);
 				
 				if (funcaoConfianca.getOrgaoUsuario() != null)
 					this.result.redirectTo(this).lista(0,funcaoConfianca.getOrgaoUsuario().getIdOrgaoUsu(), "");
@@ -277,7 +260,7 @@ public class DpFuncaoController extends SigaSelecionavelControllerSupport<DpFunc
 	@Get("/app/funcao/carregarExcel")
 	public void carregarExcel() {
 		if("ZZ".equals(getTitular().getOrgaoUsuario().getSigla())) {
-			result.include("orgaosUsu", dao().listarOrgaosUsuarios());
+			result.include("orgaosUsu", cpDao.listarOrgaosUsuarios());
 		} else {
 			result.include("nmOrgaousu", getTitular().getOrgaoUsuario().getNmOrgaoUsu());	
 		}

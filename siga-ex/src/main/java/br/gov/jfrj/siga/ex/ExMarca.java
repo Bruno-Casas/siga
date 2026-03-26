@@ -182,12 +182,12 @@ public class ExMarca extends AbstractExMarca implements Comparable<ExMarca> {
 		if (getDpLotacaoIni() != null || getDpPessoaIni() != null) {
 			sb.append(" [");
 			if (getDpLotacaoIni() != null) {
-				sb.append(getDpLotacaoIni().getLotacaoAtual().getSigla());
+				sb.append(getDpLotacaoIni().getHistoricoAtual().getSigla());
 			}
 			if (getDpPessoaIni() != null) {
 				if (getDpLotacaoIni() != null)
 					sb.append(", ");
-				sb.append(getDpPessoaIni().getPessoaAtual().getSigla());
+				sb.append(getDpPessoaIni().getHistoricoAtual().getSigla());
 			}
 			sb.append("]");
 		}

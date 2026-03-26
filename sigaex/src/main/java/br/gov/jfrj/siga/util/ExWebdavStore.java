@@ -5,7 +5,8 @@ import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExBL;
+import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.vo.ExMovimentacaoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -16,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.jboss.logging.Logger;
 
+import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +30,12 @@ import java.util.Map;
 
 public class ExWebdavStore implements IWebdavStore {
     private static final Logger log = Logger.getLogger(ExWebdavStore.class);
+
+    @Inject
+    private ExDao dao;
+
+    @Inject
+    private ExBL bl;
 
     private static class Transaction implements ITransaction {
         Principal principal;
@@ -171,7 +179,7 @@ public class ExWebdavStore implements IWebdavStore {
         log.info("removeObject:" + uri);
         try {
             ExMovimentacao mov = getMovs(new Context(uri)).mov;
-            Ex.getInstance().getBL().cancelar(null, null, mov.getExMobil(), mov, null, null, null, null);
+            this.bl.cancelar(null, null, mov.getExMobil(), mov, null, null, null, null);
         } catch (Exception e) {
             throwException("Não foi possível remover o arquivo auxiliar.", e);
         }
@@ -194,7 +202,7 @@ public class ExWebdavStore implements IWebdavStore {
 
         ExMobil mob = null;
         try {
-            mob = Documento.getMobil(ctx.mobilSigla);
+            mob = Documento.getMobil(dao, ctx.mobilSigla);
         } catch (Exception e) {
             throwException("Erro obtendo o documento.", e);
         }
@@ -206,11 +214,10 @@ public class ExWebdavStore implements IWebdavStore {
             return 0;
         }
         try {
-            ExDao dao = ExDao.getInstance();
             DpPessoa cadastrante = dao.getPessoaFromSigla(ctx.cadastranteSigla);
             DpPessoa titular = dao.getPessoaFromSigla(ctx.titularSigla);
             DpLotacao lotaTitular = dao.getLotacaoFromSigla(ctx.unidadeSigla);
-            Ex.getInstance().getBL().anexarArquivoAuxiliar(cadastrante, cadastrante.getLotacao(), mob, null, titular,
+            this.bl.anexarArquivoAuxiliar(cadastrante, cadastrante.getLotacao(), mob, null, titular,
                     ctx.nmArq, titular, lotaTitular, ab, contentType);
         } catch (Exception e) {
             throwException("Não foi possível gravar o arquivo auxiliar.", e);
@@ -236,7 +243,7 @@ public class ExWebdavStore implements IWebdavStore {
         Ret ret = new Ret();
 
         try {
-            ret.mob = Documento.getMobil(ctx.mobilSigla);
+            ret.mob = Documento.getMobil(dao, ctx.mobilSigla);
         } catch (Exception e) {
             throw new Exception("Erro obtendo o documento.", e);
         }

@@ -11,7 +11,7 @@ public class ExRequerenteDocSelecao extends Selecao<ExRequerenteDoc> {
         if (getId() == null)
             return null;
 
-        return ExDao.getInstance().consultar(getId(), ExRequerenteDoc.class, false);
+        return dao.consultar(getId(), ExRequerenteDoc.class, false);
     }
 
     @Override

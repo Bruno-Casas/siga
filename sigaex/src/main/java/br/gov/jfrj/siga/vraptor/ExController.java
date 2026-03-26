@@ -1,33 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2006 - 2011 SJRJ.
- *
- *     This file is part of SIGA.
- *
- *     SIGA is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     SIGA is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with SIGA.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
 package br.gov.jfrj.siga.vraptor;
 
-import br.com.caelum.vraptor.Result;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.TipoResponsavelEnum;
-import br.gov.jfrj.siga.cp.bl.Cp;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.DpVisualizacao;
-import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.ex.*;
-import br.gov.jfrj.siga.ex.bl.Ex;
+import br.gov.jfrj.siga.ex.bl.ExBL;
+import br.gov.jfrj.siga.ex.bl.ExCompetenciaBL;
 import br.gov.jfrj.siga.ex.bl.ExConfiguracaoBL;
 import br.gov.jfrj.siga.ex.logic.ExPodeAcessarDocumento;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeConfiguracao;
@@ -35,38 +15,46 @@ import br.gov.jfrj.siga.ex.util.NivelDeAcessoUtil;
 import br.gov.jfrj.siga.hibernate.ExDao;
 import br.gov.jfrj.siga.util.ExProcessadorModelo;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
-public class ExController extends SigaController {
-    HttpServletResponse response;
-    ServletContext context;
+public class ExController extends VraptorController {
 
-    static {
-        if (Ex.getInstance().getBL().getProcessadorModeloJsp() == null) {
-            Ex.getInstance().getBL().setProcessadorModeloJsp(new ExProcessadorModelo());
+    @Inject
+    protected HttpServletResponse response;
+
+    @Inject
+    protected ServletContext context;
+
+    @Inject
+    protected ExDao dao;
+
+    @Inject
+    protected ExBL bl;
+
+    @Inject
+    protected ExConfiguracaoBL conf;
+
+    @Inject
+    protected ExCompetenciaBL comp;
+
+    @Inject
+    private NivelDeAcessoUtil nivelDeAcessoUtil;
+
+    @PostConstruct
+    private void init() {
+        if (bl.getProcessadorModeloJsp() == null) {
+            bl.setProcessadorModeloJsp(new ExProcessadorModelo());
         }
     }
 
-    /**
-     * @deprecated CDI eyes only
-     */
-    public ExController() {
-        super();
-    }
-
-    public ExController(HttpServletRequest request, HttpServletResponse response, ServletContext context, Result result, CpDao dao, SigaObjects so,
-                        EntityManager em) {
-        super(request, result, dao, so, em);
-        this.response = response;
-        this.context = context;
-    }
-
     protected void verificaNivelAcesso(ExMobil mob) {
-        if (!Ex.getInstance().getComp().pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mob)) {
+        if (!comp.pode(ExPodeAcessarDocumento.class, getTitular(), getLotaTitular(), mob)) {
             throw new AplicacaoException("Acesso ao documento " + mob.getSigla() + " permitido somente a usuários autorizados. (" + getTitular().getSigla()
                     + "/" + getLotaTitular().getSiglaCompleta() + ")");
         }
@@ -83,12 +71,12 @@ public class ExController extends SigaController {
     }
 
     protected List<ExNivelAcesso> getListaNivelAcesso(ExTipoDocumento exTpDoc, ExFormaDocumento forma, ExModelo exMod, ExClassificacao classif) {
-        return NivelDeAcessoUtil.getListaNivelAcesso(exTpDoc, forma, exMod,
+        return nivelDeAcessoUtil.getListaNivelAcesso(exTpDoc, forma, exMod,
                 classif, getTitular(), getLotaTitular());
     }
 
     protected ExNivelAcesso getNivelAcessoDefault(final ExTipoDocumento exTpDoc, final ExFormaDocumento forma, final ExModelo exMod, final ExClassificacao classif) {
-        final Date dt = ExDao.getInstance().consultarDataEHoraDoServidor();
+        final Date dt = dao.consultarDataEHoraDoServidor();
 
         final ExConfiguracao config = new ExConfiguracao();
         config.setDpPessoa(getTitular());
@@ -102,14 +90,14 @@ public class ExController extends SigaController {
         ExConfiguracaoCache exConfig;
 
         try {
-            exConfig = (ExConfiguracaoCache) Ex.getInstance().getConf()
+            exConfig = (ExConfiguracaoCache) conf
                     .buscaConfiguracao(config, new int[]{ExConfiguracaoBL.NIVEL_ACESSO}, dt);
         } catch (Exception e) {
             exConfig = null;
         }
 
         if (exConfig != null) {
-            return dao.consultar(exConfig.exNivelAcesso, ExNivelAcesso.class, false);
+            return cpDao.consultar(exConfig.exNivelAcesso, ExNivelAcesso.class, false);
         }
 
         return null;
@@ -117,31 +105,27 @@ public class ExController extends SigaController {
 
     @SuppressWarnings("static-access")
     protected String getDescrDocConfidencial(ExDocumento doc) {
-        return Ex.getInstance().getBL().descricaoSePuderAcessar(doc, getTitular(), getLotaTitular());
+        return bl.descricaoSePuderAcessar(doc, getTitular(), getLotaTitular());
     }
 
     protected List<ExTipoDocumento> getTiposDocumento() throws AplicacaoException {
-        return dao().listarExTiposDocumento();
-    }
-
-    protected ExDao dao() {
-        return ExDao.getInstance();
+        return dao.listarExTiposDocumento();
     }
 
     protected ExDocumento daoDoc(long id) {
-        return dao().consultar(id, ExDocumento.class, false);
+        return dao.consultar(id, ExDocumento.class, false);
     }
 
     protected ExMovimentacao daoMov(long id) {
-        return dao().consultar(id, ExMovimentacao.class, false);
+        return dao.consultar(id, ExMovimentacao.class, false);
     }
 
     protected ExMobil daoMob(long id) {
-        return dao().consultar(id, ExMobil.class, false);
+        return dao.consultar(id, ExMobil.class, false);
     }
 
     protected List<ExEstadoDoc> getEstados() throws AplicacaoException {
-        return ExDao.getInstance().listarExEstadosDoc();
+        return dao.listarExEstadosDoc();
     }
 
     protected Map<Integer, String> getListaTipoResp() {
@@ -152,8 +136,8 @@ public class ExController extends SigaController {
         final ArrayList<String> lst = new ArrayList<String>();
         // map.add("", "[Vazio]");
         final Calendar cal = Calendar.getInstance();
-        for (Integer ano = cal.get(Calendar.YEAR); ano >= 1990; ano--)
-            lst.add(ano.toString());
+        for (int ano = cal.get(Calendar.YEAR); ano >= 1990; ano--)
+            lst.add(Integer.toString(ano));
         return lst;
     }
 
@@ -173,23 +157,19 @@ public class ExController extends SigaController {
         return podeVisualizarDocumento(getCadastrante(), titular, idVisualizacao, mob);
     }
 
-    public static boolean podeVisualizarDocumento(DpPessoa cadastrante, DpPessoa titular, Long idVisualizacao, final ExMobil mob) throws Exception {
+    private boolean podeVisualizarDocumento(DpPessoa cadastrante, DpPessoa titular, Long idVisualizacao, final ExMobil mob) throws Exception {
         boolean retorno = Boolean.FALSE;
 
-        if (Cp.getInstance()
-                .getConf()
-                .podePorConfiguracao(
-                        cadastrante, cadastrante.getLotacao(), ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO
-                )
+        if (conf.podePorConfiguracao(
+                cadastrante, cadastrante.getLotacao(), ExTipoDeConfiguracao.DELEGAR_VISUALIZACAO
+        )
         ) {
             if (idVisualizacao != null && !idVisualizacao.equals(0L)) {
-                DpVisualizacao vis = ExDao.getInstance().consultar(idVisualizacao, DpVisualizacao.class, false);
+                DpVisualizacao vis = dao.consultar(idVisualizacao, DpVisualizacao.class, false);
 
                 if (vis.getDelegado().equals(titular)) {
-                    if (Ex.getInstance()
-                            .getComp()
-                            .pode(ExPodeAcessarDocumento.class, vis.getTitular(), vis.getTitular().getLotacao(),
-                                    mob)) {
+                    if (comp.pode(ExPodeAcessarDocumento.class, vis.getTitular(), vis.getTitular().getLotacao(),
+                            mob)) {
                         retorno = Boolean.TRUE;
                     }
                 }

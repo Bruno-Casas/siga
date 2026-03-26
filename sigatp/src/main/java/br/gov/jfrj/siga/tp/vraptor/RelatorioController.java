@@ -52,18 +52,6 @@ public class RelatorioController extends TpController {
     private static SimpleDateFormat formatoDataDDMMYYYY = new SimpleDateFormat("dd/MM/yyyy");
     private static SimpleDateFormat formatoDataYYYYMDHMS = new SimpleDateFormat("yyyy,M,d,H,m,s");
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioController() {
-		super();
-	}
-	
-	@Inject
-    public RelatorioController(HttpServletRequest request, Result result,   Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @Path("/listarAgendaPorCondutorNoProximoDia/{idCondutor}/{dataPesquisa*}")
     public void listarAgendaPorCondutorNoProximoDia(Long idCondutor, Calendar dataPesquisa) throws ParseException {
         dataPesquisa.add(Calendar.DAY_OF_MONTH, 1);
@@ -385,7 +373,7 @@ public class RelatorioController extends TpController {
 
     @Path("/listarMissoesEmAndamento")
     public void listarMissoesEmAndamento() {
-        List<Missao> missoes = Missao.buscarEmAndamento();
+        List<Missao> missoes = Missao.buscarEmAndamento(dao.consultarDataEHoraDoServidor());
         List<Missao> missoesFiltradas = filtrarPorOrgao(missoes, Missao.class);
 
         StringBuilder registros = new StringBuilder();

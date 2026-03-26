@@ -1,24 +1,22 @@
 package br.gov.jfrj.siga.vraptor;
 
+import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
+import br.gov.jfrj.siga.cp.bl.CpCompetenciaBL;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
+import br.gov.jfrj.siga.dp.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import br.gov.jfrj.siga.acesso.ConheceUsuario;
-import br.gov.jfrj.siga.acesso.UsuarioAutenticado;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.cp.CpIdentidade;
-import br.gov.jfrj.siga.cp.bl.Cp;
-import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
-import br.gov.jfrj.siga.dp.DpLotacao;
-import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.dp.DpSubstituicao;
-import br.gov.jfrj.siga.dp.DpVisualizacao;
 import br.gov.jfrj.siga.dp.dao.CpDao;
 import br.gov.jfrj.siga.dp.dao.CpOrgaoUsuarioDaoFiltro;
 import br.gov.jfrj.siga.dp.dao.DpLotacaoDaoFiltro;
@@ -27,12 +25,13 @@ import br.gov.jfrj.siga.model.ContextoPersistencia;
 
 @RequestScoped
 public class SigaObjects implements ConheceUsuario {
-	private static Log log = LogFactory.getLog(SigaObjects.class);
+	private static final Log log = LogFactory.getLog(SigaObjects.class);
 
 	public static Log getLog() {
 		return SigaObjects.log;
 	}
 
+	@Inject
 	private HttpServletRequest request;
 
 	private DpPessoa cadastrante;
@@ -44,6 +43,15 @@ public class SigaObjects implements ConheceUsuario {
 	private CpIdentidade identidadeCadastrante;
 
 	private String mensagem;
+
+	@Inject
+	private CpDao dao;
+
+	@Inject
+	private CpConfiguracaoBL conf;
+
+	@Inject
+	private CpCompetenciaBL comp;
 
 	public SigaObjects() throws Exception {
 		this(null);
@@ -59,9 +67,7 @@ public class SigaObjects implements ConheceUsuario {
 	public void assertAcesso(String pathServico) throws AplicacaoException {
 		String servico = "SIGA:Sistema Integrado de Gestão Administrativa;"
 				+ pathServico;
-		if (!Cp.getInstance()
-				.getConf()
-				.podeUtilizarServicoPorConfiguracao(getTitular(),
+		if (!conf.podeUtilizarServicoPorConfiguracao(getTitular(),
 						getLotaTitular(), servico)) {
 
 			String siglaUsuario = getTitular() == null ? "Indefinido"
@@ -79,9 +85,10 @@ public class SigaObjects implements ConheceUsuario {
 		if (ContextoPersistencia.getUserPrincipal() == null)
 			return;
 
-		// autenticação por formulário
 		String principal = ContextoPersistencia.getUserPrincipal();
-		UsuarioAutenticado.carregarUsuarioAutenticado(principal, this);
+
+		CpIdentidade id = dao.consultaIdentidadeCadastrante(principal, true);
+		carregarUsuario(id);
 	}
 
 	public DpPessoa getCadastrante() {
@@ -106,19 +113,15 @@ public class SigaObjects implements ConheceUsuario {
 		DpSubstituicao dpSubstituicao = new DpSubstituicao();
 		dpSubstituicao.setSubstituto(getCadastrante());
 		dpSubstituicao.setLotaSubstituto(getCadastrante().getLotacao());
-		List<DpSubstituicao> itens = dao().consultarSubstituicoesPermitidas(dpSubstituicao);
-
-		return itens;
+		return dao.consultarSubstituicoesPermitidas(dpSubstituicao);
 	}
-	
+
 	public List<DpVisualizacao> getMeusDelegados() throws Exception {
 		if (getCadastrante() == null)
 			return null;
 		DpVisualizacao dpVisualizacao = new DpVisualizacao();
 		dpVisualizacao.setDelegado(getCadastrante());
-		List<DpVisualizacao> itens = dao().consultarVisualizacoesPermitidas(dpVisualizacao);
-
-		return itens;
+		return dao.consultarVisualizacoesPermitidas(dpVisualizacao);
 	}
 
 	public DpPessoa getTitular() {
@@ -146,36 +149,71 @@ public class SigaObjects implements ConheceUsuario {
 	}
 
 	public DpPessoa daoPes(long id) {
-		return dao().consultar(id, DpPessoa.class, false);
+		return dao.consultar(id, DpPessoa.class, false);
 	}
 
 	public DpPessoa daoPes(String sigla) {
 		DpPessoaDaoFiltro flt = new DpPessoaDaoFiltro();
 		flt.setSigla(sigla);
-		return (DpPessoa) dao().consultarPorSigla(flt);
+		return (DpPessoa) dao.consultarPorSigla(flt);
 	}
 
 	public DpLotacao daoLot(long id) {
-		return dao().consultar(id, DpLotacao.class, false);
+		return dao.consultar(id, DpLotacao.class, false);
 	}
 
 	public DpLotacao daoLot(String sigla) {
 		DpLotacaoDaoFiltro flt = new DpLotacaoDaoFiltro();
 		flt.setSigla(sigla);
-		// flt.setSiglaCompleta(sigla);
-		return (DpLotacao) dao().consultarPorSigla(flt);
+
+		return (DpLotacao) dao.consultarPorSigla(flt);
 	}
 
 	public CpOrgaoUsuario daoOU(String sigla) {
 		CpOrgaoUsuarioDaoFiltro fltOrgao = new CpOrgaoUsuarioDaoFiltro();
 		fltOrgao.setSigla(sigla);
-		CpOrgaoUsuario orgaoUsuario = (CpOrgaoUsuario) CpDao.getInstance()
-				.consultarPorSigla(fltOrgao);
-		return orgaoUsuario;
+		return (CpOrgaoUsuario) dao.consultarPorSigla(fltOrgao);
 	}
 
-	public CpDao dao() {
-		return CpDao.getInstance();
-	}
+	private void carregarUsuario(CpIdentidade id)
+			throws AplicacaoException, SQLException {
+		Date dt = dao.consultarDataEHoraDoServidor();
+		if (!id.ativaNaData(dt)) {
+			CpIdentidade idAtual = dao.obterIdentidadeAtual(id);
+			if (!id.getId().equals(idAtual.getId())) {
+				dao.invalidarCache(id);
+				id = idAtual;
+			}
+			if (!id.ativaNaData(dt))
+				throw new AplicacaoException("O acesso não será permitido porque identidade está inativa desde '"+ id.getDtExpiracaoDDMMYYYY() + "'.");
+		}
+		if (comp.isIdentidadeBloqueada(id)) {
+			throw new AplicacaoException("O acesso não será permitido porque esta identidade está bloqueada.");
+		}
 
+		setIdentidadeCadastrante(id);
+		setCadastrante(dao.obterPessoaAtual(id.getDpPessoa()));
+
+		CpPersonalizacao per = dao.consultarPersonalizacao(getCadastrante());
+
+		if ((per != null)
+				&& ((per.getPesSubstituindo() != null) || (per
+				.getLotaSubstituindo() != null))) {
+
+			DpSubstituicao dpSubstituicao = new DpSubstituicao();
+			dpSubstituicao.setSubstituto(getCadastrante());
+			dpSubstituicao.setLotaSubstituto(getCadastrante().getLotacao());
+
+			setTitular(per.getPesSubstituindo());
+			setLotaTitular(per.getLotaSubstituindo());
+
+		}
+
+		if (getLotaTitular() == null && getTitular() != null)
+			setLotaTitular(getTitular().getLotacao());
+		if (getTitular() == null)
+			setTitular(getCadastrante());
+		if (getLotaTitular() == null)
+			setLotaTitular(getTitular().getLotacao());
+	}
 }

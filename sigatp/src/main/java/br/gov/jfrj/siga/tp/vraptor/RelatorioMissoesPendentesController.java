@@ -26,18 +26,6 @@ import br.gov.jfrj.siga.vraptor.SigaObjects;
 public class RelatorioMissoesPendentesController extends TpController {
 	private static final String MISSOES_PENDENTES = "missoesPendentes";
 
-	/**
-	 * @deprecated CDI eyes only
-	 */
-	public RelatorioMissoesPendentesController() {
-		super();
-	}
-	
-	@Inject
-	public RelatorioMissoesPendentesController(HttpServletRequest request, Result result,  Validator validator, SigaObjects so,  EntityManager em) {
-        super(request, result, TpDao.getInstance(), validator, so, em);
-    }
-
     @SuppressWarnings("unchecked")
     @Path("/gerarRelatorio")
     public void gerarRelatorio() throws Exception {

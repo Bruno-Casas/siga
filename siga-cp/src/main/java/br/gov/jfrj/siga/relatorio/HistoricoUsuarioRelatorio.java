@@ -26,16 +26,15 @@ import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpConfiguracaoCache;
 import br.gov.jfrj.siga.cp.CpPerfil;
 import br.gov.jfrj.siga.cp.CpServico;
-import br.gov.jfrj.siga.cp.bl.Cp;
+import br.gov.jfrj.siga.cp.bl.CpConfiguracaoBL;
 import br.gov.jfrj.siga.cp.model.enm.CpTipoDeConfiguracao;
+import br.gov.jfrj.siga.cp.util.MatriculaUtils;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.dp.dao.CpDao;
-import br.gov.jfrj.siga.sinc.lib.Item;
-import br.gov.jfrj.siga.sinc.lib.Sincronizador;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -48,6 +47,9 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
     private List<DpPessoa> pessoasDoUsuario;
     private Date dtAnterior;
     private DpLotacao lotacaoAnterior;
+
+    private final CpDao dao;
+    private final CpConfiguracaoBL conf;
 
     /**
      * @return the pessoasDoUsuario
@@ -94,6 +96,10 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
     @SuppressWarnings("unchecked")
     public HistoricoUsuarioRelatorio(Map parametros) throws DJBuilderException {
         super(parametros);
+
+        dao = CDI.current().select(CpDao.class).get();
+        conf = CDI.current().select(CpConfiguracaoBL.class).get();
+
         if (parametros.get("idPessoa") == null) {
             throw new DJBuilderException("Parâmetro idPessoa não informado!");
         }
@@ -103,12 +109,12 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
             Long t_lngIdPessoa = Long.parseLong((String) parametros
                     .get("idPessoa"));
 
-            pessoa = dao().consultar(t_lngIdPessoa, DpPessoa.class, false);
+            pessoa = dao.consultar(t_lngIdPessoa, DpPessoa.class, false);
             setDpPessoa(pessoa);
         } catch (Exception e) {
             throw new DJBuilderException("Parâmetro idPessoa inválido!");
         }
-        setPessoasDoUsuario(dao().obterPessoasDoUsuario(getDpPessoa()));
+        setPessoasDoUsuario(dao.obterPessoasDoUsuario(getDpPessoa()));
         @SuppressWarnings("unused")
         int conta = 0;
         parametros.put("titulo", "SIGA");
@@ -131,20 +137,23 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
         this.addColuna("Origem", 13, RelatorioRapido.ESQUERDA, false, false);
         this.addColuna("Cadastrante", 20, RelatorioRapido.ESQUERDA, false,
                 false);
+        this.addColuna("Data Início", 10, RelatorioRapido.ESQUERDA, false,
+                false);
+        this.addColuna("Data Fim", 10, RelatorioRapido.ESQUERDA, false,
+                false);
         return this;
     }
 
     /**
      * Preenche os dados com as informações da configuração já formatados
      *
-     * @param cfga  - Configuração acesso
+     * @param itm   - Item de alteração de direitos
      * @param dados - coleção de linhas do relatório
      */
 
-    private void processarItem(Item itm, List<String> dados, Date dt) {
+    private void processarItem(AlteracaoDireitosItem itm, List<String> dados, Date dt) {
 
-        AlteracaoDireitosItem novo = (AlteracaoDireitosItem) itm.getNovo();
-        DpLotacao lot = novo.getPessoa().getLotacao();
+        DpLotacao lot = itm.getPessoa().getLotacao();
         try {
             dados.add(lot.getSiglaLotacao());
         } catch (Exception e) {
@@ -163,27 +172,39 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
             dados.add(" *");
         }
         try {
-            dados.add(novo.getServico().getDescricao());
+            dados.add(itm.getServico().getDescricao());
         } catch (Exception e) {
             dados.add("");
         }
         try {
-            dados.add(novo.getSituacao().getDescr());
+            dados.add((itm.getSituacaoDepois() != null) ? itm.getSituacaoDepois().getDescr() : "-");
         } catch (Exception e) {
             dados.add("");
         }
         try {
-            dados.add(novo.printOrigemCurta());
+            dados.add(itm.printOrigemCurta());
         } catch (Exception e) {
             dados.add("");
         }
 
         try {
-            dados.add(String.valueOf(novo.getCadastrante().getSesbPessoa()
-                    + novo.getCadastrante().getMatricula()));
+            dados.add(String.valueOf(itm.getCadastrante().getSesbPessoa()
+                    + itm.getCadastrante().getMatricula()));
         } catch (Exception e) {
             dados.add("");
         }
+
+        try {
+            dados.add(itm.getInicio() != null ? printDate(itm.getInicio()) : "");
+        } catch (Exception e) {
+            dados.add("");
+        }
+        try {
+            dados.add(itm.getFim() != null ? printDate(itm.getFim()) : "");
+        } catch (Exception e) {
+            dados.add("");
+        }
+
         setDtAnterior(dt);
         setLotacaoAnterior(lot);
     }
@@ -226,7 +247,7 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
     }
 
     private ArrayList<Date> obterDatasAlteracaoConfiguracao() {
-        List<CpConfiguracao> confs = dao().listarConfiguracoes();
+        List<CpConfiguracao> confs = dao.listarConfiguracoes();
         ArrayList<Date> arlDatas = new ArrayList<Date>();
         for (CpConfiguracao conf : confs) {
 
@@ -258,34 +279,49 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
     @Override
     public Collection processarDados() {
         ArrayList<String> dados = new ArrayList<String>();
-        List<CpServico> servicos = CpDao.getInstance().listarServicos();
+        List<CpServico> servicos = dao.listarServicos();
         CpTipoDeConfiguracao tipo = CpTipoDeConfiguracao.UTILIZAR_SERVICO;
-        SortedSet<Sincronizavel> setAntes = new TreeSet<Sincronizavel>(); // obterItensDosServicosNaData(tipo,
         setDtAnterior(null);
         setLotacaoAnterior(null);
+
+        Map<CpServico, AlteracaoDireitosItem> mapAntes = new HashMap<>();
+
         for (Date dt : obterDatasRelevantes()) {
             try {
-                SortedSet<Sincronizavel> setDepois = obterItensDosServicosNaData(
-                        tipo, servicos, dt);
+                for (CpServico srv : servicos) {
+                    AlteracaoDireitosItem itemDepois = gerar(tipo, null,
+                            obterPessoaDoUsuarioAtivaNaData(dt), null, null, srv,
+                            dt, false);
 
-                List<Item> list = compararServicosNoPeriodo(setAntes,
-                        setDepois, servicos);
-                for (Item itm : list) {
-                    processarItem(itm, dados, dt);
+                    AlteracaoDireitosItem itemAntes = mapAntes.get(srv);
+
+                    if (itemAntes == null || !equivalentes(itemAntes.getCfgDepois(), itemDepois.getCfgDepois())) {
+                        AlteracaoDireitosItem itemRel = new AlteracaoDireitosItem();
+                        itemRel.setPessoa(itemDepois.getPessoa());
+                        itemRel.setServico(srv);
+                        itemRel.setCfgAntes(itemAntes != null ? itemAntes.getCfgDepois() : null);
+                        itemRel.setCfgDepois(itemDepois.getCfgDepois());
+                        processarItem(itemRel, dados, dt);
+                    }
+                    mapAntes.put(srv, itemDepois);
                 }
-                setAntes = setDepois;
             } catch (Exception e) {
                 throw new Error(e);
             }
         }
-        // gerarArquivoDados(dados, "c:\\RelHistUsu.txt");
         return dados;
+    }
 
+    private boolean equivalentes(CpConfiguracao cfg1, CpConfiguracao cfg2) {
+        if (cfg1 == null && cfg2 == null) return true;
+        if (cfg1 == null || cfg2 == null) return false;
+        if (cfg1.getId().equals(cfg2.getId())) return true;
+        return false;
     }
 
     @SuppressWarnings("unused")
     private void gerarArquivoDados(ArrayList<String> dados, String nomeArq) {
-        final int QUANTOS_CAMPOS = 6;
+        final int QUANTOS_CAMPOS = 8;
         File file = new File(nomeArq);
         try {
             Writer output = new BufferedWriter(new FileWriter(file));
@@ -307,35 +343,10 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
         }
     }
 
-    public List<Item> compararServicosNoPeriodo(
-            SortedSet<Sincronizavel> setAntes,
-            SortedSet<Sincronizavel> setDepois, List<CpServico> srvs)
-            throws Exception {
-        Sincronizador sinc = new Sincronizador();
-        sinc.setSetNovo(setDepois);
-        sinc.setSetAntigo(setAntes);
-        List<Item> list = sinc.getEncaixe();
-        for (Item itm : list)
-            System.out.println(itm.getDescricao());
-        return list;
-    }
-
     @SuppressWarnings("unchecked")
-    public SortedSet obterItensDosServicosNaData(CpTipoDeConfiguracao tipo,
-                                                 List<CpServico> srvs, Date dtEvn) throws Exception {
-        TreeSet lista = new TreeSet<AlteracaoDireitosItem>();
-        for (CpServico srv : srvs) {
-            AlteracaoDireitosItem item = gerar(tipo, null,
-                    obterPessoaDoUsuarioAtivaNaData(dtEvn), null, null, srv,
-                    dtEvn);
-            lista.add(item);
-        }
-        return lista;
-    }
-
-    static public AlteracaoDireitosItem gerar(CpTipoDeConfiguracao tipo,
+    public AlteracaoDireitosItem gerar(CpTipoDeConfiguracao tipo,
                                               CpPerfil perfil, DpPessoa pessoa, DpLotacao lotacao,
-                                              CpOrgaoUsuario orgao, CpServico servico, Date dtEvn)
+                                              CpOrgaoUsuario orgao, CpServico servico, Date dtEvn, boolean isAntes)
             throws Exception {
         CpConfiguracao cfgFiltro = new CpConfiguracao();
         cfgFiltro.setCpGrupo(perfil);
@@ -344,38 +355,33 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
         cfgFiltro.setOrgaoUsuario(orgao);
         cfgFiltro.setCpServico(servico);
         cfgFiltro.setCpTipoConfiguracao(tipo);
-        CpConfiguracaoCache cache = Cp.getInstance().getConf().buscaConfiguracao(
+        CpConfiguracaoCache cache = conf.buscaConfiguracao(
                 cfgFiltro, new int[0], dtEvn);
 
         CpConfiguracao cfg = null;
         if (Objects.nonNull(cache))
-            cfg = CpDao.getInstance().consultar(cache.idConfiguracao, CpConfiguracao.class, false);
+            cfg = dao.consultar(cache.idConfiguracao, CpConfiguracao.class, false);
 
         AlteracaoDireitosItem itm = new AlteracaoDireitosItem();
         itm.setServico(servico);
         itm.setPessoa(pessoa);
-        if (cfg != null) {
-            itm.setCfg(cfg);
-            itm.setSituacao(cfg.getCpSituacaoConfiguracao());
+        if (isAntes) {
+            itm.setCfgAntes(cfg);
         } else {
-            itm.setSituacao(servico.getCpTipoServico().getSituacaoDefault());
+            itm.setCfgDepois(cfg);
         }
         return itm;
     }
 
-    private CpDao dao() {
-        return CpDao.getInstance();
-    }
-
     /**
-     * @return the cpServico
+     * @return the dpPessoa
      */
     public DpPessoa getDpPessoa() {
         return dpPessoa;
     }
 
     /**
-     * @param cpServico the cpServico to set
+     * @param dpPessoa the dpPessoa to set
      */
     public void setDpPessoa(DpPessoa dpPessoa) {
         this.dpPessoa = dpPessoa;
@@ -389,7 +395,7 @@ public class HistoricoUsuarioRelatorio extends RelatorioTemplate {
 		Map<String, String> listaParametros = new HashMap<String, String>();
 		listaParametros.put("idPessoa", "129972");
 		HistoricoUsuarioRelatorio r = new HistoricoUsuarioRelatorio(
-				listaParametros);
+				null, listaParametros);
 		r.gerar();
 		JasperViewer.viewReport(r.getRelatorioJasperPrint());
 	}

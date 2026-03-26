@@ -30,7 +30,6 @@ import br.gov.jfrj.siga.cp.model.enm.ITipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.ExDocumento;
 import br.gov.jfrj.siga.ex.ExMobil;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import br.gov.jfrj.siga.ex.vo.ExDocumentoVO;
 import br.gov.jfrj.siga.hibernate.ExDao;
@@ -59,7 +58,7 @@ public class ExPainelController extends ExController {
     public ExPainelController(HttpServletRequest request,
                               HttpServletResponse response, ServletContext context,
                               Result result, SigaObjects so, EntityManager em) {
-        super(request, response, context, result, ExDao.getInstance(), so, em);
+        super(request, response, context, result, dao, so, em);
     }
 
     @Get("app/expediente/painel/exibir")
@@ -176,8 +175,7 @@ public class ExPainelController extends ExController {
         }
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .corrigeDocSemMobil(
                             exDocumentoDTO.getDoc());
 
@@ -208,7 +206,7 @@ public class ExPainelController extends ExController {
                 exDocumentoDTO.getMob(), getCadastrante(), getTitular(),
                 getLotaTitular(), true, true, false, false);
 
-        ExMovimentacao mov = dao().consultar(idMovDuplicada, ExMovimentacao.class, false);
+        ExMovimentacao mov = cpDao.consultar(idMovDuplicada, ExMovimentacao.class, false);
 
         ITipoDeMovimentacao[] tpMovs = {ExTipoDeMovimentacao.RECEBIMENTO, ExTipoDeMovimentacao.TRANSFERENCIA, ExTipoDeMovimentacao.JUNTADA};
         java.util.Set<ExMovimentacao> setDuplicadas = mov.getExMobil().getMovsDuplicadas(TEMPO_MAX_MILISEG, tpMovs);
@@ -272,8 +270,7 @@ public class ExPainelController extends ExController {
         }
 
         try {
-            Ex.getInstance()
-                    .getBL()
+            bl
                     .corrigeDocSemDescricao(
                             exDocumentoDTO.getDoc());
 
@@ -295,7 +292,7 @@ public class ExPainelController extends ExController {
                 && exDocumentoDto.getSigla().length() != 0) {
             final ExMobilDaoFiltro filter = new ExMobilDaoFiltro();
             filter.setSigla(exDocumentoDto.getSigla());
-            exDocumentoDto.setMob(dao().consultarPorSigla(filter));
+            exDocumentoDto.setMob(cpDao.consultarPorSigla(filter));
             if (exDocumentoDto.getMob() != null) {
                 exDocumentoDto.setDoc(exDocumentoDto.getMob().getExDocumento());
             }
@@ -303,12 +300,12 @@ public class ExPainelController extends ExController {
                 && exDocumentoDto.getDocumentoViaSel().getId() != null) {
             exDocumentoDto
                     .setIdMob(exDocumentoDto.getDocumentoViaSel().getId());
-            exDocumentoDto.setMob(dao().consultar(exDocumentoDto.getIdMob(),
+            exDocumentoDto.setMob(cpDao.consultar(exDocumentoDto.getIdMob(),
                     ExMobil.class, false));
         } else if (exDocumentoDto.getMob() == null
                 && exDocumentoDto.getIdMob() != null
                 && exDocumentoDto.getIdMob() != 0) {
-            exDocumentoDto.setMob(dao().consultar(exDocumentoDto.getIdMob(),
+            exDocumentoDto.setMob(cpDao.consultar(exDocumentoDto.getIdMob(),
                     ExMobil.class, false));
         }
         if (exDocumentoDto.getMob() != null) {

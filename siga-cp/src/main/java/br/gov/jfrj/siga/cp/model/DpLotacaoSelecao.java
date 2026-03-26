@@ -39,7 +39,7 @@ public class DpLotacaoSelecao extends Selecao<DpLotacao> {
 		if (getId() == null)
 			return null;
 
-		final DpLotacao o = CpDao.getInstance().consultar(getId(),
+		final DpLotacao o = dao.consultar(getId(),
 				DpLotacao.class, false);
 
 		return o;
@@ -47,7 +47,7 @@ public class DpLotacaoSelecao extends Selecao<DpLotacao> {
 
 	@Override
 	public boolean buscarPorId() throws AplicacaoException {
-		final DpLotacao o = CpDao.getInstance().consultar(getId(),
+		final DpLotacao o = dao.consultar(getId(),
 				DpLotacao.class, false);
 		if (o == null)
 			return false;
@@ -64,7 +64,7 @@ public class DpLotacaoSelecao extends Selecao<DpLotacao> {
 		final DpLotacao oExemplo = new DpLotacao();
 		oExemplo.setSigla(getSigla());
 
-		final DpLotacao o = CpDao.getInstance().consultarPorSigla(oExemplo);
+		final DpLotacao o = dao.consultarPorSigla(oExemplo);
 
 		if (o == null) {
 			apagar();
@@ -75,18 +75,18 @@ public class DpLotacaoSelecao extends Selecao<DpLotacao> {
 		return true;
 	}
 
-	public boolean buscarPorSiglaCompleta() throws AplicacaoException {
+	private boolean buscarPorSiglaCompleta() throws AplicacaoException {
 
 		CpOrgaoUsuario ouFiltro = new CpOrgaoUsuario();
 		ouFiltro.setSigla(getSigla().substring(0, 2));
-		CpOrgaoUsuario ou = CpDao.getInstance().consultarPorSigla(ouFiltro);
+		CpOrgaoUsuario ou = dao.consultarPorSigla(ouFiltro);
 
 		final DpLotacao oExemplo = new DpLotacao();
 		oExemplo.setOrgaoUsuario(ou);
 		oExemplo.setSigla(getSigla().substring(2));
 
 		try{
-			final DpLotacao o = CpDao.getInstance().consultarPorSigla(oExemplo);
+			final DpLotacao o = dao.consultarPorSigla(oExemplo);
 
 			if (o == null) {
 				return false;

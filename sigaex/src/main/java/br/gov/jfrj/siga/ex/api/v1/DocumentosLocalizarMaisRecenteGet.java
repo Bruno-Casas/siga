@@ -22,7 +22,7 @@ public class DocumentosLocalizarMaisRecenteGet implements IDocumentosLocalizarMa
         // Modelo
         ExModelo modelo = null;
         if (req.modelo != null) {
-            modelo = ExDao.getInstance().consultarExModelo(null, req.modelo);
+            modelo = dao.consultarExModelo(null, req.modelo);
             if (modelo == null)
                 throw new SwaggerException("Não existe modelo com o nome especificado (" + req.modelo + ")", 400, null,
                         req, resp, null);
@@ -32,7 +32,7 @@ public class DocumentosLocalizarMaisRecenteGet implements IDocumentosLocalizarMa
         // Lota Subscritor
         final DpLotacao fltLotaSubscritor = new DpLotacao();
         fltLotaSubscritor.setSigla(req.lotaSubscritor.toUpperCase());
-        DpLotacao lotaSubscritor = CpDao.getInstance().consultarPorSigla(fltLotaSubscritor);
+        DpLotacao lotaSubscritor = dao.consultarPorSigla(fltLotaSubscritor);
         if (lotaSubscritor == null)
             throw new SwaggerException("Nenhuma lotação foi encontrada contendo a sigla informada.", 400, null, req,
                     resp, null);
@@ -45,7 +45,7 @@ public class DocumentosLocalizarMaisRecenteGet implements IDocumentosLocalizarMa
         // Marcador
         CpMarcador marcador = null;
         if (req.marcador != null) {
-            List<CpMarcador> listMarcador = ExDao.getInstance().consultaCpMarcadorAtivoPorNome(req.marcador, null);
+            List<CpMarcador> listMarcador = dao.consultaCpMarcadorAtivoPorNome(req.marcador, null);
             if (listMarcador.size() > 0) {
                 marcador = listMarcador.get(0);
             } else {
@@ -55,7 +55,7 @@ public class DocumentosLocalizarMaisRecenteGet implements IDocumentosLocalizarMa
         }
         builder.setUltMovIdEstadoDoc(marcador.getHisIdIni());
 
-        List<Object[]> l = ExDao.getInstance().consultarPorFiltro(builder, 0, 1);
+        List<Object[]> l = dao.consultarPorFiltro(builder, 0, 1);
         if (l.isEmpty())
             throw new SwaggerException("Nenhum documento foi encontrado com os argumentos informados.", 404, null, req,
                     resp, null);

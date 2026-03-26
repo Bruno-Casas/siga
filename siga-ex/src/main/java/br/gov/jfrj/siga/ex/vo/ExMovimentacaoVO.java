@@ -27,7 +27,6 @@ import br.gov.jfrj.siga.cp.util.CpProcessadorReferencias;
 import br.gov.jfrj.siga.dp.DpLotacao;
 import br.gov.jfrj.siga.dp.DpPessoa;
 import br.gov.jfrj.siga.ex.ExMovimentacao;
-import br.gov.jfrj.siga.ex.bl.Ex;
 import br.gov.jfrj.siga.ex.logic.*;
 import br.gov.jfrj.siga.ex.model.enm.ExTipoDeMovimentacao;
 import com.auth0.jwt.JWTSigner;
@@ -35,6 +34,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.crivano.jlogic.NOr;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.enterprise.inject.spi.CDI;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
@@ -114,7 +114,7 @@ public class ExMovimentacaoVO extends ExVO {
             descricao = StringUtils.isNotBlank(mov.getDescrMov()) ? mov.getDescrMov() : mov.getNmArqMov();
 
         if (mov.getExTipoMovimentacao() == (ExTipoDeMovimentacao.ASSINATURA_COM_SENHA) || mov.getExTipoMovimentacao() == (ExTipoDeMovimentacao.ASSINATURA_DIGITAL_DOCUMENTO)) {
-            descricao += Ex.getInstance().getBL().extraiPersonalizacaoAssinatura(mov, false);
+            descricao += this.bl.extraiPersonalizacaoAssinatura(mov, false);
         }
 
         addAcoes(mov, cadastrante, titular, lotaTitular);
@@ -246,7 +246,7 @@ public class ExMovimentacaoVO extends ExVO {
             }
 
             if (exTipoMovimentacao == ExTipoDeMovimentacao.ANEXACAO) {
-                if (!mov.isCancelada() && !mov.mob().doc().isSemEfeito() && !mov.mob().isEmTransito(titular, lotaTitular)) {
+                if (!mov.isCancelada() && !mov.mob().doc().isSemEfeito() && !mobBl.isEmTransito(mov.mob(), titular, lotaTitular)) {
                     addAcao(AcaoVO.builder().nome("Excluir")
                             .nameSpace("/app/expediente/mov")
                             .acao("excluir")
@@ -308,7 +308,7 @@ public class ExMovimentacaoVO extends ExVO {
                                     .params("popup", "true").params("autenticando", "true")
                                     .exp(new ExPodeAutenticarMovimentacao(mov, titular, lotaTitular)).build());
 
-                    } else if (!(mov.isAssinada() && mov.mob().isEmTransito(titular, lotaTitular))) {
+                    } else if (!(mov.isAssinada() && mobBl.isEmTransito(mov.mob(), titular, lotaTitular))) {
                         addAcao(AcaoVO.builder().nome(mov.isAssinada() ? "Ver" : "Ver/Assinar").nameSpace("/app/expediente/mov").acao("exibir").params("sigla", mov.mob().getCodigoCompacto()).params("id", mov.getIdMov().toString())
                                 .params("popup", "true")
                                 .exp(new CpPodeSempre()).build());
@@ -381,18 +381,15 @@ public class ExMovimentacaoVO extends ExVO {
                 addAcao(AcaoVO.builder().nome(mov.getExMobil().getSigla()).nameSpace("/app/expediente/doc").acao("exibir").params("sigla", mov.getExMobil().getSigla())
                         .exp(new CpPodeSempre()).pre("Documento juntado: ").pos(mensagemPos).build());
 
-                if (mov.getExMobil().podeExibirNoAcompanhamento(titular, lotaTitular)) {
-                    Set<ExMovimentacao> movs = mov.getExMobil().getMovsNaoCanceladas(ExTipoDeMovimentacao.EXIBIR_NO_ACOMPANHAMENTO_DO_PROTOCOLO);
-                    if (!movs.isEmpty()) {
-                        addAcao(AcaoVO.builder().nome("Desfazer Disponibilizar no Acompanhamento do Protocolo").nameSpace("/app/expediente/mov").acao("desfazer_exibir_no_acompanhamento_do_protocolo")
-                                .params("id", movs.iterator().next().getIdMov().toString())
-                                .exp(new CpPodeSempre()).msgConfirmacao("Ao clicar em OK o conteúdo deste documento deixará de ficar disponível através do número do "
-                                        + "protocolo de acompanhamento. Deseja continuar?").build());
-                    }
+                Set<ExMovimentacao> movs = mov.getExMobil().getMovsNaoCanceladas(ExTipoDeMovimentacao.EXIBIR_NO_ACOMPANHAMENTO_DO_PROTOCOLO);
+                if (!movs.isEmpty() && comp.pode(ExPodeDisponibilizarNoAcompanhamentoDoProtocolo.class, titular, lotaTitular, mov.getExMobil().getDoc())) {
+                    addAcao(AcaoVO.builder().nome("Desfazer Disponibilizar no Acompanhamento do Protocolo").nameSpace("/app/expediente/mov").acao("desfazer_exibir_no_acompanhamento_do_protocolo")
+                            .params("id", movs.iterator().next().getIdMov().toString())
+                            .exp(new CpPodeSempre()).msgConfirmacao("Ao clicar em OK o conteúdo deste documento deixará de ficar disponível através do número do "
+                                    + "protocolo de acompanhamento. Deseja continuar?").build());
                 } else {
                     if (mov.getExMobil().isJuntado()
-                            && Ex.getInstance().getComp()
-                            .pode(ExPodeDisponibilizarNoAcompanhamentoDoProtocolo.class, titular, lotaTitular, mov.getExDocumento())) {
+                            && comp.pode(ExPodeDisponibilizarNoAcompanhamentoDoProtocolo.class, titular, lotaTitular, mov.getExDocumento())) {
                         addAcao(AcaoVO.builder().nome("Disponibilizar no Acompanhamento do Protocolo").nameSpace("/app/expediente/mov").acao("exibir_no_acompanhamento_do_protocolo")
                                 .params("sigla", mov.getExMobil().getSigla())
                                 .exp(new CpPodeSempre()).msgConfirmacao("Ao clicar em OK o conteúdo deste documento ficará disponível através do número do "
@@ -566,7 +563,8 @@ public class ExMovimentacaoVO extends ExVO {
         }
 
         if (descricao != null && descricao.equals(mov.getObs())) {
-            descricao = CpProcessadorReferencias.marcarReferenciasParaDocumentos(descricao, null);
+            CpProcessadorReferencias pr = CDI.current().select(CpProcessadorReferencias.class).get();
+            descricao = pr.marcarReferenciasParaDocumentos(descricao, null);
         }
     }
 

@@ -22,138 +22,51 @@ import br.gov.jfrj.siga.cp.CpConfiguracao;
 import br.gov.jfrj.siga.cp.CpServico;
 import br.gov.jfrj.siga.cp.model.enm.CpSituacaoDeConfiguracaoEnum;
 import br.gov.jfrj.siga.dp.DpPessoa;
-import br.gov.jfrj.siga.sinc.lib.Desconsiderar;
-import br.gov.jfrj.siga.sinc.lib.Sincronizavel;
-import br.gov.jfrj.siga.sinc.lib.SincronizavelSuporte;
 
 import java.util.Date;
 import java.util.Objects;
 
-public class AlteracaoDireitosItem extends SincronizavelSuporte implements
-        Sincronizavel, Comparable {
-    @Desconsiderar
+public class AlteracaoDireitosItem implements Comparable<AlteracaoDireitosItem> {
     DpPessoa pessoa;
-    @Desconsiderar
     CpServico servico;
-    @Desconsiderar
-    CpConfiguracao cfg;
-    @Desconsiderar
-    CpSituacaoDeConfiguracaoEnum situacao;
-    long idPessoaIni;
-    long idServico;
-    long idSituacao;
+    CpConfiguracao cfgAntes;
+    CpConfiguracao cfgDepois;
 
-    /**
-     * @return the situacao
-     */
-    public CpSituacaoDeConfiguracaoEnum getSituacao() {
-        return situacao;
-    }
-
-    /**
-     * @param situacao the situacao to set
-     */
-    public void setSituacao(CpSituacaoDeConfiguracaoEnum situacao) {
-        this.situacao = situacao;
-        idSituacao = situacao == null ? null : situacao.getId();
-    }
-
-    /**
-     * @return the pessoa
-     */
     public DpPessoa getPessoa() {
         return pessoa;
     }
 
-    /**
-     * @param pessoa the pessoa to set
-     */
     public void setPessoa(DpPessoa pessoa) {
         this.pessoa = pessoa;
-
-        if (Objects.nonNull(pessoa)) {
-            if (Objects.nonNull(pessoa.getIdInicial())) {
-                idPessoaIni = pessoa.getIdInicial();
-            } else {
-                idPessoaIni = pessoa.getId();
-            }
-        }
     }
 
-    /**
-     * @return the servico
-     */
     public CpServico getServico() {
         return servico;
     }
 
-    /**
-     * @param servico the servico to set
-     */
     public void setServico(CpServico servico) {
         this.servico = servico;
-        idServico = servico.getIdServico();
     }
 
-    /**
-     * @return the cfg
-     */
-    public CpConfiguracao getCfg() {
-        return cfg;
+    public CpConfiguracao getCfgAntes() {
+        return cfgAntes;
     }
 
-    /**
-     * @param cfg the cfg to set
-     */
-    public void setCfg(CpConfiguracao cfg) {
-        this.cfg = cfg;
+    public void setCfgAntes(CpConfiguracao cfgAntes) {
+        this.cfgAntes = cfgAntes;
     }
 
-    public String getDescricaoExterna() {
-        StringBuffer stb = new StringBuffer();
-        if (servico != null)
-            stb.append(servico.getSigla());
-        stb.append(':');
-        if (pessoa != null)
-            stb.append(pessoa.getSigla());
-        stb.append(':');
-        if (cfg != null
-                && cfg.getCpSituacaoConfiguracao() != null
-                && cfg.getCpSituacaoConfiguracao().getDescr() != null) {
-            stb.append(cfg.getCpSituacaoConfiguracao().getDescr());
-        }
-        return stb.toString();
+    public CpConfiguracao getCfgDepois() {
+        return cfgDepois;
     }
 
-    public String getIdExterna() {
-        return servico.getId() + ": " + pessoa.getIdInicial();
-    }
-
-    public int compareTo(Object o) {
-        return getIdExterna().compareTo(
-                ((AlteracaoDireitosItem) o).getIdExterna());
-    }
-
-    public String printOrigem() {
-        try {
-            return getCfg().printOrigem();
-        } catch (Exception e) {
-            return new String();
-        }
-    }
-
-    public String printOrigemCurta() {
-        try {
-            if (getCfg() == null) return "DEFAULT";
-            return getCfg().printOrigemCurta();
-        } catch (Exception e) {
-            return new String();
-        }
+    public void setCfgDepois(CpConfiguracao cfgDepois) {
+        this.cfgDepois = cfgDepois;
     }
 
     public Date getInicio() {
         try {
-            return getCfg().getHisDtIni();
+            return getCfgAntes().getHisDtIni();
         } catch (Exception e) {
             return null;
         }
@@ -161,15 +74,49 @@ public class AlteracaoDireitosItem extends SincronizavelSuporte implements
 
     public Date getFim() {
         try {
-            return getCfg().getHisDtFim();
+            return getCfgDepois().getHisDtFim();
         } catch (Exception e) {
             return null;
         }
     }
 
+    public CpSituacaoDeConfiguracaoEnum getSituacaoAntes() {
+        if (cfgAntes != null)
+            return cfgAntes.getCpSituacaoConfiguracao();
+        if (servico != null && servico.getCpTipoServico() != null)
+            return servico.getCpTipoServico().getSituacaoDefault();
+        return null;
+    }
+
+    public CpSituacaoDeConfiguracaoEnum getSituacaoDepois() {
+        if (cfgDepois != null)
+            return cfgDepois.getCpSituacaoConfiguracao();
+        if (servico != null && servico.getCpTipoServico() != null)
+            return servico.getCpTipoServico().getSituacaoDefault();
+        return null;
+    }
+
+    public String getIdExterna() {
+        return (servico != null ? servico.getId() : "") + ": " + (pessoa != null ? pessoa.getIdInicial() : "");
+    }
+
+    @Override
+    public int compareTo(AlteracaoDireitosItem o) {
+        return getIdExterna().compareTo(o.getIdExterna());
+    }
+
+    public String printOrigemCurta() {
+        try {
+            if (getCfgDepois() == null) return "DEFAULT";
+            return getCfgDepois().printOrigemCurta();
+        } catch (Exception e) {
+            return new String();
+        }
+    }
+
     public DpPessoa getCadastrante() {
         try {
-            return getCfg().getHisIdcIni().getDpPessoa();
+            return getCfgDepois().getHisIdcIni().getDpPessoa();
         } catch (Exception e) {
             return null;
         }

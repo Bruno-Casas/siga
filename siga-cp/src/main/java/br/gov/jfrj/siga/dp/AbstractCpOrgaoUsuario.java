@@ -50,6 +50,7 @@ public abstract class AbstractCpOrgaoUsuario extends Objeto implements
     private Integer codOrgaoUsu;
 
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "ID_ORGAO_USU", unique = true, nullable = false)
     private Long idOrgaoUsu;
 

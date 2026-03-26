@@ -10,7 +10,6 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -27,7 +26,6 @@ import javax.validation.constraints.Size;
 
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import br.gov.jfrj.siga.cp.model.DpLotacaoSelecao;
 import br.gov.jfrj.siga.dp.CpOrgaoUsuario;
@@ -368,7 +366,7 @@ public class Veiculo extends TpModel implements ConvertableEntity, Comparable<Ve
 		List<Veiculo> veiculos;
 
 		String qrl = "SELECT v FROM Veiculo v WHERE " + "  v.cpOrgaoUsuario.id = " + orgaoUsuario.getId() + " AND v.id in (SELECT L.veiculo.id FROM LotacaoVeiculo L " + " where L.veiculo.id = v.id "
-				+ " AND L.lotacao.idLotacaoIni = " + lotacao.getIdLotacaoIni() + " AND L.dataHoraFim IS NULL)" + " ORDER BY v.marca, v.modelo";
+				+ " AND L.lotacao.hisIdIni = " + lotacao.getHisIdIni() + " AND L.dataHoraFim IS NULL)" + " ORDER BY v.marca, v.modelo";
 
 		Query qry = AR.em().createQuery(qrl);
 		try {
